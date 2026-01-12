@@ -39,24 +39,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-def select_folder():
-    logger.info("Abriendo selector de carpetas (subprocess)...")
-    try:
-        script_path = os.path.join(BASE_DIR, "utils", "browse_directory.py")
-        logger.info(f"Ejecutando script: {script_path}")
-        result = subprocess.run(
-            [sys.executable, script_path],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        folder_path = result.stdout.strip()
-        logger.info(f"Carpeta seleccionada: {folder_path}")
-        return folder_path
-    except Exception as e:
-        logger.error(f"Error en select_folder: {str(e)}")
-        return ""
-
 class ProcessRequest(BaseModel):
     target_directory: str
     max_emails: int = 5
@@ -67,15 +49,36 @@ TOKEN_PATH = os.path.abspath("token.json")
 # Instancia global del repositorio
 factura_repo = PostgresFacturaRepository()
 
-@app.get("/api/v1/utils/browse-directory")
-async def browse_directory():
-    logger.info("Petición GET /api/v1/utils/browse-directory")
+@app.get("/api/v1/utils/list-directory")
+async def list_directory(path: str = Query("/app/data")):
+    logger.info(f"Listando directorio: {path}")
     try:
-        loop = asyncio.get_running_loop()
-        folder_selected = await loop.run_in_executor(None, select_folder)
-        return {"path": folder_selected}
+        if not os.path.exists(path):
+             raise HTTPException(status_code=404, detail="Ruta no encontrada")
+        
+        if not os.path.isdir(path):
+             raise HTTPException(status_code=400, detail="La ruta no es un directorio")
+
+        items = []
+        with os.scandir(path) as it:
+            for entry in it:
+                if entry.name.startswith('.'): continue
+                items.append({
+                    "name": entry.name,
+                    "type": "directory" if entry.is_dir() else "file",
+                    "path": entry.path
+                })
+        
+        items.sort(key=lambda x: (x["type"] != "directory", x["name"].lower()))
+        parent_path = os.path.dirname(path)
+        
+        return {
+            "current_path": path,
+            "parent_path": parent_path,
+            "items": items
+        }
     except Exception as e:
-        logger.error(f"Error en /browse-directory: {str(e)}", exc_info=True)
+        logger.error(f"Error listando directorio: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/v1/invoices/process")
@@ -136,6 +139,20 @@ class ExportDBRequest(BaseModel):
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     provider: Optional[str] = None
+
+@app.get("/api/v1/invoices")
+async def get_invoices_list(
+    start_date: Optional[date] = Query(None),
+    end_date: Optional[date] = Query(None),
+    provider: Optional[str] = Query(None)
+):
+    logger.info(f"Petición GET /api/v1/invoices - Filtros: {start_date} a {end_date}, Prov: {provider}")
+    try:
+        invoices = factura_repo.get_invoices(start_date, end_date, provider)
+        return {"invoices": invoices, "count": len(invoices)}
+    except Exception as e:
+        logger.error(f"Error en get_invoices_list: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/v1/invoices/export-db")
 async def export_invoices_db(request: ExportDBRequest):

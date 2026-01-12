@@ -1,5 +1,5 @@
 # Script para sincronizar cambios con GitHub
-# Repositorio: https://github.com/SergioLalinde59/ConciliacionWeb
+# Repositorio: https://github.com/SergioLalinde59/Facturas
 
 $ErrorActionPreference = "Stop"
 

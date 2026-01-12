@@ -56,22 +56,35 @@ class PostgresFacturaRepository(FacturaRepository):
         conn = pool.getconn()
         try:
             with conn.cursor() as cur:
-                query = "SELECT fecha, nit, proveedor, factura, subtotal, iva, total, nombre_xml FROM facturas WHERE 1=1"
+                query = "SELECT fecha, nit, proveedor, factura, subtotal, iva, total, nombre_xml FROM facturas"
                 params = []
+                conditions = []
+
                 if start_date:
-                    query += " AND fecha >= %s"
+                    conditions.append("fecha >= %s")
                     params.append(start_date)
                 if end_date:
-                    query += " AND fecha <= %s"
+                    conditions.append("fecha <= %s")
                     params.append(end_date)
                 if provider:
-                    query += " AND proveedor = %s"
+                    conditions.append("proveedor = %s")
                     params.append(provider)
                 
+                if conditions:
+                    query += " WHERE " + " AND ".join(conditions)
+                
                 query += " ORDER BY fecha DESC, proveedor ASC"
+                print(f"DEBUG SQL: {query} -- PARAMS: {params}")
                 cur.execute(query, params)
                 
                 rows = cur.fetchall()
+                print(f"DEBUG SQL RESULT: {len(rows)} records found")
+                
+                if len(rows) == 0:
+                    cur.execute("SELECT count(*) FROM facturas")
+                    total = cur.fetchone()[0]
+                    print(f"DEBUG ADVERTENCIA: La consulta retorno 0, pero hay un TOTAL de {total} registros en la tabla 'facturas'")
+                
                 result = []
                 for row in rows:
                     result.append({
