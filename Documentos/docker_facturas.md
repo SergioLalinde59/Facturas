@@ -96,7 +96,7 @@ docker-compose down
 
 ```env
 DB_USER=postgres
-DB_PASSWORD=SLB
+DB_PASSWORD=<tu_contraseña>
 DB_NAME=Facturas
 ```
 

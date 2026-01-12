@@ -103,7 +103,7 @@ Define los 3 servicios principales:
 Crear archivo `.env` en la raíz (o usar los valores por defecto):
 ```env
 DB_USER=postgres
-DB_PASSWORD=postgres
+DB_PASSWORD=<tu_contraseña>
 DB_NAME=Mvtos
 ```
 
@@ -194,7 +194,7 @@ services:
       - DB_PORT=5434                     # ← Ajustar puerto
       - DB_NAME=${DB_NAME:-Facturas}     # ← Cambiar BD
       - DB_USER=${DB_USER:-postgres}
-      - DB_PASSWORD=SLB
+      - DB_PASSWORD=${DB_PASSWORD}
       - ENVIRONMENT=production
     depends_on:
       db:
@@ -218,7 +218,7 @@ volumes:
 ### 3. Cambios en .env
 ```env
 DB_USER=postgres
-DB_PASSWORD=postgres
+DB_PASSWORD=<tu_contraseña>
 DB_NAME=Facturas
 ```
 

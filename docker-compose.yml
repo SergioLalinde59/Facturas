@@ -8,7 +8,7 @@ services:
       - DB_PORT=5433
       - DB_NAME=${DB_NAME:-Facturas}
       - DB_USER=${DB_USER:-postgres}
-      - DB_PASSWORD=SLB
+      - DB_PASSWORD=${DB_PASSWORD}
       - ENVIRONMENT=production
     ports:
       - "8002:8000"

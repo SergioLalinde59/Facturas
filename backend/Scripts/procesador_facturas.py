@@ -34,9 +34,19 @@ except ImportError as e:
 # ============================================================================
 
 # Credenciales Gmail (usar Contraseña de Aplicación, no contraseña normal)
-GMAIL_USER = "sergio.lalinde.facturas@gmail.com"
-GMAIL_PASSWORD = "idlr udpv xtjp oton"  # IMPORTANTE: Debe ser "Contraseña de Aplicación"
+# SEGURIDAD: Las credenciales se leen desde variables de entorno
+GMAIL_USER = os.getenv('GMAIL_USER')
+GMAIL_PASSWORD = os.getenv('GMAIL_PASSWORD')  # Debe ser "Contraseña de Aplicación" de Google
 IMAP_SERVER = "imap.gmail.com"
+
+# Validar que las credenciales de Gmail estén configuradas
+if not GMAIL_USER or not GMAIL_PASSWORD:
+    print("[ERROR] Las credenciales de Gmail no están configuradas.")
+    print("Por favor, define las siguientes variables de entorno:")
+    print("  - GMAIL_USER: Tu dirección de correo Gmail")
+    print("  - GMAIL_PASSWORD: Tu Contraseña de Aplicación de Google")
+    print("Puedes definirlas en el archivo .env del proyecto.")
+    sys.exit(1)
 
 # Directorios
 BASE_DIR = r"F:\1.Facturas"
