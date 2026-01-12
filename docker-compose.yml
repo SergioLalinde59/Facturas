@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgres:18-alpine
+    container_name: facturas_db
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-Facturas}
+    volumes:
+      - facturas_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-Facturas}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+    container_name: facturas_backend
+    environment:
+      - DB_HOST=host.docker.internal
+      - DB_PORT=5434
+      - DB_NAME=${DB_NAME:-Facturas}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=SLB
+      - ENVIRONMENT=production
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8002:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: facturas_frontend
+    ports:
+      - "5174:80"
+    depends_on:
+      - backend
+
+volumes:
+  facturas_postgres_data:

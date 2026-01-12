@@ -1,0 +1,35 @@
+# Archivos de entorno y credenciales
+.env
+*.env
+backend/.env
+backend/credentials.json
+backend/token.json
+
+# Logs
+*.log
+backend/app.log
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Node modules
+node_modules/
+frontend/node_modules/
+
+# Build outputs
+frontend/dist/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker volumes (local data)
+postgres_data/
