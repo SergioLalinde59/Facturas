@@ -42,6 +42,7 @@ app.add_middleware(
 class ProcessRequest(BaseModel):
     target_directory: str
     max_emails: int = 5
+    dry_run: bool = False
 
 CREDENTIALS_PATH = os.path.abspath("credentials.json")
 TOKEN_PATH = os.path.abspath("token.json")
@@ -112,13 +113,27 @@ async def process_invoices(request: ProcessRequest):
 
 @app.post("/api/v1/invoices/import-db")
 async def import_invoices_to_db(request: ProcessRequest):
-    logger.info(f"Petición POST /api/v1/invoices/import-db - Dir: {request.target_directory}")
+    logger.info(f"Petición POST /api/v1/invoices/import-db - Dir: {request.target_directory}, Preview: {request.dry_run}")
     try:
         exporter = ExporterService()
-        result = exporter.import_to_db(request.target_directory, factura_repo)
+        result = exporter.import_to_db(request.target_directory, factura_repo, dry_run=request.dry_run)
         return result
     except Exception as e:
         logger.error(f"Error en import_invoices_to_db: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/invoices/stats")
+async def get_invoices_stats(
+    start_date: Optional[date] = Query(None),
+    end_date: Optional[date] = Query(None)
+):
+    """Endpoint para obtener estadísticas del dashboard"""
+    logger.info(f"Petición GET /api/v1/invoices/stats - Filtros: {start_date} a {end_date}")
+    try:
+        stats = factura_repo.get_stats(start_date, end_date)
+        return {"stats": stats}
+    except Exception as e:
+        logger.error(f"Error en get_invoices_stats: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/v1/invoices/providers")

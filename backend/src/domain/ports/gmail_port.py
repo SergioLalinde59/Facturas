@@ -33,6 +33,21 @@ class GmailPort(ABC):
         pass
 
     @abstractmethod
+    def extract_metadata(self, message: Dict[str, Any]) -> Dict[str, str]:
+        """Extrae metadatos de un objeto de mensaje ya cargado."""
+        pass
+
+    @abstractmethod
+    def extract_attachments(self, message: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Extrae adjuntos de un objeto de mensaje ya cargado."""
+        pass
+
+    @abstractmethod
+    def get_thread_messages(self, thread_id: str) -> List[Dict[str, Any]]:
+        """Obtiene todos los mensajes de un hilo."""
+        pass
+
+    @abstractmethod
     def trash_message(self, message_id: str):
         """Mueve el correo a la papelera."""
         pass

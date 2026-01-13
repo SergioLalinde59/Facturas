@@ -53,27 +53,33 @@ class InvoiceProcessorService:
 
         for msg in messages:
             msg_id = msg['id']
-            # Obtener metadatos básicos del correo
-            metadata = self.gmail_service.get_message_metadata(msg_id)
+            # Metadatos del mensaje detectado para logging inicial
+            initial_metadata = self.gmail_service.get_message_metadata(msg_id)
             
-            logger.info(f"Procesando correo de: {metadata.get('from')} (ID: {msg_id})")
+            logger.info(f"Procesando correo de: {initial_metadata.get('from')} (ID: {msg_id})")
             try:
-                success, count = self._process_email(msg_id, target_directory)
+                success, saved_files, deep_metadata = self._process_email(msg_id, target_directory)
+                
+                # Usar metadatos del correo más profundo que contiene el ZIP, o el inicial como fallback
+                final_metadata = deep_metadata if deep_metadata else initial_metadata
+                
                 res = {
                     "msg_id": msg_id, 
-                    "sender": metadata.get("from"),
-                    "date": metadata.get("date"),
-                    "count": count
+                    "sender": final_metadata.get("from"),
+                    "subject": final_metadata.get("subject"),
+                    "date": final_metadata.get("date"),
+                    "attachments": saved_files,
+                    "count": len(saved_files)
                 }
                 
                 if success:
-                    logger.info(f"Correo {msg_id} procesado exitosamente. Archivos guardados: {count}")
+                    logger.info(f"Correo {msg_id} procesado exitosamente usando metadatos de {final_metadata.get('from')}. Archivos: {len(saved_files)}")
                     self.gmail_service.mark_as_processed(msg_id, self.processed_label)
                     res["status"] = "success"
                     stats["successful"] += 1
-                    stats["files_saved"] += count
+                    stats["files_saved"] += len(saved_files)
                 else:
-                    logger.warning(f"No se encontraron facturas válidas en el correo {msg_id}. Moviendo a la papelera.")
+                    logger.warning(f"No se encontraron facturas válidas en el hilo del correo {msg_id}. Moviendo a la papelera.")
                     self.gmail_service.trash_message(msg_id)
                     res["status"] = "no_valid_invoices"
                     stats["trashed"] += 1
@@ -84,29 +90,66 @@ class InvoiceProcessorService:
                 stats["errors"] += 1
                 results.append({
                     "msg_id": msg_id, 
-                    "sender": metadata.get("from"),
-                    "date": metadata.get("date"),
+                    "sender": initial_metadata.get("from"),
+                    "subject": initial_metadata.get("subject"),
+                    "date": initial_metadata.get("date"),
                     "status": "error", 
                     "error": str(e),
+                    "attachments": [],
                     "count": 0
                 })
         
         return {"results": results, "stats": stats}
 
-    def _process_email(self, msg_id: str, target_dir: str) -> Tuple[bool, int]:
-        logger.debug(f"Obteniendo adjuntos para el correo {msg_id}")
-        attachments = self.gmail_service.get_attachments(msg_id)
-        processed_count = 0
+    def _process_email(self, msg_id: str, target_dir: str) -> Tuple[bool, List[str], Optional[Dict[str, Any]]]:
+        # Obtener metadatos básicos para conseguir el threadId
+        meta = self.gmail_service.get_message_metadata(msg_id)
+        thread_id = meta.get("threadId")
         
+        if not thread_id:
+            logger.debug(f"Correo {msg_id} no tiene threadId, procesando individualmente.")
+            attachments = self.gmail_service.get_attachments(msg_id)
+            success, saved_files = self._extract_zips_from_attachments(msg_id, attachments, target_dir)
+            return success, saved_files, meta
+
+        # Buscar en todo el hilo el correo más profundo (primero en orden cronológico) con el ZIP
+        logger.info(f"Escaneando hilo {thread_id} para buscar el correo original con el ZIP...")
+        thread_messages = self.gmail_service.get_thread_messages(thread_id)
+        
+        logger.debug(f"El hilo contiene {len(thread_messages)} mensajes.")
+        
+        for i, msg_obj in enumerate(thread_messages):
+            attachments = self.gmail_service.extract_attachments(msg_obj)
+            zip_attachments = [a for a in attachments if a['filename'].lower().endswith('.zip')]
+            
+            # Extraer metadatos de este mensaje para logging
+            current_meta = self.gmail_service.extract_metadata(msg_obj)
+            
+            if zip_attachments:
+                logger.info(f"Encontrado ZIP en mensaje index {i} (ID: {msg_obj.get('id')}) de: {current_meta.get('from')} el {current_meta.get('date')}")
+                
+                success, saved_files = self._extract_zips_from_attachments(msg_obj['id'], zip_attachments, target_dir)
+                if success:
+                    logger.debug(f"Procesado exitosamente usando metadatos profundos de: {current_meta.get('from')}")
+                    return True, saved_files, current_meta
+            else:
+                logger.debug(f"Mensaje index {i} no contiene ZIP. (De: {current_meta.get('from')})")
+        
+        logger.warning(f"No se encontró ningún mensaje con ZIP en el hilo {thread_id}")
+        return False, [], None
+
+    def _extract_zips_from_attachments(self, msg_id: str, attachments: List[Dict[str, Any]], target_dir: str) -> Tuple[bool, List[str]]:
+        saved_files = []
         for att in attachments:
             if att['filename'].lower().endswith('.zip'):
                 logger.debug(f"Descargando adjunto ZIP: {att['filename']}")
                 content = self.gmail_service.download_attachment(msg_id, att['attachmentId'])
-                if self._handle_zip(content, target_dir):
-                    processed_count += 1
-        return processed_count > 0, processed_count
+                saved_filename = self._handle_zip(content, target_dir)
+                if saved_filename:
+                    saved_files.append(saved_filename)
+        return len(saved_files) > 0, saved_files
 
-    def _handle_zip(self, zip_content: bytes, target_dir: str) -> bool:
+    def _handle_zip(self, zip_content: bytes, target_dir: str) -> Optional[str]:
         try:
             with zipfile.ZipFile(io.BytesIO(zip_content)) as zf:
                 filenames = zf.namelist()
@@ -116,7 +159,7 @@ class InvoiceProcessorService:
                 logger.debug(f"ZIP contiene {len(xml_files)} XMLs y {len(pdf_files)} PDFs.")
                 
                 if not xml_files:
-                    return False
+                    return None
 
                 # Buscar XML de factura (puede ser el XML directo o un AttachedDocument)
                 invoice_data = None
@@ -131,7 +174,7 @@ class InvoiceProcessorService:
                 
                 if not invoice_data:
                     logger.warning("No se encontró un XML de factura válido (ni Invoice ni AttachedDocument) dentro del ZIP.")
-                    return False
+                    return None
 
                 # Limpiar caracteres prohibidos en nombres de archivo de Windows
                 safe_supplier = "".join(c for c in invoice_data.supplier_name if c.isalnum() or c in (' ', '-', '_')).strip()
@@ -142,7 +185,7 @@ class InvoiceProcessorService:
                 xml_path = os.path.join(target_dir, f"{base_name}.xml")
                 if os.path.exists(xml_path):
                     logger.info(f"La factura {base_name} ya existe en el directorio. Saltando.")
-                    return True # Lo marcamos como éxito para que no se re-procese
+                    return f"{base_name}.xml" # Lo marcamos como éxito devolviendo el nombre
                 
                 with open(xml_path, 'wb') as f:
                     f.write(xml_data_bytes)
@@ -156,10 +199,10 @@ class InvoiceProcessorService:
                         f.write(pdf_content)
                     logger.debug(f"PDF guardado: {pdf_path}")
 
-                return True
+                return f"{base_name}.xml"
         except Exception as e:
             logger.error(f"Error procesando ZIP: {str(e)}")
-            return False
+            return None
 
     def _parse_xml(self, xml_content: bytes) -> Optional[InvoiceMetadata]:
         try:

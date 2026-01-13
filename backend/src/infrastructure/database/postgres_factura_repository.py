@@ -5,7 +5,7 @@ from datetime import date
 from typing import List, Optional, Dict, Any
 
 class PostgresFacturaRepository(FacturaRepository):
-    def save(self, f: Dict[str, Any]) -> str:
+    def save(self, f: Dict[str, Any]) -> tuple[str, Optional[str]]:
         pool = get_connection_pool()
         conn = pool.getconn()
         try:
@@ -24,11 +24,10 @@ class PostgresFacturaRepository(FacturaRepository):
                 result = cur.fetchone()
                 status = 'inserted' if result else 'updated'
             conn.commit()
-            return status
+            return status, None
         except Exception as e:
             conn.rollback()
-            # print(f"Error saving factura: {e}")
-            return 'error'
+            return 'error', str(e)
         finally:
             pool.putconn(conn)
 
@@ -98,5 +97,60 @@ class PostgresFacturaRepository(FacturaRepository):
                         'nombre_xml': row[7]
                     })
                 return result
+        finally:
+            pool.putconn(conn)
+
+    def check_exists(self, nit: str, factura: str) -> bool:
+        """Verifica si una factura ya existe en la base de datos."""
+        pool = get_connection_pool()
+        conn = pool.getconn()
+        try:
+            with conn.cursor() as cur:
+                query = "SELECT 1 FROM facturas WHERE nit = %s AND factura = %s"
+                cur.execute(query, (nit, factura))
+                return cur.fetchone() is not None
+        finally:
+            pool.putconn(conn)
+
+    def get_stats(self, start_date: Optional[date] = None, end_date: Optional[date] = None) -> Dict[str, Any]:
+        """Obtiene estadísticas agregadas de las facturas"""
+        pool = get_connection_pool()
+        conn = pool.getconn()
+        try:
+            with conn.cursor() as cur:
+                query = """
+                SELECT 
+                    COUNT(*) as total_facturas,
+                    COALESCE(SUM(subtotal), 0) as total_subtotal,
+                    COALESCE(SUM(iva), 0) as total_iva,
+                    COALESCE(SUM(total), 0) as total_monto,
+                    COUNT(DISTINCT proveedor) as total_proveedores,
+                    COUNT(DISTINCT nit) as total_nits,
+                    MIN(fecha) as fecha_min,
+                    MAX(fecha) as fecha_max
+                FROM facturas
+                WHERE 1=1
+                """
+                params = []
+                if start_date:
+                    query += " AND fecha >= %s"
+                    params.append(start_date)
+                if end_date:
+                    query += " AND fecha <= %s"
+                    params.append(end_date)
+                
+                cur.execute(query, params)
+                row = cur.fetchone()
+                
+                return {
+                    'total_facturas': row[0] or 0,
+                    'total_subtotal': float(row[1] or 0),
+                    'total_iva': float(row[2] or 0),
+                    'total_monto': float(row[3] or 0),
+                    'total_proveedores': row[4] or 0,
+                    'total_nits': row[5] or 0,
+                    'fecha_min': str(row[6]) if row[6] else None,
+                    'fecha_max': str(row[7]) if row[7] else None
+                }
         finally:
             pool.putconn(conn)

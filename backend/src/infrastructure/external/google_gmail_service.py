@@ -5,8 +5,10 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 import logging
+import email.utils
+from datetime import datetime
 from src.domain.ports.gmail_port import GmailPort
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 SCOPES = ['https://www.googleapis.com/auth/gmail.modify']
 logger = logging.getLogger("gmail_service")
@@ -87,8 +89,10 @@ class GoogleGmailService(GmailPort):
 
     def get_attachments(self, message_id: str) -> List[Dict[str, Any]]:
         message = self.service.users().messages().get(userId='me', id=message_id).execute()
+        return self.extract_attachments(message)
+
+    def extract_attachments(self, message: Dict[str, Any]) -> List[Dict[str, Any]]:
         payload = message.get('payload', {})
-        
         attachments = []
         self._find_attachments_recursive(payload, attachments)
         return attachments
@@ -127,13 +131,45 @@ class GoogleGmailService(GmailPort):
 
     def get_message_metadata(self, message_id: str) -> Dict[str, str]:
         message = self.service.users().messages().get(userId='me', id=message_id, format='metadata').execute()
+        return self.extract_metadata(message)
+
+    def extract_metadata(self, message: Dict[str, Any]) -> Dict[str, str]:
         headers = message.get('payload', {}).get('headers', [])
         
+        def get_header(name: str) -> Optional[str]:
+            for h in headers:
+                if h.get('name', '').lower() == name.lower():
+                    return h.get('value')
+            return None
+
+        raw_from = get_header('From') or "Desconocido"
+        raw_date = get_header('Date') or "Fecha desconocida"
+        subject = get_header('Subject') or "(Sin asunto)"
+        
+        # Formatear fecha a yyyy-mm-dd
+        formatted_date = raw_date
+        try:
+            parsed_date = email.utils.parsedate_to_datetime(raw_date)
+            formatted_date = parsed_date.strftime('%Y-%m-%d')
+        except Exception as e:
+            logger.debug(f"Error parseando fecha {raw_date}: {str(e)}")
+            
         metadata = {
-            "from": next((h['value'] for h in headers if h['name'] == 'From'), "Desconocido"),
-            "date": next((h['value'] for h in headers if h['name'] == 'Date'), "Fecha desconocida")
+            "from": raw_from,
+            "date": formatted_date,
+            "subject": subject,
+            "threadId": message.get('threadId'),
+            "id": message.get('id'),
+            "internalDate": message.get('internalDate')
         }
         return metadata
+
+    def get_thread_messages(self, thread_id: str) -> List[Dict[str, Any]]:
+        thread = self.service.users().threads().get(userId='me', id=thread_id).execute()
+        messages = thread.get('messages', [])
+        # Asegurar orden cronológico (el más antiguo primero)
+        messages.sort(key=lambda x: int(x.get('internalDate', 0)))
+        return messages
 
     def trash_message(self, message_id: str):
         logger.info(f"Moviendo correo {message_id} a la papelera.")

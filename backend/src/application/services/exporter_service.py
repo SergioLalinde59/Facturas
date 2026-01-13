@@ -18,8 +18,8 @@ class ExporterService:
         result = element.xpath(xpath, namespaces=self.ns)
         return result[0].text.strip() if result else ""
 
-    def parse_xml_invoice(self, file_path: str) -> Optional[Dict[str, Any]]:
-        """Extrae metadatos de un archivo XML de factura."""
+    def parse_xml_invoice(self, file_path: str) -> tuple[Optional[Dict[str, Any]], Optional[str]]:
+        """Extrae metadatos de un archivo XML de factura. Retorna (data, error_msg)"""
         try:
             tree = etree.parse(file_path)
             root = tree.getroot()
@@ -50,23 +50,26 @@ class ExporterService:
             tax_amount = self._get_text(root, '//*[local-name()="TaxTotal"]/*[local-name()="TaxAmount"]')
             subtotal = self._get_text(root, '//*[local-name()="LegalMonetaryTotal"]//*[local-name()="LineExtensionAmount"]')
 
-            if invoice_id and supplier_name:
-                return {
-                    'fecha': issue_date,
-                    'proveedor': supplier_name,
-                    'nit': nit,
-                    'factura': invoice_id,
-                    'subtotal': float(subtotal or 0),
-                    'iva': float(tax_amount or 0),
-                    'total': float(total_amount or 0),
-                    'nombre_xml': os.path.basename(file_path)
-                }
-        except Exception:
-            pass
-        return None
+            if not invoice_id:
+                return None, "No se encontró ID de factura o ParentDocumentID en el XML"
+            if not supplier_name:
+                return None, "No se encontró el nombre del proveedor en el XML"
 
-    def import_to_db(self, directory: str, repository: Any) -> Dict[str, Any]:
-        """Procesa XMLs de un directorio y los guarda en la BD."""
+            return {
+                'fecha': issue_date,
+                'proveedor': supplier_name,
+                'nit': nit,
+                'factura': invoice_id,
+                'subtotal': float(subtotal or 0),
+                'iva': float(tax_amount or 0),
+                'total': float(total_amount or 0),
+                'nombre_xml': os.path.basename(file_path)
+            }, None
+        except Exception as e:
+            return None, str(e)
+
+    def import_to_db(self, directory: str, repository: Any, dry_run: bool = False) -> Dict[str, Any]:
+        """Procesa XMLs de un directorio y los guarda en la BD (o solo previsualiza)."""
         if not os.path.exists(directory):
             return {"status": "error", "message": f"Directorio no encontrado: {directory}"}
 
@@ -74,24 +77,58 @@ class ExporterService:
         count_imported = 0
         count_duplicates = 0
         count_errors = 0
+        results = []
         
         for filename in files:
             file_path = os.path.join(directory, filename)
-            data = self.parse_xml_invoice(file_path)
+            data, parse_error = self.parse_xml_invoice(file_path)
+            
+            res = {
+                "date": data.get("fecha") if data else datetime.now().strftime('%Y-%m-%d'),
+                "sender": data.get("proveedor") if data else "Sistema",
+                "subject": data.get('factura') if data else filename,
+                "attachments": [filename],
+                "status": "pending",
+                "message": None
+            }
+
             if data:
-                save_status = repository.save(data)
-                if save_status == 'inserted':
-                    count_imported += 1
-                elif save_status == 'updated':
-                    count_duplicates += 1
+                if dry_run:
+                    # En previsualización solo verificamos si ya existe
+                    exists = repository.check_exists(data['nit'], data['factura'])
+                    if exists:
+                        count_duplicates += 1
+                        res["status"] = "duplicate"
+                        res["message"] = "Ya existe en la base de datos"
+                    else:
+                        count_imported += 1
+                        res["status"] = "success"
                 else:
-                    count_errors += 1
+                    # En modo normal, guardamos
+                    save_status, save_msg = repository.save(data)
+                    if save_status == 'inserted':
+                        count_imported += 1
+                        res["status"] = "success"
+                    elif save_status == 'updated':
+                        count_duplicates += 1
+                        res["status"] = "duplicate"
+                        res["message"] = "Ya existe (omitido por conflicto)"
+                    else:
+                        count_errors += 1
+                        res["status"] = "error"
+                        res["message"] = save_msg or "Error desconocido al guardar"
             else:
                 count_errors += 1
+                res["status"] = "error"
+                res["message"] = parse_error or "Error al analizar el XML"
+            
+            results.append(res)
         
         return {
             "status": "success",
-            "message": "",
+            "message": f"Se {'previsualizaron' if dry_run else 'procesaron'} {len(files)} archivos locales.",
+            "results": results,
+            "dry_run": dry_run,
             "stats": {
                 "total": len(files),
                 "successful": count_imported,
