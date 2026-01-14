@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS facturas (
     proveedor VARCHAR(255) NOT NULL,
     factura VARCHAR(50) NOT NULL,
     subtotal DECIMAL(15, 2) NOT NULL DEFAULT 0,
+    descuentos DECIMAL(15, 2) NOT NULL DEFAULT 0,
     iva DECIMAL(15, 2) NOT NULL DEFAULT 0,
     total DECIMAL(15, 2) NOT NULL DEFAULT 0,
     nombre_xml VARCHAR(255),

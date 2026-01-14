@@ -33,11 +33,20 @@ class ExporterService:
                     inner_xml = description[xml_start:xml_end]
                     root = etree.fromstring(inner_xml.encode('utf-8'))
 
-            # Extraer metadatos
-            invoice_id = self._get_text(root, '//*[local-name()="ParentDocumentID"]') or \
-                         self._get_text(root, '//*[local-name()="ID"]')
+            # Extraer metadatos - IMPORTANTE: Iterar SOLO hijos directos para evitar UBLExtensions
+            invoice_id = None
+            issue_date = None
             
-            issue_date = self._get_text(root, '//*[local-name()="IssueDate"]')
+            # Intentar primero con ParentDocumentID (AttachedDocument)
+            invoice_id = self._get_text(root, '//*[local-name()="ParentDocumentID"]')
+            
+            # Buscar ID e IssueDate en los hijos directos del root (evita UBLExtensions)
+            for child in root:
+                localname = etree.QName(child).localname
+                if localname == 'IssueDate' and child.text and not issue_date:
+                    issue_date = child.text
+                elif localname == 'ID' and child.text and not invoice_id:
+                    invoice_id = child.text
             
             supplier_name = self._get_text(root, '//*[local-name()="SenderParty"]//*[local-name()="RegistrationName"]') or \
                             self._get_text(root, '//*[local-name()="AccountingSupplierParty"]//*[local-name()="RegistrationName"]') or \
@@ -46,23 +55,124 @@ class ExporterService:
             nit = self._get_text(root, '//*[local-name()="SenderParty"]//*[local-name()="CompanyID"]') or \
                   self._get_text(root, '//*[local-name()="AccountingSupplierParty"]//*[local-name()="CompanyID"]')
 
+            # DEBUG INICIAL: Ver qué tipo de documento es y qué valores extrae
+            # doc_type = etree.QName(root).localname
+            # print(f"\n📄 DEBUG INICIO - Archivo: {os.path.basename(file_path)}")
+            # print(f"  Tipo de documento: {doc_type}")
+            # print(f"  Proveedor (inicial): {supplier_name}")
+            # print(f"  NIT (inicial): {nit}")
+            # print(f"  Invoice ID (inicial): {invoice_id}")
+            # print(f"  Fecha (inicial): {issue_date}")
+
+            # Intentar extraer valores financieros del documento principal
             total_amount = self._get_text(root, '//*[local-name()="LegalMonetaryTotal"]//*[local-name()="PayableAmount"]')
             tax_amount = self._get_text(root, '//*[local-name()="TaxTotal"]/*[local-name()="TaxAmount"]')
             subtotal = self._get_text(root, '//*[local-name()="LegalMonetaryTotal"]//*[local-name()="LineExtensionAmount"]')
+            allowance = self._get_text(root, '//*[local-name()="LegalMonetaryTotal"]//*[local-name()="AllowanceTotalAmount"]')
+
+            # Si es un AttachedDocument, SIEMPRE buscar en el XML embebido (Invoice o CreditNote)
+            # para obtener los datos reales del documento, no del contenedor
+            is_credit_note = False
+            if etree.QName(root).localname == 'AttachedDocument':
+                # Buscar en el Description del Attachment
+                description = self._get_text(root, '//*[local-name()="Attachment"]//*[local-name()="Description"]')
+                if description:
+                    # Buscar Invoice o CreditNote embebido
+                    inner_xml_start = -1
+                    inner_xml_end = -1
+                    
+                    for doc_type in ['<Invoice', '<CreditNote']:
+                        if doc_type in description:
+                            inner_xml_start = description.find(doc_type)
+                            close_tag = '</Invoice>' if doc_type == '<Invoice' else '</CreditNote>'
+                            inner_xml_end = description.rfind(close_tag) + len(close_tag)
+                            is_credit_note = (doc_type == '<CreditNote')
+                            break
+                    
+                    if inner_xml_start != -1 and inner_xml_end != -1:
+                        try:
+                            inner_xml = description[inner_xml_start:inner_xml_end]
+                            inner_root = etree.fromstring(inner_xml.encode('utf-8'))
+                            
+                            # Extraer valores del documento embebido (PRIORITARIO)
+                            inner_total = self._get_text(inner_root, '//*[local-name()="LegalMonetaryTotal"]//*[local-name()="PayableAmount"]')
+                            inner_tax = self._get_text(inner_root, '//*[local-name()="TaxTotal"]/*[local-name()="TaxAmount"]')
+                            inner_subtotal = self._get_text(inner_root, '//*[local-name()="LegalMonetaryTotal"]//*[local-name()="LineExtensionAmount"]')
+                            inner_allowance = self._get_text(inner_root, '//*[local-name()="LegalMonetaryTotal"]//*[local-name()="AllowanceTotalAmount"]')
+                            
+                            # Sobrescribir con valores del documento interno si existen
+                            if inner_total:
+                                total_amount = inner_total
+                            if inner_tax:
+                                tax_amount = inner_tax
+                            if inner_subtotal:
+                                subtotal = inner_subtotal
+                            if inner_allowance:
+                                allowance = inner_allowance
+                            
+                            # También extraer NIT, proveedor, fecha e ID del documento interno (PRIORITARIO)
+                            inner_nit = self._get_text(inner_root, '//*[local-name()="AccountingSupplierParty"]//*[local-name()="CompanyID"]') or \
+                                       self._get_text(inner_root, '//*[local-name()="SenderParty"]//*[local-name()="CompanyID"]')
+                            if inner_nit:
+                                nit = inner_nit
+                            
+                            inner_supplier = self._get_text(inner_root, '//*[local-name()="AccountingSupplierParty"]//*[local-name()="RegistrationName"]') or \
+                                           self._get_text(inner_root, '//*[local-name()="PartyName"]//*[local-name()="Name"]')
+                            if inner_supplier:
+                                supplier_name = inner_supplier
+                            
+                            # DEBUG: Ver qué estamos extrayendo
+                            # print(f"\n🔍 DEBUG - Procesando AttachedDocument:")
+                            # print(f"  NIT: {nit}")
+                            # print(f"  Proveedor: {supplier_name}")
+                            # print(f"  Fecha (antes): {issue_date}")
+                            # print(f"  Invoice ID (antes): {invoice_id}")
+                            
+                            # IMPORTANTE: Extraer fecha e ID excluyendo UBLExtensions
+                            # Las extensiones pueden tener <ID> y <IssueDate> con valores diferentes
+                            # Buscamos directamente como hijos del elemento raíz (Invoice/CreditNote)
+                            for child in inner_root:
+                                localname = etree.QName(child).localname
+                                if localname == 'IssueDate' and child.text:
+                                    # print(f"  ✅ Encontré IssueDate directo: {child.text}")
+                                    issue_date = child.text
+                                elif localname == 'ID' and child.text:
+                                    # print(f"  ✅ Encontré ID directo: {child.text}")
+                                    invoice_id = child.text
+                            
+                            # print(f"  Fecha (después): {issue_date}")
+                            # print(f"  Invoice ID (después): {invoice_id}")
+                        except Exception as e:
+                            # Si falla el parseo del XML interno, continuamos con los valores que ya tenemos
+                            # print(f"❌ ERROR en parsing embebido: {e}")
+                            pass
 
             if not invoice_id:
                 return None, "No se encontró ID de factura o ParentDocumentID en el XML"
             if not supplier_name:
                 return None, "No se encontró el nombre del proveedor en el XML"
 
+            # Convertir a float y aplicar valores negativos si es nota crédito
+            subtotal_val = float(subtotal or 0)
+            descuentos_val = float(allowance or 0)
+            iva_val = float(tax_amount or 0)
+            total_val = float(total_amount or 0)
+            
+            if is_credit_note:
+                subtotal_val = -abs(subtotal_val)
+                descuentos_val = -abs(descuentos_val)
+                iva_val = -abs(iva_val)
+                total_val = -abs(total_val)
+
             return {
                 'fecha': issue_date,
                 'proveedor': supplier_name,
                 'nit': nit,
                 'factura': invoice_id,
-                'subtotal': float(subtotal or 0),
-                'iva': float(tax_amount or 0),
-                'total': float(total_amount or 0),
+                'subtotal': subtotal_val,
+                'descuentos': descuentos_val,
+                'iva': iva_val,
+                'total': total_val,
                 'nombre_xml': os.path.basename(file_path)
             }, None
         except Exception as e:
@@ -86,7 +196,13 @@ class ExporterService:
             res = {
                 "date": data.get("fecha") if data else datetime.now().strftime('%Y-%m-%d'),
                 "sender": data.get("proveedor") if data else "Sistema",
+                "nit": data.get("nit", "") if data else "",
                 "subject": data.get('factura') if data else filename,
+                "subtotal": data.get('subtotal', 0) if data else 0,
+                "descuentos": data.get('descuentos', 0) if data else 0,
+                "iva": data.get('iva', 0) if data else 0,
+                "total": data.get('total', 0) if data else 0,
+                "nombre_xml": filename,
                 "attachments": [filename],
                 "status": "pending",
                 "message": None

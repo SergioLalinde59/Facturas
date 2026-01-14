@@ -12,14 +12,14 @@ class PostgresFacturaRepository(FacturaRepository):
             with conn.cursor() as cur:
                 query = """
                 INSERT INTO facturas 
-                (fecha, nit, proveedor, factura, subtotal, iva, total, nombre_xml)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                (fecha, nit, proveedor, factura, subtotal, descuentos, iva, total, nombre_xml)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (nit, factura) DO NOTHING
                 RETURNING 1;
                 """
                 cur.execute(query, (
                     f['fecha'], f['nit'], f['proveedor'], f['factura'],
-                    f['subtotal'], f['iva'], f['total'], f.get('nombre_xml')
+                    f['subtotal'], f.get('descuentos', 0), f['iva'], f['total'], f.get('nombre_xml')
                 ))
                 result = cur.fetchone()
                 status = 'inserted' if result else 'updated'
@@ -55,7 +55,7 @@ class PostgresFacturaRepository(FacturaRepository):
         conn = pool.getconn()
         try:
             with conn.cursor() as cur:
-                query = "SELECT fecha, nit, proveedor, factura, subtotal, iva, total, nombre_xml FROM facturas"
+                query = "SELECT fecha, nit, proveedor, factura, subtotal, descuentos, iva, total, nombre_xml FROM facturas"
                 params = []
                 conditions = []
 
@@ -92,9 +92,10 @@ class PostgresFacturaRepository(FacturaRepository):
                         'proveedor': row[2],
                         'factura': row[3],
                         'subtotal': float(row[4]),
-                        'iva': float(row[5]),
-                        'total': float(row[6]),
-                        'nombre_xml': row[7]
+                        'descuentos': float(row[5]),
+                        'iva': float(row[6]),
+                        'total': float(row[7]),
+                        'nombre_xml': row[8]
                     })
                 return result
         finally:
@@ -122,6 +123,7 @@ class PostgresFacturaRepository(FacturaRepository):
                 SELECT 
                     COUNT(*) as total_facturas,
                     COALESCE(SUM(subtotal), 0) as total_subtotal,
+                    COALESCE(SUM(descuentos), 0) as total_descuentos,
                     COALESCE(SUM(iva), 0) as total_iva,
                     COALESCE(SUM(total), 0) as total_monto,
                     COUNT(DISTINCT proveedor) as total_proveedores,
@@ -145,12 +147,13 @@ class PostgresFacturaRepository(FacturaRepository):
                 return {
                     'total_facturas': row[0] or 0,
                     'total_subtotal': float(row[1] or 0),
-                    'total_iva': float(row[2] or 0),
-                    'total_monto': float(row[3] or 0),
-                    'total_proveedores': row[4] or 0,
-                    'total_nits': row[5] or 0,
-                    'fecha_min': str(row[6]) if row[6] else None,
-                    'fecha_max': str(row[7]) if row[7] else None
+                    'total_descuentos': float(row[2] or 0),
+                    'total_iva': float(row[3] or 0),
+                    'total_monto': float(row[4] or 0),
+                    'total_proveedores': row[5] or 0,
+                    'total_nits': row[6] or 0,
+                    'fecha_min': str(row[7]) if row[7] else None,
+                    'fecha_max': str(row[8]) if row[8] else None
                 }
         finally:
             pool.putconn(conn)

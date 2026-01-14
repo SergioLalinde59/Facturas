@@ -51,6 +51,7 @@ interface Invoice {
   proveedor: string;
   factura: string;
   subtotal: number;
+  descuentos: number;
   iva: number;
   total: number;
   nombre_xml: string;
@@ -89,7 +90,7 @@ function App() {
   const [exportFormats, setExportFormats] = useState({ csv: true, excel: false, pdf: false });
 
   // Sorting state for report table
-  type SortColumn = 'fecha' | 'proveedor' | 'nit' | 'factura' | 'subtotal' | 'iva' | 'total';
+  type SortColumn = 'fecha' | 'proveedor' | 'nit' | 'factura' | 'subtotal' | 'descuentos' | 'iva' | 'total';
   type SortDirection = 'asc' | 'desc';
   const [sortColumn, setSortColumn] = useState<SortColumn>('fecha');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -1164,6 +1165,113 @@ function App() {
                   </div>
                 </div>
               </div>
+
+              {/* SEGUNDA FILA: Totales Financieros */}
+              <div className="summary-cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginTop: '1.5rem' }}>
+                {/* Subtotal */}
+                <div className="summary-card">
+                  <div className="summary-card-content">
+                    <span className="summary-card-label">Subtotal Total</span>
+                    <span style={{
+                      fontSize: '1.5rem',
+                      fontWeight: 700,
+                      color: processResults.reduce((sum, r) => sum + (r.subtotal || 0), 0) >= 0 ? '#10b981' : '#ef4444'
+                    }}>
+                      ${processResults.reduce((sum, r) => sum + (r.subtotal || 0), 0).toLocaleString('es-CO', { minimumFractionDigits: 0 })}
+                    </span>
+                  </div>
+                  <div style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 10,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: processResults.reduce((sum, r) => sum + (r.subtotal || 0), 0) >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                    color: processResults.reduce((sum, r) => sum + (r.subtotal || 0), 0) >= 0 ? '#10b981' : '#ef4444'
+                  }}>
+                    <FileText size={20} />
+                  </div>
+                </div>
+
+                {/* Descuentos */}
+                <div className="summary-card">
+                  <div className="summary-card-content">
+                    <span className="summary-card-label">Descuentos Total</span>
+                    <span style={{
+                      fontSize: '1.5rem',
+                      fontWeight: 700,
+                      color: processResults.reduce((sum, r) => sum + (r.descuentos || 0), 0) >= 0 ? '#10b981' : '#ef4444'
+                    }}>
+                      ${processResults.reduce((sum, r) => sum + (r.descuentos || 0), 0).toLocaleString('es-CO', { minimumFractionDigits: 0 })}
+                    </span>
+                  </div>
+                  <div style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 10,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: processResults.reduce((sum, r) => sum + (r.descuentos || 0), 0) >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                    color: processResults.reduce((sum, r) => sum + (r.descuentos || 0), 0) >= 0 ? '#10b981' : '#ef4444'
+                  }}>
+                    <FileText size={20} />
+                  </div>
+                </div>
+
+                {/* IVA */}
+                <div className="summary-card">
+                  <div className="summary-card-content">
+                    <span className="summary-card-label">IVA Total</span>
+                    <span style={{
+                      fontSize: '1.5rem',
+                      fontWeight: 700,
+                      color: processResults.reduce((sum, r) => sum + (r.iva || 0), 0) >= 0 ? '#10b981' : '#ef4444'
+                    }}>
+                      ${processResults.reduce((sum, r) => sum + (r.iva || 0), 0).toLocaleString('es-CO', { minimumFractionDigits: 0 })}
+                    </span>
+                  </div>
+                  <div style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 10,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: processResults.reduce((sum, r) => sum + (r.iva || 0), 0) >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                    color: processResults.reduce((sum, r) => sum + (r.iva || 0), 0) >= 0 ? '#10b981' : '#ef4444'
+                  }}>
+                    <FileText size={20} />
+                  </div>
+                </div>
+
+                {/* Total */}
+                <div className="summary-card">
+                  <div className="summary-card-content">
+                    <span className="summary-card-label">Total General</span>
+                    <span style={{
+                      fontSize: '1.5rem',
+                      fontWeight: 700,
+                      color: processResults.reduce((sum, r) => sum + (r.total || 0), 0) >= 0 ? '#10b981' : '#ef4444'
+                    }}>
+                      ${processResults.reduce((sum, r) => sum + (r.total || 0), 0).toLocaleString('es-CO', { minimumFractionDigits: 0 })}
+                    </span>
+                  </div>
+                  <div style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 10,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: processResults.reduce((sum, r) => sum + (r.total || 0), 0) >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                    color: processResults.reduce((sum, r) => sum + (r.total || 0), 0) >= 0 ? '#10b981' : '#ef4444'
+                  }}>
+                    <FileText size={20} />
+                  </div>
+                </div>
+              </div>
             </>
           )}
 
@@ -1293,15 +1401,28 @@ function App() {
                               Emisor {getProcessSortIcon('sender')}
                             </div>
                           </th>
+                          <th style={{ width: '110px', padding: '0.4rem 0.75rem' }}>
+                            NIT
+                          </th>
                           <th style={{ width: '120px', padding: '0.4rem 0.75rem', cursor: 'pointer' }} onClick={() => handleProcessSort('subject')}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                               Factura {getProcessSortIcon('subject')}
                             </div>
                           </th>
-                          <th style={{ padding: '0.4rem 0.75rem', cursor: 'pointer' }} onClick={() => handleProcessSort('count')}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                              Archivo {getProcessSortIcon('count')}
-                            </div>
+                          <th style={{ width: '100px', padding: '0.4rem 0.75rem', textAlign: 'right' }}>
+                            Subtotal
+                          </th>
+                          <th style={{ width: '100px', padding: '0.4rem 0.75rem', textAlign: 'right' }}>
+                            Descuentos
+                          </th>
+                          <th style={{ width: '100px', padding: '0.4rem 0.75rem', textAlign: 'right' }}>
+                            IVA
+                          </th>
+                          <th style={{ width: '100px', padding: '0.4rem 0.75rem', textAlign: 'right' }}>
+                            Total
+                          </th>
+                          <th style={{ width: '180px', padding: '0.4rem 0.75rem' }}>
+                            Archivo XML
                           </th>
                           <th style={{ width: '100px', padding: '0.4rem 0.75rem', textAlign: 'center', cursor: 'pointer' }} onClick={() => handleProcessSort('status')}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
@@ -1319,29 +1440,26 @@ function App() {
                             <td style={{ fontWeight: 500, color: 'var(--text-primary)', padding: '0.3rem 0.75rem', fontSize: '0.75rem', lineClamp: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                               {res.sender}
                             </td>
+                            <td style={{ padding: '0.3rem 0.75rem', fontSize: '0.72rem', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
+                              {res.nit || ''}
+                            </td>
                             <td style={{ color: 'var(--text-secondary)', padding: '0.3rem 0.75rem', fontSize: '0.75rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {res.subject}
                             </td>
-                            <td style={{ padding: '0.3rem 0.75rem' }}>
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.15rem' }}>
-                                {res.attachments && res.attachments.map((file: string, fidx: number) => (
-                                  <span key={fidx} style={{
-                                    padding: '0.05rem 0.3rem',
-                                    backgroundColor: 'rgba(59, 130, 246, 0.05)',
-                                    border: '1px solid rgba(59, 130, 246, 0.1)',
-                                    borderRadius: '3px',
-                                    fontSize: '0.65rem',
-                                    color: 'var(--accent-color)',
-                                    fontFamily: 'monospace',
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    maxWidth: '200px'
-                                  }} title={file}>
-                                    {file}
-                                  </span>
-                                ))}
-                              </div>
+                            <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace', color: res.subtotal >= 0 ? '#10b981' : '#ef4444' }}>
+                              ${typeof res.subtotal === 'number' ? res.subtotal.toLocaleString('es-CO', { minimumFractionDigits: 0 }) : '0'}
+                            </td>
+                            <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace', color: res.descuentos >= 0 ? '#10b981' : '#ef4444' }}>
+                              ${typeof res.descuentos === 'number' ? res.descuentos.toLocaleString('es-CO', { minimumFractionDigits: 0 }) : '0'}
+                            </td>
+                            <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace', color: res.iva >= 0 ? '#10b981' : '#ef4444' }}>
+                              ${typeof res.iva === 'number' ? res.iva.toLocaleString('es-CO', { minimumFractionDigits: 0 }) : '0'}
+                            </td>
+                            <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace', fontWeight: 600, color: res.total >= 0 ? '#10b981' : '#ef4444' }}>
+                              ${typeof res.total === 'number' ? res.total.toLocaleString('es-CO', { minimumFractionDigits: 0 }) : '0'}
+                            </td>
+                            <td style={{ padding: '0.3rem 0.75rem', fontSize: '0.7rem', fontFamily: 'monospace', color: 'var(--accent-color)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={res.nombre_xml}>
+                              {res.nombre_xml || (res.attachments && res.attachments[0]) || ''}
                             </td>
                             <td style={{ padding: '0.3rem 0.75rem', textAlign: 'center' }}>
                               <div className={res.message ? "has-tooltip" : ""}>
@@ -1376,7 +1494,7 @@ function App() {
             </div>
           )}
 
-          {/* Report Stats Ribbon - Compact statistics display */}
+          {/* Report Stats Ribbon - Todas las estadísticas */}
           {activeView === 'report' && status === 'success' && (
             <div className="stats-ribbon">
               <div className="stats-ribbon-item">
@@ -1400,34 +1518,65 @@ function App() {
                 </div>
               </div>
               <div className="stats-ribbon-item">
-                <div className="stats-ribbon-icon cyan">
+                <div className="stats-ribbon-icon" style={{
+                  backgroundColor: reportData.reduce((sum, inv) => sum + inv.subtotal, 0) >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                  color: reportData.reduce((sum, inv) => sum + inv.subtotal, 0) >= 0 ? '#10b981' : '#ef4444'
+                }}>
                   <FileSpreadsheet size={16} />
                 </div>
                 <div className="stats-ribbon-content">
                   <span className="stats-ribbon-label">Subtotal</span>
-                  <span className="stats-ribbon-value info">
+                  <span className="stats-ribbon-value" style={{
+                    color: reportData.reduce((sum, inv) => sum + inv.subtotal, 0) >= 0 ? '#10b981' : '#ef4444'
+                  }}>
                     ${reportData.reduce((sum, inv) => sum + inv.subtotal, 0).toLocaleString('es-CO', { minimumFractionDigits: 0 })}
                   </span>
                 </div>
               </div>
               <div className="stats-ribbon-item">
-                <div className="stats-ribbon-icon amber">
+                <div className="stats-ribbon-icon" style={{
+                  backgroundColor: reportData.reduce((sum, inv) => sum + (inv.descuentos || 0), 0) >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                  color: reportData.reduce((sum, inv) => sum + (inv.descuentos || 0), 0) >= 0 ? '#10b981' : '#ef4444'
+                }}>
+                  <FileText size={16} />
+                </div>
+                <div className="stats-ribbon-content">
+                  <span className="stats-ribbon-label">Descuentos</span>
+                  <span className="stats-ribbon-value" style={{
+                    color: reportData.reduce((sum, inv) => sum + (inv.descuentos || 0), 0) >= 0 ? '#10b981' : '#ef4444'
+                  }}>
+                    ${reportData.reduce((sum, inv) => sum + (inv.descuentos || 0), 0).toLocaleString('es-CO', { minimumFractionDigits: 0 })}
+                  </span>
+                </div>
+              </div>
+              <div className="stats-ribbon-item">
+                <div className="stats-ribbon-icon" style={{
+                  backgroundColor: reportData.reduce((sum, inv) => sum + inv.iva, 0) >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                  color: reportData.reduce((sum, inv) => sum + inv.iva, 0) >= 0 ? '#10b981' : '#ef4444'
+                }}>
                   <DollarSign size={16} />
                 </div>
                 <div className="stats-ribbon-content">
                   <span className="stats-ribbon-label">IVA Total</span>
-                  <span className="stats-ribbon-value warning">
+                  <span className="stats-ribbon-value" style={{
+                    color: reportData.reduce((sum, inv) => sum + inv.iva, 0) >= 0 ? '#10b981' : '#ef4444'
+                  }}>
                     ${reportData.reduce((sum, inv) => sum + inv.iva, 0).toLocaleString('es-CO', { minimumFractionDigits: 0 })}
                   </span>
                 </div>
               </div>
               <div className="stats-ribbon-item">
-                <div className="stats-ribbon-icon green">
+                <div className="stats-ribbon-icon" style={{
+                  backgroundColor: reportData.reduce((sum, inv) => sum + inv.total, 0) >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                  color: reportData.reduce((sum, inv) => sum + inv.total, 0) >= 0 ? '#10b981' : '#ef4444'
+                }}>
                   <TrendingUp size={16} />
                 </div>
                 <div className="stats-ribbon-content">
-                  <span className="stats-ribbon-label">Monto Total</span>
-                  <span className="stats-ribbon-value positive">
+                  <span className="stats-ribbon-label">Total</span>
+                  <span className="stats-ribbon-value" style={{
+                    color: reportData.reduce((sum, inv) => sum + inv.total, 0) >= 0 ? '#10b981' : '#ef4444'
+                  }}>
                     ${reportData.reduce((sum, inv) => sum + inv.total, 0).toLocaleString('es-CO', { minimumFractionDigits: 0 })}
                   </span>
                 </div>
@@ -1439,10 +1588,7 @@ function App() {
           {activeView === 'report' && status === 'success' && (
             <div className="data-card">
               <div className="data-card-header">
-                <span className="data-card-title">Resultados ({reportData.length})</span>
-                <span className="data-card-subtitle">
-                  Total: {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(reportData.reduce((sum, inv) => sum + inv.total, 0))}
-                </span>
+                <span className="data-card-title">Resultados</span>
               </div>
               <div className="data-card-content" style={{ overflowX: 'auto' }}>
                 <table className="data-table">
@@ -1468,6 +1614,10 @@ function App() {
                         <span>Subtotal</span>
                         {getSortIcon('subtotal')}
                       </th>
+                      <th className="sortable-header" style={{ textAlign: 'right' }} onClick={() => handleSort('descuentos')}>
+                        <span>Descuentos</span>
+                        {getSortIcon('descuentos')}
+                      </th>
                       <th className="sortable-header" style={{ textAlign: 'right' }} onClick={() => handleSort('iva')}>
                         <span>IVA</span>
                         {getSortIcon('iva')}
@@ -1485,13 +1635,32 @@ function App() {
                         <td style={{ fontWeight: 500 }}>{inv.proveedor}</td>
                         <td className="font-mono" style={{ fontSize: '0.85rem' }}>{inv.nit}</td>
                         <td className="font-mono" style={{ fontSize: '0.85rem' }}>{inv.factura}</td>
-                        <td className="font-mono" style={{ textAlign: 'right' }}>
+                        <td className="font-mono" style={{
+                          textAlign: 'right',
+                          color: inv.subtotal >= 0 ? '#10b981' : '#ef4444',
+                          fontWeight: 500
+                        }}>
                           {new Intl.NumberFormat('es-CO', { style: 'decimal', minimumFractionDigits: 0 }).format(inv.subtotal)}
                         </td>
-                        <td className="font-mono" style={{ textAlign: 'right' }}>
+                        <td className="font-mono" style={{
+                          textAlign: 'right',
+                          color: (inv.descuentos || 0) >= 0 ? '#10b981' : '#ef4444',
+                          fontWeight: 500
+                        }}>
+                          {new Intl.NumberFormat('es-CO', { style: 'decimal', minimumFractionDigits: 0 }).format(inv.descuentos || 0)}
+                        </td>
+                        <td className="font-mono" style={{
+                          textAlign: 'right',
+                          color: inv.iva >= 0 ? '#10b981' : '#ef4444',
+                          fontWeight: 500
+                        }}>
                           {new Intl.NumberFormat('es-CO', { style: 'decimal', minimumFractionDigits: 0 }).format(inv.iva)}
                         </td>
-                        <td className="font-mono" style={{ textAlign: 'right', fontWeight: 600 }}>
+                        <td className="font-mono" style={{
+                          textAlign: 'right',
+                          fontWeight: 600,
+                          color: inv.total >= 0 ? '#10b981' : '#ef4444'
+                        }}>
                           {new Intl.NumberFormat('es-CO', { style: 'decimal', minimumFractionDigits: 0 }).format(inv.total)}
                         </td>
                       </tr>
