@@ -1,0 +1,27 @@
+@import '../../../styles/tokens.css';
+
+.directory-input {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: flex-end;
+}
+
+.directory-input--full {
+    width: 100%;
+}
+
+.directory-input__input-wrapper {
+    flex: 1;
+}
+
+.directory-input__button-wrapper {
+    margin-bottom: 0;
+    /* Alineado con el input, no con el label */
+}
+
+@media (max-width: 480px) {
+    .directory-input {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}

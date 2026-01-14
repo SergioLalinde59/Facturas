@@ -19,7 +19,7 @@ else {
 
 # 2. Run docker-compose - SOLAMENTE BACKEND
 Write-Host "`nRestarting Backend in Docker..."
-docker-compose down 2>$null
+docker-compose down
 docker-compose up -d --build backend
 
 # Vite (Frontend dev) - Forzamos 127.0.0.1 para evitar error EACCES de IPv6

@@ -1,3 +1,4 @@
+@import './styles/tokens.css';
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
@@ -621,6 +622,14 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 .text-negative {
   color: var(--danger-color);
   font-weight: 600;
+}
+
+.text-currency-positive {
+  color: var(--success-color) !important;
+}
+
+.text-currency-negative {
+  color: var(--danger-color) !important;
 }
 
 .badge {

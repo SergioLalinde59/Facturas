@@ -1,0 +1,50 @@
+@import '../../../styles/tokens.css';
+
+.stat-card-grid {
+    display: grid;
+    gap: var(--spacing-lg);
+    width: 100%;
+}
+
+.stat-card-grid--cols-1 {
+    grid-template-columns: repeat(1, 1fr);
+}
+
+.stat-card-grid--cols-2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.stat-card-grid--cols-3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.stat-card-grid--cols-4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.stat-card-grid--cols-5 {
+    grid-template-columns: repeat(5, 1fr);
+}
+
+@media (max-width: 1280px) {
+
+    .stat-card-grid--cols-4,
+    .stat-card-grid--cols-5 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 1024px) {
+
+    .stat-card-grid--cols-3,
+    .stat-card-grid--cols-4,
+    .stat-card-grid--cols-5 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .stat-card-grid {
+        grid-template-columns: 1fr !important;
+    }
+}

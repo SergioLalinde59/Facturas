@@ -1,0 +1,22 @@
+@import '../../../styles/tokens.css';
+
+.date-range-filter {
+    display: flex;
+    gap: var(--spacing-md);
+    align-items: flex-end;
+}
+
+.date-range-filter--full {
+    width: 100%;
+}
+
+.date-range-filter>* {
+    flex: 1;
+}
+
+@media (max-width: 640px) {
+    .date-range-filter {
+        flex-direction: column;
+        width: 100%;
+    }
+}

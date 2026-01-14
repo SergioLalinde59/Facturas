@@ -1,0 +1,12 @@
+@import '../../../styles/tokens.css';
+
+.quick-filter-btn {
+    transition: all var(--transition-base);
+    font-weight: var(--font-weight-medium);
+    border-radius: var(--radius-md);
+    padding: 0 var(--spacing-md);
+}
+
+.quick-filter-btn--active {
+    box-shadow: 0 0 0 2px var(--color-primary-light);
+}

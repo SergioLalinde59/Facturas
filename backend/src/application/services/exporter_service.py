@@ -158,9 +158,14 @@ class ExporterService:
             iva_val = float(tax_amount or 0)
             total_val = float(total_amount or 0)
             
+            # Los descuentos SIEMPRE son negativos (reducen el total)
+            if descuentos_val > 0:
+                descuentos_val = -descuentos_val
+            
             if is_credit_note:
                 subtotal_val = -abs(subtotal_val)
-                descuentos_val = -abs(descuentos_val)
+                # descuentos_val ya es negativo, al invertir se vuelve positivo en nota crédito
+                descuentos_val = abs(descuentos_val)
                 iva_val = -abs(iva_val)
                 total_val = -abs(total_val)
 
@@ -178,7 +183,7 @@ class ExporterService:
         except Exception as e:
             return None, str(e)
 
-    def import_to_db(self, directory: str, repository: Any, dry_run: bool = False) -> Dict[str, Any]:
+    def import_to_db(self, directory: str, repository: Any, dry_run: bool = False, filters: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Procesa XMLs de un directorio y los guarda en la BD (o solo previsualiza)."""
         if not os.path.exists(directory):
             return {"status": "error", "message": f"Directorio no encontrado: {directory}"}
@@ -187,11 +192,43 @@ class ExporterService:
         count_imported = 0
         count_duplicates = 0
         count_errors = 0
+        count_filtered = 0
         results = []
+        
+        # Extraer filtros si existen
+        filter_start_date = filters.get('start_date') if filters else None
+        filter_end_date = filters.get('end_date') if filters else None
+        filter_provider = filters.get('provider') if filters else None
         
         for filename in files:
             file_path = os.path.join(directory, filename)
             data, parse_error = self.parse_xml_invoice(file_path)
+            
+            # Aplicar filtros si están definidos y hay datos válidos
+            if data:
+                skip_record = False
+                
+                # Filtrar por fecha de inicio
+                if filter_start_date and data.get('fecha'):
+                    if data['fecha'] < str(filter_start_date):
+                        count_filtered += 1
+                        skip_record = True
+                
+                # Filtrar por fecha de fin
+                if filter_end_date and data.get('fecha') and not skip_record:
+                    if data['fecha'] > str(filter_end_date):
+                        count_filtered += 1
+                        skip_record = True
+                
+                # Filtrar por proveedor
+                if filter_provider and data.get('proveedor') and not skip_record:
+                    if data['proveedor'] != filter_provider:
+                        count_filtered += 1
+                        skip_record = True
+                
+                # Si el registro fue filtrado, saltar al siguiente
+                if skip_record:
+                    continue
             
             res = {
                 "date": data.get("fecha") if data else datetime.now().strftime('%Y-%m-%d'),
@@ -240,13 +277,20 @@ class ExporterService:
             
             results.append(res)
         
+        total_processed = len(results)
+        total_found = len(files)
+        
+        filter_msg = ""
+        if count_filtered > 0:
+            filter_msg = f" ({count_filtered} archivos excluidos por filtros)"
+        
         return {
             "status": "success",
-            "message": f"Se {'previsualizaron' if dry_run else 'procesaron'} {len(files)} archivos locales.",
+            "message": f"Se {'previsualizaron' if dry_run else 'procesaron'} {total_processed} de {total_found} archivos locales{filter_msg}.",
             "results": results,
             "dry_run": dry_run,
             "stats": {
-                "total": len(files),
+                "total": total_processed,
                 "successful": count_imported,
                 "duplicates": count_duplicates,
                 "errors": count_errors

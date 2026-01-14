@@ -43,6 +43,9 @@ class ProcessRequest(BaseModel):
     target_directory: str
     max_emails: int = 5
     dry_run: bool = False
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    provider: Optional[str] = None
 
 CREDENTIALS_PATH = os.path.abspath("credentials.json")
 TOKEN_PATH = os.path.abspath("token.json")
@@ -113,10 +116,15 @@ async def process_invoices(request: ProcessRequest):
 
 @app.post("/api/v1/invoices/import-db")
 async def import_invoices_to_db(request: ProcessRequest):
-    logger.info(f"Petición POST /api/v1/invoices/import-db - Dir: {request.target_directory}, Preview: {request.dry_run}")
+    logger.info(f"Petición POST /api/v1/invoices/import-db - Dir: {request.target_directory}, Preview: {request.dry_run}, Filtros: {request.start_date} a {request.end_date}, Prov: {request.provider}")
     try:
         exporter = ExporterService()
-        result = exporter.import_to_db(request.target_directory, factura_repo, dry_run=request.dry_run)
+        filters = {
+            'start_date': request.start_date,
+            'end_date': request.end_date,
+            'provider': request.provider
+        }
+        result = exporter.import_to_db(request.target_directory, factura_repo, dry_run=request.dry_run, filters=filters)
         return result
     except Exception as e:
         logger.error(f"Error en import_invoices_to_db: {str(e)}")
@@ -141,8 +149,10 @@ async def get_providers(
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None)
 ):
+    logger.info(f"Petición GET /api/v1/invoices/providers - Filtros: {start_date} a {end_date}")
     try:
         providers = factura_repo.get_distinct_providers(start_date, end_date)
+        logger.info(f"Proveedores encontrados: {len(providers)}")
         return {"providers": providers}
     except Exception as e:
         logger.error(f"Error en get_providers: {str(e)}")

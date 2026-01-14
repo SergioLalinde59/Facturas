@@ -1,0 +1,119 @@
+@import '../../../styles/tokens.css';
+
+.sidebar {
+    width: 240px;
+    background-color: #0f172a;
+    /* Mantenemos el color oscuro elegante */
+    border-right: 1px solid #1e293b;
+    height: 100vh;
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    color: #e2e8f0;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar__header {
+    padding: var(--spacing-lg) var(--spacing-md);
+    border-bottom: 1px solid #1e293b;
+}
+
+.sidebar__logo {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.sidebar__logo-icon {
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, #0891b2 0%, #2563eb 100%);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sidebar__title {
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-bold);
+    line-height: 1.2;
+}
+
+.sidebar__subtitle {
+    font-size: var(--font-size-xs);
+    color: #64748b;
+}
+
+.sidebar__nav {
+    flex: 1;
+    padding: var(--spacing-md) 0;
+    overflow-y: auto;
+}
+
+.sidebar__section {
+    margin-bottom: var(--spacing-sm);
+}
+
+.sidebar__section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-sm) var(--spacing-md);
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+}
+
+.sidebar__section-header:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.sidebar__section-title {
+    font-size: 0.65rem;
+    font-weight: var(--font-weight-bold);
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.sidebar__nav-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: 0.6rem var(--spacing-md);
+    background: transparent;
+    border: none;
+    border-left: 3px solid transparent;
+    color: #94a3b8;
+    cursor: pointer;
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    transition: all var(--transition-fast);
+    text-align: left;
+}
+
+.sidebar__nav-item:hover {
+    background-color: rgba(59, 130, 246, 0.08);
+    color: white;
+}
+
+.sidebar__nav-item--active {
+    background-color: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    border-left-color: #60a5fa;
+}
+
+.sidebar__nav-icon {
+    opacity: 0.7;
+}
+
+.sidebar__nav-item--active .sidebar__nav-icon {
+    opacity: 1;
+}
+
+.sidebar__footer {
+    padding: var(--spacing-md) 0;
+    border-top: 1px solid #1e293b;
+}
