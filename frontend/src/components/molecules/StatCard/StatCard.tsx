@@ -6,7 +6,7 @@ export interface StatCardProps {
     /** Título o descripción de la métrica */
     label: string;
     /** Valor principal a mostrar */
-    value: string | number;
+    value: string | number | React.ReactNode;
     /** Icono descriptivo */
     icon: React.ReactNode;
     /** Variante de color para el icono y acentos */
@@ -40,12 +40,7 @@ export const StatCard: React.FC<StatCardProps> = ({
                     <div className="stat-card__value-skeleton" />
                 ) : (
                     <div className="stat-card__value-container">
-                        <span className={`stat-card__value ${String(value).includes('-')
-                                ? 'text-currency-negative'
-                                : String(value) !== '0' && String(value) !== '$ 0'
-                                    ? 'text-currency-positive'
-                                    : ''
-                            }`}>{value}</span>
+                        <span className="stat-card__value">{value}</span>
                         {trend && (
                             <Badge variant={trend.variant} size="sm">
                                 {trend.label}

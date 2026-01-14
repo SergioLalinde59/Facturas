@@ -33,13 +33,14 @@ export const DirectoryInput: React.FC<DirectoryInputProps> = ({
 }) => {
     return (
         <div className={`directory-input ${fullWidth ? 'directory-input--full' : ''}`}>
+            <label className="directory-input__label">{label}</label>
             <div className="directory-input__input-wrapper">
                 <Input
-                    label={label}
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     placeholder={placeholder}
                     fullWidth
+                // No pasamos label aquí para tener control del layout
                 />
             </div>
             <div className="directory-input__button-wrapper">

@@ -9,7 +9,7 @@ if (Test-Path $localServerPath) {
     # Guardamos la carpeta actual para volver luego
     $currentDir = Get-Location
     Set-Location $localServerPath
-    docker-compose up -d 2>$null
+    docker-compose up -d 
     Set-Location $currentDir
     Write-Host "Puente Lógico activo." -ForegroundColor Green
 }

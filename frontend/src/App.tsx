@@ -28,7 +28,7 @@ import {
 import './App.css';
 
 // System Components
-import { Button } from './components/atoms';
+import { CurrencyValue } from './components/atoms';
 import { DirectoryInput } from './components/molecules';
 import { Sidebar, FilterBar, StatCardGrid } from './components/organisms';
 
@@ -363,8 +363,12 @@ function App() {
   useEffect(() => {
     if (activeView === 'report') {
       handleGetReport();
+    } else if (activeView === 'import' && directory) {
+      // Auto-trigger preview when filters change in import view
+      // Debounce could be added here if needed, but for now direct call
+      handleImportToDB(true);
     }
-  }, [activeView, startDate, endDate, provider]);
+  }, [activeView, startDate, endDate, provider, directory]);
 
 
 
@@ -497,16 +501,6 @@ function App() {
     setImportStats(null);
     setIsPreviewMode(false);
   };
-
-  const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(val);
-  };
-
 
   const getViewConfig = () => {
     switch (activeView) {
@@ -685,14 +679,14 @@ function App() {
                         {
                           id: 'subtotal',
                           label: 'Subtotal Acumulado',
-                          value: formatCurrency(dashboardStats.total_subtotal),
+                          value: <CurrencyValue value={dashboardStats.total_subtotal} />,
                           icon: <FileSpreadsheet size={20} />,
                           variant: 'primary'
                         },
                         {
                           id: 'descuentos',
                           label: 'Total Descuentos',
-                          value: formatCurrency(dashboardStats.total_descuentos),
+                          value: <CurrencyValue value={dashboardStats.total_descuentos} />,
                           icon: <Percent size={20} />,
                           variant: 'warning',
                           trend: { label: 'Ahorro', variant: 'success' }
@@ -700,7 +694,7 @@ function App() {
                         {
                           id: 'iva',
                           label: 'Total IVA',
-                          value: formatCurrency(dashboardStats.total_iva),
+                          value: <CurrencyValue value={dashboardStats.total_iva} />,
                           icon: <DollarSign size={20} />,
                           variant: 'warning',
                           trend: { label: 'Impuesto', variant: 'warning' }
@@ -708,7 +702,7 @@ function App() {
                         {
                           id: 'total',
                           label: 'Monto Total',
-                          value: formatCurrency(dashboardStats.total_monto),
+                          value: <CurrencyValue value={dashboardStats.total_monto} />,
                           icon: <TrendingUp size={20} />,
                           variant: 'success',
                           trend: { label: 'Neto', variant: 'success' }
@@ -831,18 +825,9 @@ function App() {
                       onChange: setProvider
                     }}
                   />
-                  {activeView === 'import' && (
+                  {activeView !== 'import' && (
                     <div style={{ position: 'absolute', top: '1.25rem', right: '1.25rem' }}>
-                      <Button
-                        variant="primary"
-                        size="md"
-                        onClick={() => handleImportToDB(true)}
-                        disabled={status === 'loading' || !directory}
-                        loading={status === 'loading'}
-                        icon={<Database size={16} />}
-                      >
-                        Previsualizar
-                      </Button>
+                      {/* Button placeholder if needed for other views, or remove if unused elsewhere */}
                     </div>
                   )}
                 </div>
@@ -1056,28 +1041,28 @@ function App() {
                     {
                       id: 'subtotal',
                       label: 'Subtotal Total',
-                      value: formatCurrency(processResults.reduce((sum, r) => sum + (r.subtotal || 0), 0)),
+                      value: <CurrencyValue value={processResults.reduce((sum, r) => sum + (r.subtotal || 0), 0)} />,
                       icon: <FileText size={20} />,
                       variant: processResults.reduce((sum, r) => sum + (r.subtotal || 0), 0) >= 0 ? 'success' : 'error'
                     },
                     {
                       id: 'descuentos',
                       label: 'Descuentos Total',
-                      value: formatCurrency(processResults.reduce((sum, r) => sum + (r.descuentos || 0), 0)),
+                      value: <CurrencyValue value={processResults.reduce((sum, r) => sum + (r.descuentos || 0), 0)} />,
                       icon: <FileText size={20} />,
                       variant: 'warning'
                     },
                     {
                       id: 'iva',
                       label: 'IVA Total',
-                      value: formatCurrency(processResults.reduce((sum, r) => sum + (r.iva || 0), 0)),
+                      value: <CurrencyValue value={processResults.reduce((sum, r) => sum + (r.iva || 0), 0)} />,
                       icon: <FileText size={20} />,
                       variant: processResults.reduce((sum, r) => sum + (r.iva || 0), 0) >= 0 ? 'success' : 'error'
                     },
                     {
                       id: 'monto',
                       label: 'Total General',
-                      value: formatCurrency(processResults.reduce((sum, r) => sum + (r.total || 0), 0)),
+                      value: <CurrencyValue value={processResults.reduce((sum, r) => sum + (r.total || 0), 0)} />,
                       icon: <FileText size={20} />,
                       variant: processResults.reduce((sum, r) => sum + (r.total || 0), 0) >= 0 ? 'success' : 'error'
                     }
@@ -1273,17 +1258,17 @@ function App() {
                             <td style={{ color: 'var(--text-secondary)', padding: '0.3rem 0.75rem', fontSize: '0.75rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {res.subject}
                             </td>
-                            <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace' }} className={res.subtotal >= 0 ? "text-currency-positive" : "text-currency-negative"}>
-                              ${typeof res.subtotal === 'number' ? res.subtotal.toLocaleString('es-CO', { minimumFractionDigits: 0 }) : '0'}
+                            <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace' }}>
+                              <CurrencyValue value={res.subtotal} />
                             </td>
-                            <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace' }} className={res.descuentos >= 0 ? "text-currency-positive" : "text-currency-negative"}>
-                              ${typeof res.descuentos === 'number' ? res.descuentos.toLocaleString('es-CO', { minimumFractionDigits: 0 }) : '0'}
+                            <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace' }}>
+                              <CurrencyValue value={res.descuentos} />
                             </td>
-                            <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace' }} className={res.iva >= 0 ? "text-currency-positive" : "text-currency-negative"}>
-                              ${typeof res.iva === 'number' ? res.iva.toLocaleString('es-CO', { minimumFractionDigits: 0 }) : '0'}
+                            <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace' }}>
+                              <CurrencyValue value={res.iva} />
                             </td>
-                            <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace', fontWeight: 600 }} className={res.total >= 0 ? "text-currency-positive" : "text-currency-negative"}>
-                              ${typeof res.total === 'number' ? res.total.toLocaleString('es-CO', { minimumFractionDigits: 0 }) : '0'}
+                            <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace', fontWeight: 600 }}>
+                              <CurrencyValue value={res.total} />
                             </td>
                             <td style={{ padding: '0.3rem 0.75rem', fontSize: '0.7rem', fontFamily: 'monospace', color: 'var(--accent-color)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={res.nombre_xml}>
                               {res.nombre_xml || (res.attachments && res.attachments[0]) || ''}
@@ -1342,28 +1327,28 @@ function App() {
                   {
                     id: 'subtotal',
                     label: 'Subtotal',
-                    value: formatCurrency(reportData.reduce((sum, inv) => sum + inv.subtotal, 0)),
+                    value: <CurrencyValue value={reportData.reduce((sum, inv) => sum + inv.subtotal, 0)} />,
                     icon: <FileSpreadsheet size={18} />,
                     variant: reportData.reduce((sum, inv) => sum + inv.subtotal, 0) >= 0 ? 'success' : 'error'
                   },
                   {
                     id: 'descuentos',
                     label: 'Descuentos',
-                    value: formatCurrency(reportData.reduce((sum, inv) => sum + (inv.descuentos || 0), 0)),
+                    value: <CurrencyValue value={reportData.reduce((sum, inv) => sum + (inv.descuentos || 0), 0)} />,
                     icon: <FileText size={18} />,
                     variant: 'warning'
                   },
                   {
                     id: 'iva',
                     label: 'IVA Total',
-                    value: formatCurrency(reportData.reduce((sum, inv) => sum + inv.iva, 0)),
+                    value: <CurrencyValue value={reportData.reduce((sum, inv) => sum + inv.iva, 0)} />,
                     icon: <DollarSign size={18} />,
                     variant: 'warning'
                   },
                   {
                     id: 'total',
                     label: 'Total General',
-                    value: formatCurrency(reportData.reduce((sum, inv) => sum + inv.total, 0)),
+                    value: <CurrencyValue value={reportData.reduce((sum, inv) => sum + inv.total, 0)} />,
                     icon: <TrendingUp size={18} />,
                     variant: reportData.reduce((sum, inv) => sum + inv.total, 0) >= 0 ? 'success' : 'error'
                   }
@@ -1427,26 +1412,26 @@ function App() {
                         <td style={{
                           textAlign: 'right',
                           fontWeight: 500
-                        }} className={`font-mono ${inv.subtotal >= 0 ? "text-currency-positive" : "text-currency-negative"}`}>
-                          {new Intl.NumberFormat('es-CO', { style: 'decimal', minimumFractionDigits: 0 }).format(inv.subtotal)}
+                        }} className="font-mono">
+                          <CurrencyValue value={inv.subtotal} />
                         </td>
                         <td style={{
                           textAlign: 'right',
                           fontWeight: 500
-                        }} className={`font-mono ${(inv.descuentos || 0) >= 0 ? "text-currency-positive" : "text-currency-negative"}`}>
-                          {new Intl.NumberFormat('es-CO', { style: 'decimal', minimumFractionDigits: 0 }).format(inv.descuentos || 0)}
+                        }} className="font-mono">
+                          <CurrencyValue value={inv.descuentos || 0} />
                         </td>
                         <td style={{
                           textAlign: 'right',
                           fontWeight: 500
-                        }} className={`font-mono ${inv.iva >= 0 ? "text-currency-positive" : "text-currency-negative"}`}>
-                          {new Intl.NumberFormat('es-CO', { style: 'decimal', minimumFractionDigits: 0 }).format(inv.iva)}
+                        }} className="font-mono">
+                          <CurrencyValue value={inv.iva} />
                         </td>
                         <td style={{
                           textAlign: 'right',
                           fontWeight: 600,
-                        }} className={`font-mono ${inv.total >= 0 ? "text-currency-positive" : "text-currency-negative"}`}>
-                          {new Intl.NumberFormat('es-CO', { style: 'decimal', minimumFractionDigits: 0 }).format(inv.total)}
+                        }} className="font-mono">
+                          <CurrencyValue value={inv.total} />
                         </td>
                       </tr>
                     ))}

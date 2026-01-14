@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users } from 'lucide-react';
+import { } from 'lucide-react';
 import { QuickFilterButton } from '../../molecules/QuickFilterButton';
 import { DateRangeFilter } from '../../molecules/DateRangeFilter';
 import { Select } from '../../atoms/Select';
@@ -59,7 +59,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                     <Select
                         label="Proveedor"
                         value={provider.value}
-                        options={['Todos los proveedores', ...provider.options]}
+                        options={[{ value: '', label: 'Todos los proveedores' }, ...provider.options]}
                         onChange={(e) => provider.onChange(e.target.value)}
                         fullWidth
                     />

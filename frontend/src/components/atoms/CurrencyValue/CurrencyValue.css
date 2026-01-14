@@ -1,0 +1,19 @@
+.currency-value {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    font-weight: 600;
+    /* Ensure bold weight matches current UI preference */
+}
+
+.currency-value--positive {
+    color: var(--success-color, #10b981) !important;
+}
+
+.currency-value--negative {
+    color: var(--danger-color, #ef4444) !important;
+}
+
+.currency-value--zero {
+    color: inherit;
+    opacity: 0.7;
+}

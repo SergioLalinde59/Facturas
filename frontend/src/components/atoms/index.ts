@@ -4,6 +4,8 @@
  */
 
 export * from './Button';
-export * from './Input';
+export * from './Badge';
+export * from './CurrencyValue/CurrencyValue';
+
 export * from './Badge';
 export * from './Select';

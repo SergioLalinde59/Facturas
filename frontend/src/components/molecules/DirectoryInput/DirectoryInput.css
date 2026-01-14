@@ -3,7 +3,16 @@
 .directory-input {
     display: flex;
     gap: var(--spacing-sm);
-    align-items: flex-end;
+    align-items: center;
+    /* Alineación vertical centrada */
+}
+
+.directory-input__label {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    margin-right: var(--spacing-xs);
 }
 
 .directory-input--full {
@@ -16,12 +25,16 @@
 
 .directory-input__button-wrapper {
     margin-bottom: 0;
-    /* Alineado con el input, no con el label */
 }
 
-@media (max-width: 480px) {
+@media (max-width: 640px) {
     .directory-input {
         flex-direction: column;
         align-items: stretch;
+        gap: var(--spacing-xs);
+    }
+
+    .directory-input__label {
+        margin-bottom: var(--spacing-xs);
     }
 }
