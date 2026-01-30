@@ -1,5 +1,5 @@
 # Script de gestión de servicios Backend y Frontend - Gmail Invoice Processor
-# Uso: . .\servicios.ps1  (para cargar las funciones)
+# Uso: .\servicios.ps1
 
 # Función para arrancar el Backend
 function Start-Backend {
@@ -12,9 +12,9 @@ function Start-Backend {
         return
     }
 
-    $backendCmd = "cd '$backendPath'; python -m uvicorn src.infrastructure.api.main:app --reload --host 0.0.0.0 --port 8000"
+    $backendCmd = "cd '$backendPath'; python -m uvicorn src.infrastructure.api.main:app --reload --host 0.0.0.0 --port 8002"
     Start-Process powershell -ArgumentList "-NoExit", "-Command", $backendCmd
-    Write-Host "Backend iniciado en ventana separada (Puerto 8000)" -ForegroundColor Green
+    Write-Host "Backend iniciado en ventana separada (Puerto 8002)" -ForegroundColor Green
 }
 
 # Función para arrancar el Frontend
@@ -60,6 +60,26 @@ function Restart-Backend {
     Stop-Backend
     Start-Sleep -Seconds 1
     Start-Backend
+}
+
+# Función para terminar procesos Node (Frontend)
+function Stop-Frontend {
+    Write-Host "Terminando procesos del Frontend (Node)..." -ForegroundColor Red
+    $processes = Get-Process node -ErrorAction SilentlyContinue
+    if ($processes) {
+        Stop-Process -Name node -Force
+        Write-Host "Procesos del Frontend terminados." -ForegroundColor Green
+    }
+    else {
+        Write-Host "No hay procesos del Frontend activos." -ForegroundColor Yellow
+    }
+}
+
+# Función para reiniciar Frontend
+function Restart-Frontend {
+    Stop-Frontend
+    Start-Sleep -Seconds 1
+    Start-Frontend
 }
 
 # Función para listar procesos Python activos
@@ -111,22 +131,36 @@ function Get-ServiceStatus {
 }
 
 # Ayuda
-function Show-Help {
-    Write-Host ""
-    Write-Host "Comandos para Gmail Invoice Processor:" -ForegroundColor White
-    Write-Host "===========================================" -ForegroundColor White
-    Write-Host "   Start-AllServices - Arranca Backend y Frontend"
-    Write-Host "   Start-Backend     - Arranca solo el Backend (Puerto 8000)"
-    Write-Host "   Start-Frontend    - Arranca solo el Frontend"
-    Write-Host "   Get-ServiceStatus - Muestra el estado de los servicios"
-    Write-Host "   Stop-Backend      - Detiene el servidor Python"
-    Write-Host "   Restart-Backend   - Detiene y arranca el Backend"
-    Write-Host "===========================================" -ForegroundColor White
-    Write-Host "Tip: Ejecuta '. .\servicios.ps1' primero para activar los comandos." -ForegroundColor Gray
-    Write-Host ""
+# Menú Interactivo
+function Show-Menu {
+    Clear-Host
+    Write-Host "=============================================" -ForegroundColor Cyan
+    Write-Host "   GMAIL INVOICE PROCESSOR - SERVICIOS" -ForegroundColor Cyan
+    Write-Host "=============================================" -ForegroundColor Cyan
+    Write-Host "1. Iniciar Todos los Servicios"
+    Write-Host "2. Iniciar Backend"
+    Write-Host "3. Iniciar Frontend"
+    Write-Host "4. Ver Estado de Servicios"
+    Write-Host "5. Detener Backend"
+    Write-Host "6. Reiniciar Backend"
+    Write-Host "7. Detener Frontend"
+    Write-Host "8. Reiniciar Frontend"
+    Write-Host "=============================================" -ForegroundColor Cyan
 }
 
-# Mensaje inicial
-Write-Host "Script 'servicios.ps1' cargado correctamente." -ForegroundColor Green
-Write-Host "Escribe 'Show-Help' para ver los comandos." -ForegroundColor Gray
-Show-Help
+# Ejecución del menú una sola vez
+Show-Menu
+$selection = Read-Host " Seleccione una opción (1-8)"
+Write-Host ""
+
+switch ($selection) {
+    '1' { Start-AllServices }
+    '2' { Start-Backend }
+    '3' { Start-Frontend }
+    '4' { Get-ServiceStatus }
+    '5' { Stop-Backend }
+    '6' { Restart-Backend }
+    '7' { Stop-Frontend }
+    '8' { Restart-Frontend }
+    default { Write-Host "Opción no válida." -ForegroundColor Red }
+}

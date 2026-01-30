@@ -1,6 +1,5 @@
-import React from 'react';
 import {
-    LayoutDashboard, Mail, Database, Download, FileText,
+    LayoutDashboard, Mail, Database, FileText,
     Settings2, ChevronDown, ChevronRight, Zap
 } from 'lucide-react';
 import './Sidebar.css';
@@ -65,7 +64,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <div className="sidebar__section-content">
                             <NavItem icon={Mail} label="Extraer de Gmail" view="extract" active={activeView === 'extract'} />
                             <NavItem icon={Database} label="Cargar a BD" view="import" active={activeView === 'import'} />
-                            <NavItem icon={Download} label="Exportar Facturas" view="export" active={activeView === 'export'} />
                         </div>
                     )}
                 </div>

@@ -26,6 +26,11 @@
     grid-template-columns: repeat(5, 1fr);
 }
 
+.stat-card-grid--cols-6 {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1rem;
+}
+
 @media (max-width: 1280px) {
 
     .stat-card-grid--cols-4,

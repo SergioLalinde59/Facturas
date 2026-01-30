@@ -7,7 +7,7 @@ export interface StatCardGridProps {
     /** Lista de configuraciones para cada StatCard */
     stats: (StatCardProps & { id: string | number })[];
     /** Columnas en escritorio (default 4) */
-    columns?: 1 | 2 | 3 | 4 | 5;
+    columns?: 1 | 2 | 3 | 4 | 5 | 6;
 }
 
 /**

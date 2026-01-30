@@ -199,7 +199,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 1.5rem 2.5rem 1rem;
+  padding: 0.75rem 1.5rem 0.75rem;
   /* Reduced padding */
   border-bottom: 1px solid var(--border-color);
   background-color: var(--bg-header);
@@ -241,7 +241,7 @@ body {
 
 /* ===== CONTENT AREA ===== */
 .content-area {
-  padding: 1.25rem 2.5rem;
+  padding: 1rem 1.5rem;
   /* Reduced top padding */
 }
 
@@ -249,8 +249,8 @@ body {
 .filter-section {
   background-color: var(--bg-card);
   border-radius: 12px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-sm);
 }
@@ -427,8 +427,8 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 .summary-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
 .summary-card {
@@ -531,7 +531,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.5rem;
+  padding: 0.75rem 1.25rem;
   border-bottom: 1px solid var(--border-color);
 }
 
@@ -542,7 +542,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 }
 
 .data-card-content {
-  padding: 1.5rem;
+  padding: 1rem;
 }
 
 /* ===== DATA TABLE ===== */
@@ -553,7 +553,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 
 .data-table th {
   text-align: left;
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 0.75rem;
   font-size: 0.7rem;
   font-weight: 600;
   color: var(--text-muted);
@@ -561,10 +561,15 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   letter-spacing: 0.05em;
   border-bottom: 1px solid var(--border-color);
   background-color: var(--bg-input);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  box-shadow: 0 1px 0 var(--border-color);
+  /* Extra divider */
 }
 
 .data-table td {
-  padding: 0.875rem 1rem;
+  padding: 0.5rem 0.75rem;
   font-size: 0.85rem;
   color: var(--text-secondary);
   border-bottom: 1px solid var(--border-color);

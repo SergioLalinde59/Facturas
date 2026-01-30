@@ -87,8 +87,14 @@ function App() {
   const [maxEmails, setMaxEmails] = useState(50);
   const [processResults, setProcessResults] = useState<any[]>([]);
   const [reportData, setReportData] = useState<Invoice[]>([]);
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [startDate, setStartDate] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  });
+  const [endDate, setEndDate] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  });
   const [provider, setProvider] = useState('');
   const [providers, setProviders] = useState<string[]>([]);
   const [exportFormats, setExportFormats] = useState({ csv: true, excel: false, pdf: false });
@@ -223,7 +229,7 @@ function App() {
   };
 
   // Quick Filter State
-  const [activeQuickFilter, setActiveQuickFilter] = useState<string>('');
+  const [activeQuickFilter, setActiveQuickFilter] = useState<string>('current-month');
 
   const applyQuickFilter = (type: string) => {
     const today = new Date();
@@ -296,7 +302,7 @@ function App() {
   const [expandedSections, setExpandedSections] = useState({
     principal: true,
     procesos: true,
-    reportes: false
+    reportes: true
   });
 
   useEffect(() => {
@@ -422,9 +428,11 @@ function App() {
     }
   };
 
-  const handleExportFromDB = async () => {
-    if (!directory) return;
-    const selectedFormats = Object.entries(exportFormats)
+  const handleExportFromDB = async (overrideDirectory?: string | null, overrideFormats?: any) => {
+    const targetDir = overrideDirectory !== undefined ? overrideDirectory : directory;
+    const activeFormats = overrideFormats || exportFormats;
+
+    const selectedFormats = Object.entries(activeFormats)
       .filter(([_, enabled]) => enabled)
       .map(([format]) => format);
 
@@ -440,7 +448,7 @@ function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          output_directory: directory,
+          output_directory: targetDir || null,
           formats: selectedFormats,
           start_date: startDate || null,
           end_date: endDate || null,
@@ -448,11 +456,12 @@ function App() {
         }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.detail || 'Error al exportar');
+      if (!response.ok) throw new Error(data.detail || data.message || 'Error al exportar');
       setMessage(data.message);
       setStatus('success');
     } catch (err: any) {
-      setMessage(err.message);
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      setMessage(errorMsg);
       setStatus('error');
     }
   };
@@ -645,7 +654,7 @@ function App() {
                 </div>
               ) : dashboardStats ? (
                 <>
-                  <div style={{ marginBottom: '2rem' }}>
+                  <div style={{ marginBottom: '1rem' }}>
                     <StatCardGrid
                       stats={[
                         {
@@ -872,7 +881,7 @@ function App() {
               {activeView !== 'report' && activeView !== 'import' && (
                 <div className="filter-row" style={{ marginTop: '0.75rem', justifyContent: 'flex-end' }}>
                   <button
-                    onClick={activeView === 'extract' ? handleProcess : handleExportFromDB}
+                    onClick={activeView === 'extract' ? handleProcess : () => handleExportFromDB()}
                     disabled={status === 'loading' || !directory}
                     className="btn-primary"
                     style={{
@@ -899,8 +908,8 @@ function App() {
             <div
               className="data-card"
               style={{
-                marginBottom: '1.5rem',
-                padding: '1rem 1.5rem',
+                marginBottom: '1rem',
+                padding: '0.75rem 1rem',
                 borderColor: status === 'success' ? 'rgba(16, 185, 129, 0.3)' :
                   status === 'error' ? 'rgba(239, 68, 68, 0.3)' : 'var(--border-color)',
                 backgroundColor: status === 'success' ? 'rgba(16, 185, 129, 0.05)' :
@@ -927,7 +936,7 @@ function App() {
           )}
 
           {activeView === 'extract' && status === 'success' && stats && (
-            <div style={{ marginBottom: '1.5rem' }}>
+            <div style={{ marginBottom: '1rem' }}>
               <StatCardGrid
                 stats={[
                   {
@@ -1007,7 +1016,7 @@ function App() {
                 </div>
               )}
 
-              <div style={{ marginBottom: '1.5rem' }}>
+              <div style={{ marginBottom: '1rem' }}>
                 <StatCardGrid
                   stats={[
                     {
@@ -1307,7 +1316,7 @@ function App() {
           )}
 
           {activeView === 'report' && status === 'success' && (
-            <div style={{ marginBottom: '1.5rem' }}>
+            <div style={{ marginBottom: '1rem' }}>
               <StatCardGrid
                 stats={[
                   {
@@ -1353,7 +1362,7 @@ function App() {
                     variant: reportData.reduce((sum, inv) => sum + inv.total, 0) >= 0 ? 'success' : 'error'
                   }
                 ]}
-                columns={3}
+                columns={6}
               />
             </div>
           )}
@@ -1361,10 +1370,78 @@ function App() {
           {/* Report Table */}
           {activeView === 'report' && status === 'success' && (
             <div className="data-card">
-              <div className="data-card-header">
+              <div className="data-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span className="data-card-title">Resultados</span>
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <button
+                    onClick={() => {
+                      const formats = { excel: true, csv: false, pdf: false };
+                      setExportFormats(formats);
+                      handleExportFromDB(null, formats);
+                    }}
+                    className="btn-icon"
+                    title="Exportar a Excel"
+                    style={{
+                      color: '#16a34a',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '4px',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <FileSpreadsheet size={24} />
+                    <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)' }}>EXCEL</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      const formats = { excel: false, csv: true, pdf: false };
+                      setExportFormats(formats);
+                      handleExportFromDB(null, formats);
+                    }}
+                    className="btn-icon"
+                    title="Exportar a CSV"
+                    style={{
+                      color: '#0284c7',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '4px',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <Database size={24} />
+                    <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)' }}>CSV</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      const formats = { excel: false, csv: false, pdf: true };
+                      setExportFormats(formats);
+                      handleExportFromDB(null, formats);
+                    }}
+                    className="btn-icon"
+                    title="Exportar a PDF"
+                    style={{
+                      color: '#dc2626',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '4px',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <Download size={24} />
+                    <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)' }}>PDF</span>
+                  </button>
+                </div>
               </div>
-              <div className="data-card-content" style={{ overflowX: 'auto' }}>
+              <div className="data-card-content" style={{ overflow: 'auto', maxHeight: 'calc(100vh - 250px)' }}>
                 <table className="data-table">
                   <thead>
                     <tr>
@@ -1400,6 +1477,7 @@ function App() {
                         <span>Total</span>
                         {getSortIcon('total')}
                       </th>
+                      <th style={{ width: '50px', textAlign: 'center' }}>PDF</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1432,6 +1510,28 @@ function App() {
                           fontWeight: 600,
                         }} className="font-mono">
                           <CurrencyValue value={inv.total} />
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          <a
+                            href={`/api/v1/utils/view-file?path=/app/data/Facturas/${inv.fecha.substring(0, 4)}/${inv.nombre_xml.replace('.xml', '.pdf')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn-icon"
+                            title="Ver PDF"
+                            style={{
+                              color: 'var(--danger-color)',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              padding: '4px',
+                              borderRadius: '4px',
+                              transition: 'background-color 0.2s'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                          >
+                            <FileText size={18} />
+                          </a>
                         </td>
                       </tr>
                     ))}

@@ -7081,3 +7081,80 @@
 2026-01-10 12:34:43,349 - api - INFO - Iniciando API. Log en: F:\1. Cloud\4. AI\1. Antigravity\Gmail - Lectura\backend\app.log
 2026-01-10 17:38:47,420 - database - INFO - Inicializando connection pool: min=1, max=10
 2026-01-10 17:38:47,471 - database - INFO - Connection pool inicializado correctamente
+2026-01-30 09:34:02,767 - api - INFO - Iniciando API. Log en: F:\1. Cloud\4. AI\1. Antigravity\Facturas\backend\app.log
+2026-01-30 10:06:22,662 - api - INFO - Iniciando API. Log en: F:\1. Cloud\4. AI\1. Antigravity\Facturas\backend\app.log
+2026-01-30 10:15:43,755 - api - INFO - Petición GET /api/v1/invoices/stats - Filtros: None a None
+2026-01-30 10:15:43,755 - database - INFO - Inicializando connection pool: min=1, max=10
+2026-01-30 10:15:43,957 - database - INFO - Connection pool inicializado correctamente
+2026-01-30 10:15:44,170 - api - INFO - Petición GET /api/v1/invoices/stats - Filtros: None a None
+2026-01-30 10:15:59,754 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 10:15:59,776 - api - INFO - Proveedores encontrados: 49
+2026-01-30 10:15:59,777 - api - INFO - Petición GET /api/v1/invoices - Filtros: None a None, Prov: None
+2026-01-30 10:39:31,896 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: None a None, Prov: None
+2026-01-30 10:39:31,898 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 10:39:31,899 - api - INFO - Proveedores encontrados: 49
+2026-01-30 10:39:39,944 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2026-01-01 a 2026-01-30, Prov: None
+2026-01-30 10:39:39,947 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 10:39:39,948 - api - INFO - Proveedores encontrados: 49
+2026-01-30 10:39:46,466 - api - INFO - Listando directorio: /app/data/Facturas/2026
+2026-01-30 10:39:46,467 - api - ERROR - Error listando directorio: 404: Ruta no encontrada
+2026-01-30 10:39:50,703 - api - INFO - Listando directorio: /app/data/Facturas
+2026-01-30 10:39:50,703 - api - ERROR - Error listando directorio: 404: Ruta no encontrada
+2026-01-30 10:40:06,399 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: 2026-01-01 a 2026-01-30
+2026-01-30 10:40:06,421 - api - INFO - Proveedores encontrados: 6
+2026-01-30 10:40:06,422 - api - INFO - Petición GET /api/v1/invoices - Filtros: 2026-01-01 a 2026-01-30, Prov: None
+2026-01-30 10:56:26,967 - api - INFO - Petición POST /api/v1/invoices/process - Dir: /app/data/Facturas/2026, Límite: 50
+2026-01-30 10:56:26,967 - gmail_service - INFO - Inicializando servicio de Gmail...
+2026-01-30 10:56:26,967 - gmail_service - INFO - Cargando token desde F:\1. Cloud\4. AI\1. Antigravity\Facturas\backend\token.json
+2026-01-30 10:56:26,982 - gmail_service - INFO - Token expirado, intentando refrescar...
+2026-01-30 10:56:27,920 - api - ERROR - Error crítico en process_invoices: ('invalid_grant: Bad Request', {'error': 'invalid_grant', 'error_description': 'Bad Request'})
+Traceback (most recent call last):
+  File "F:\1. Cloud\4. AI\1. Antigravity\Facturas\backend\src\infrastructure\api\main.py", line 96, in process_invoices
+    gmail_service = GoogleGmailService(CREDENTIALS_PATH, TOKEN_PATH)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\1. Cloud\4. AI\1. Antigravity\Facturas\backend\src\infrastructure\external\google_gmail_service.py", line 21, in __init__
+    self.service = self._authenticate()
+                   ^^^^^^^^^^^^^^^^^^^^
+  File "F:\1. Cloud\4. AI\1. Antigravity\Facturas\backend\src\infrastructure\external\google_gmail_service.py", line 32, in _authenticate
+    creds.refresh(Request())
+  File "D:\ProgramFiles\Anaconda\Lib\site-packages\google\oauth2\credentials.py", line 409, in refresh
+    ) = reauth.refresh_grant(
+        ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ProgramFiles\Anaconda\Lib\site-packages\google\oauth2\reauth.py", line 366, in refresh_grant
+    _client._handle_error_response(response_data, retryable_error)
+  File "D:\ProgramFiles\Anaconda\Lib\site-packages\google\oauth2\_client.py", line 69, in _handle_error_response
+    raise exceptions.RefreshError(
+google.auth.exceptions.RefreshError: ('invalid_grant: Bad Request', {'error': 'invalid_grant', 'error_description': 'Bad Request'})
+2026-01-30 10:56:30,811 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2026-01-01 a 2026-01-30, Prov: None
+2026-01-30 10:56:30,813 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 10:56:30,815 - api - INFO - Proveedores encontrados: 49
+2026-01-30 10:56:33,280 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: 2026-01-01 a 2026-01-30
+2026-01-30 10:56:33,281 - api - INFO - Proveedores encontrados: 6
+2026-01-30 10:56:33,283 - api - INFO - Petición GET /api/v1/invoices - Filtros: 2026-01-01 a 2026-01-30, Prov: None
+2026-01-30 11:52:12,799 - api - INFO - Iniciando API. Log en: F:\1. Cloud\4. AI\1. Antigravity\Facturas\backend\app.log
+2026-01-30 11:52:15,116 - api - INFO - Petición GET /api/v1/invoices/stats - Filtros: None a None
+2026-01-30 11:52:15,116 - database - INFO - Inicializando connection pool: min=1, max=10
+2026-01-30 11:52:15,173 - database - INFO - Connection pool inicializado correctamente
+2026-01-30 11:52:15,183 - api - INFO - Petición GET /api/v1/invoices/stats - Filtros: None a None
+2026-01-30 11:52:39,147 - api - INFO - Petición POST /api/v1/invoices/process - Dir: /app/data/Facturas/2026, Límite: 50
+2026-01-30 11:52:39,148 - gmail_service - INFO - Inicializando servicio de Gmail...
+2026-01-30 11:52:39,148 - gmail_service - INFO - Cargando token desde F:\1. Cloud\4. AI\1. Antigravity\Facturas\backend\token.json
+2026-01-30 11:52:39,149 - gmail_service - INFO - Token expirado, intentando refrescar...
+2026-01-30 11:52:39,679 - api - ERROR - Error crítico en process_invoices: ('invalid_grant: Bad Request', {'error': 'invalid_grant', 'error_description': 'Bad Request'})
+Traceback (most recent call last):
+  File "F:\1. Cloud\4. AI\1. Antigravity\Facturas\backend\src\infrastructure\api\main.py", line 96, in process_invoices
+    gmail_service = GoogleGmailService(CREDENTIALS_PATH, TOKEN_PATH)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\1. Cloud\4. AI\1. Antigravity\Facturas\backend\src\infrastructure\external\google_gmail_service.py", line 21, in __init__
+    self.service = self._authenticate()
+                   ^^^^^^^^^^^^^^^^^^^^
+  File "F:\1. Cloud\4. AI\1. Antigravity\Facturas\backend\src\infrastructure\external\google_gmail_service.py", line 32, in _authenticate
+    creds.refresh(Request())
+  File "D:\ProgramFiles\Anaconda\Lib\site-packages\google\oauth2\credentials.py", line 409, in refresh
+    ) = reauth.refresh_grant(
+        ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ProgramFiles\Anaconda\Lib\site-packages\google\oauth2\reauth.py", line 366, in refresh_grant
+    _client._handle_error_response(response_data, retryable_error)
+  File "D:\ProgramFiles\Anaconda\Lib\site-packages\google\oauth2\_client.py", line 69, in _handle_error_response
+    raise exceptions.RefreshError(
+google.auth.exceptions.RefreshError: ('invalid_grant: Bad Request', {'error': 'invalid_grant', 'error_description': 'Bad Request'})

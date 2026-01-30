@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from src.application.services.invoice_processor_service import InvoiceProcessorService
 from src.application.services.exporter_service import ExporterService
@@ -12,6 +13,13 @@ import logging
 import sys
 from datetime import date
 from typing import Optional, List
+from dotenv import load_dotenv
+
+# Cargar variables de entorno
+load_dotenv()
+
+# Configuración
+EXPORT_DIRECTORY = os.getenv('EXPORT_DIRECTORY', '/app/data/Facturas/Exportadas')
 
 # Configurar Logging - Usar ruta absoluta
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -83,6 +91,36 @@ async def list_directory(path: str = Query("/app/data")):
         }
     except Exception as e:
         logger.error(f"Error listando directorio: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/utils/view-file")
+async def view_file(path: str):
+    """Sirve un archivo local (como un PDF) para ser visualizado en el navegador."""
+    logger.info(f"Petición GET /api/v1/utils/view-file - Archivo: {path}")
+    try:
+        if not os.path.exists(path):
+             logger.warning(f"Archivo no encontrado: {path}")
+             raise HTTPException(status_code=404, detail="Archivo no encontrado")
+        
+        if not os.path.isfile(path):
+             raise HTTPException(status_code=400, detail="La ruta no es un archivo")
+
+        # Determinar el media type basado en la extensión
+        media_type = "application/octet-stream"
+        if path.lower().endswith('.pdf'):
+            media_type = "application/pdf"
+        elif path.lower().endswith('.xml'):
+            media_type = "application/xml"
+        elif path.lower().endswith('.png'):
+            media_type = "image/png"
+        elif path.lower().endswith('.jpg') or path.lower().endswith('.jpeg'):
+            media_type = "image/jpeg"
+
+        return FileResponse(path, media_type=media_type)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error sirviendo archivo: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/v1/invoices/process")
@@ -159,7 +197,7 @@ async def get_providers(
         raise HTTPException(status_code=500, detail=str(e))
 
 class ExportDBRequest(BaseModel):
-    output_directory: str
+    output_directory: Optional[str] = None
     formats: List[str]
     start_date: Optional[date] = None
     end_date: Optional[date] = None
@@ -189,7 +227,13 @@ async def export_invoices_db(request: ExportDBRequest):
             'end_date': request.end_date,
             'provider': request.provider
         }
-        result = exporter.export_from_db(factura_repo, filters, request.formats, request.output_directory)
+        output_dir = request.output_directory or EXPORT_DIRECTORY
+        
+        # Asegurar que el directorio existe
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir, exist_ok=True)
+            
+        result = exporter.export_from_db(factura_repo, filters, request.formats, output_dir)
         return result
     except Exception as e:
         logger.error(f"Error en export_invoices_db: {str(e)}")
