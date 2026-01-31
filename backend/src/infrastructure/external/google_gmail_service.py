@@ -66,10 +66,14 @@ class GoogleGmailService(GmailPort):
         new_label = self.service.users().labels().create(userId='me', body=label_body).execute()
         return new_label['id']
 
-    def search_unprocessed_emails(self, label_name: str) -> List[Dict[str, Any]]:
-        # Modo agresivo: Buscamos TODO en el INBOX que no haya sido procesado ya.
-        # Esto incluye Principal, Promociones, Social, etc.
-        query = f"label:INBOX -label:{label_name}"
+    def search_unprocessed_emails(self, label_name: str, search_query: Optional[str] = None) -> List[Dict[str, Any]]:
+        # Query base: Bandeja de entrada o Categoría de Compras, que no tengan la etiqueta de procesada.
+        query = f"(in:inbox OR category:purchases) -label:{label_name}"
+        
+        # Si hay un filtro adicional por título/contenido, lo agregamos
+        if search_query:
+            query = f"({query}) {search_query}"
+            
         messages = []
         next_page_token = None
         
@@ -81,7 +85,8 @@ class GoogleGmailService(GmailPort):
             messages.extend(results.get('messages', []))
             next_page_token = results.get('nextPageToken')
             
-            if not next_page_token or len(messages) >= 2000:
+            # Aumentamos el límite de escaneo de IDs a 50,000 para llegar al final de la historia
+            if not next_page_token or len(messages) >= 50000:
                 break
         
         logger.info(f"Búsqueda finalizada. Query: '{query}'. Encontrados: {len(messages)}")

@@ -21,12 +21,13 @@ export const CurrencyValue: React.FC<CurrencyValueProps> = ({
     if (value < 0) colorClass = 'currency-value--negative';
 
     // Format the number
+    const numValue = isNaN(value) ? 0 : value;
     const formattedValue = new Intl.NumberFormat('es-CO', {
         style: 'currency',
         currency: currency,
         minimumFractionDigits: decimals,
         maximumFractionDigits: decimals,
-    }).format(value);
+    }).format(numValue);
 
     return (
         <span className={`currency-value ${colorClass} ${className}`}>

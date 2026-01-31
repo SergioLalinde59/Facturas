@@ -21,6 +21,7 @@ export interface FilterBarProps {
         options: string[];
         onChange: (val: string) => void;
     };
+    children?: React.ReactNode;
 }
 
 /**
@@ -30,7 +31,8 @@ export interface FilterBarProps {
 export const FilterBar: React.FC<FilterBarProps> = ({
     quickFilters,
     dateRange,
-    provider
+    provider,
+    children
 }) => {
     return (
         <div className="filter-bar">
@@ -64,6 +66,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                         fullWidth
                     />
                 </div>
+                {children}
             </div>
         </div>
     );

@@ -3,8 +3,8 @@ from typing import List, Optional, Dict, Any
 
 class GmailPort(ABC):
     @abstractmethod
-    def search_unprocessed_emails(self, label_name: str) -> List[Dict[str, Any]]:
-        """Busca correos que no tengan la etiqueta de procesado."""
+    def search_unprocessed_emails(self, label_name: str, search_query: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Busca correos que no tengan la etiqueta de procesado, opcionalmente filtrando por query."""
         pass
 
     @abstractmethod

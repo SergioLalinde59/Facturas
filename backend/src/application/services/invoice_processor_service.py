@@ -2,6 +2,7 @@ import zipfile
 import io
 import os
 import logging
+import math
 from lxml import etree
 from datetime import datetime
 from src.domain.ports.gmail_port import GmailPort
@@ -21,28 +22,26 @@ class InvoiceProcessorService:
         self.gmail_service = gmail_service
         self.processed_label = "Factura_Procesada"
 
-    def process_all_new_invoices(self, target_directory: str, max_emails: int = None):
+    def process_all_new_invoices_generator(self, target_directory: str, max_emails: int = None, search_query: str = None):
         logger.info(f"Iniciando procesamiento de facturas en: {target_directory}")
         if not os.path.exists(target_directory):
             logger.info(f"Creando directorio de destino: {target_directory}")
             os.makedirs(target_directory, exist_ok=True)
 
         self.gmail_service.ensure_label_exists(self.processed_label)
-        messages = self.gmail_service.search_unprocessed_emails(self.processed_label)
+        messages = self.gmail_service.search_unprocessed_emails(self.processed_label, search_query=search_query)
         
         logger.info(f"Se encontraron {len(messages)} correos sin procesar.")
         
         # Procesar de más antiguo a más nuevo
         messages.reverse()
         
-        # Aplicar límite si se especifica
         if max_emails and max_emails > 0:
+            logger.info(f"Aplicando límite de {max_emails} correos.")
             messages = messages[:max_emails]
-            logger.info(f"Límite aplicado: procesando solo los {len(messages)} correos más antiguos.")
-        else:
-            logger.info(f"Procesando {len(messages)} correos (sin límite).")
         
-        results = []
+        logger.info(f"Final: Se procesarán {len(messages)} correos en este lote.")
+        
         stats = {
             "total_scanned": len(messages),
             "successful": 0,
@@ -51,6 +50,9 @@ class InvoiceProcessorService:
             "files_saved": 0
         }
 
+        # Enviar evento inicial con el total a procesar
+        yield {"type": "start", "total": len(messages)}
+
         for msg in messages:
             msg_id = msg['id']
             # Metadatos del mensaje detectado para logging inicial
@@ -58,7 +60,7 @@ class InvoiceProcessorService:
             
             logger.info(f"Procesando correo de: {initial_metadata.get('from')} (ID: {msg_id})")
             try:
-                success, saved_files, deep_metadata = self._process_email(msg_id, target_directory)
+                success, saved_files, deep_metadata, invoice_data = self._process_email(msg_id, target_directory)
                 
                 # Usar metadatos del correo más profundo que contiene el ZIP, o el inicial como fallback
                 final_metadata = deep_metadata if deep_metadata else initial_metadata
@@ -73,8 +75,9 @@ class InvoiceProcessorService:
                 }
                 
                 if success:
-                    logger.info(f"Correo {msg_id} procesado exitosamente usando metadatos de {final_metadata.get('from')}. Archivos: {len(saved_files)}")
+                    logger.info(f"Correo {msg_id} procesado exitosamente. Archivos: {len(saved_files)}")
                     self.gmail_service.mark_as_processed(msg_id, self.processed_label)
+                    
                     res["status"] = "success"
                     stats["successful"] += 1
                     stats["files_saved"] += len(saved_files)
@@ -84,11 +87,11 @@ class InvoiceProcessorService:
                     res["status"] = "no_valid_invoices"
                     stats["trashed"] += 1
                 
-                results.append(res)
+                yield {"type": "item", "data": res, "stats": stats}
             except Exception as e:
                 logger.error(f"Error procesando el correo {msg_id}: {str(e)}", exc_info=True)
                 stats["errors"] += 1
-                results.append({
+                res = {
                     "msg_id": msg_id, 
                     "sender": initial_metadata.get("from"),
                     "subject": initial_metadata.get("subject"),
@@ -97,11 +100,23 @@ class InvoiceProcessorService:
                     "error": str(e),
                     "attachments": [],
                     "count": 0
-                })
+                }
+                yield {"type": "item", "data": res, "stats": stats}
         
-        return {"results": results, "stats": stats}
+        yield {"type": "complete", "stats": stats}
 
-    def _process_email(self, msg_id: str, target_dir: str) -> Tuple[bool, List[str], Optional[Dict[str, Any]]]:
+    def process_all_new_invoices(self, target_directory: str, max_emails: int = None):
+        """Versión sincrónica para compatibilidad si es necesaria"""
+        results = []
+        final_stats = {}
+        for event in self.process_all_new_invoices_generator(target_directory, max_emails):
+            if event["type"] == "item":
+                results.append(event["data"])
+            elif event["type"] in ["complete", "item"]:
+                final_stats = event["stats"]
+        return {"results": results, "stats": final_stats}
+
+    def _process_email(self, msg_id: str, target_dir: str) -> Tuple[bool, List[str], Optional[Dict[str, Any]], Optional[InvoiceMetadata]]:
         # Obtener metadatos básicos para conseguir el threadId
         meta = self.gmail_service.get_message_metadata(msg_id)
         thread_id = meta.get("threadId")
@@ -109,8 +124,8 @@ class InvoiceProcessorService:
         if not thread_id:
             logger.debug(f"Correo {msg_id} no tiene threadId, procesando individualmente.")
             attachments = self.gmail_service.get_attachments(msg_id)
-            success, saved_files = self._extract_zips_from_attachments(msg_id, attachments, target_dir)
-            return success, saved_files, meta
+            success, saved_files, last_invoice_data = self._extract_zips_from_attachments(msg_id, attachments, target_dir)
+            return success, saved_files, meta, last_invoice_data
 
         # Buscar en todo el hilo el correo más profundo (primero en orden cronológico) con el ZIP
         logger.info(f"Escaneando hilo {thread_id} para buscar el correo original con el ZIP...")
@@ -128,28 +143,31 @@ class InvoiceProcessorService:
             if zip_attachments:
                 logger.info(f"Encontrado ZIP en mensaje index {i} (ID: {msg_obj.get('id')}) de: {current_meta.get('from')} el {current_meta.get('date')}")
                 
-                success, saved_files = self._extract_zips_from_attachments(msg_obj['id'], zip_attachments, target_dir)
+                success, saved_files, last_invoice_data = self._extract_zips_from_attachments(msg_obj['id'], zip_attachments, target_dir)
                 if success:
                     logger.debug(f"Procesado exitosamente usando metadatos profundos de: {current_meta.get('from')}")
-                    return True, saved_files, current_meta
+                    return True, saved_files, current_meta, last_invoice_data
             else:
                 logger.debug(f"Mensaje index {i} no contiene ZIP. (De: {current_meta.get('from')})")
         
         logger.warning(f"No se encontró ningún mensaje con ZIP en el hilo {thread_id}")
-        return False, [], None
+        return False, [], None, None
 
-    def _extract_zips_from_attachments(self, msg_id: str, attachments: List[Dict[str, Any]], target_dir: str) -> Tuple[bool, List[str]]:
+    def _extract_zips_from_attachments(self, msg_id: str, attachments: List[Dict[str, Any]], target_dir: str) -> Tuple[bool, List[str], Optional[InvoiceMetadata]]:
         saved_files = []
+        last_invoice_data = None
         for att in attachments:
             if att['filename'].lower().endswith('.zip'):
                 logger.debug(f"Descargando adjunto ZIP: {att['filename']}")
                 content = self.gmail_service.download_attachment(msg_id, att['attachmentId'])
-                saved_filename = self._handle_zip(content, target_dir)
+                saved_filename, invoice_data = self._handle_zip(content, target_dir)
                 if saved_filename:
                     saved_files.append(saved_filename)
-        return len(saved_files) > 0, saved_files
+                    if invoice_data:
+                        last_invoice_data = invoice_data
+        return len(saved_files) > 0, saved_files, last_invoice_data
 
-    def _handle_zip(self, zip_content: bytes, target_dir: str) -> Optional[str]:
+    def _handle_zip(self, zip_content: bytes, target_dir: str) -> Tuple[Optional[str], Optional[InvoiceMetadata]]:
         try:
             with zipfile.ZipFile(io.BytesIO(zip_content)) as zf:
                 filenames = zf.namelist()
@@ -159,7 +177,7 @@ class InvoiceProcessorService:
                 logger.debug(f"ZIP contiene {len(xml_files)} XMLs y {len(pdf_files)} PDFs.")
                 
                 if not xml_files:
-                    return None
+                    return None, None
 
                 # Buscar XML de factura (puede ser el XML directo o un AttachedDocument)
                 invoice_data = None
@@ -173,36 +191,43 @@ class InvoiceProcessorService:
                         break
                 
                 if not invoice_data:
-                    logger.warning("No se encontró un XML de factura válido (ni Invoice ni AttachedDocument) dentro del ZIP.")
-                    return None
+                    logger.warning("No se encontró un XML de factura válido dentro del ZIP.")
+                    return None, None
 
-                # Limpiar caracteres prohibidos en nombres de archivo de Windows
+                # 1. Determinar Directorio por Año
+                invoice_year = invoice_data.issue_date.split('-')[0] if invoice_data.issue_date else datetime.now().strftime('%Y')
+                year_dir = os.path.join(target_dir, invoice_year)
+                if not os.path.exists(year_dir):
+                    os.makedirs(year_dir, exist_ok=True)
+
+                # 2. Renombrado Seguro
                 safe_supplier = "".join(c for c in invoice_data.supplier_name if c.isalnum() or c in (' ', '-', '_')).strip()
                 base_name = f"{invoice_data.issue_date} {safe_supplier}"
                 logger.info(f"Factura identificada: {base_name}")
                 
                 # Guardar XML
-                xml_path = os.path.join(target_dir, f"{base_name}.xml")
+                xml_filename = f"{base_name}.xml"
+                xml_path = os.path.join(year_dir, xml_filename)
+                
                 if os.path.exists(xml_path):
-                    logger.info(f"La factura {base_name} ya existe en el directorio. Saltando.")
-                    return f"{base_name}.xml" # Lo marcamos como éxito devolviendo el nombre
+                    logger.info(f"La factura {base_name} ya existe. Saltando.")
+                    return xml_filename, invoice_data
                 
                 with open(xml_path, 'wb') as f:
                     f.write(xml_data_bytes)
 
                 # Guardar PDF correspondiente
                 if pdf_files:
-                    # Intentar encontrar el PDF que más se parezca al nombre del XML o simplemente el primero
-                    pdf_content = zf.read(pdf_files[0])
-                    pdf_path = os.path.join(target_dir, f"{base_name}.pdf")
+                    pdf_filename = f"{base_name}.pdf"
+                    pdf_path = os.path.join(year_dir, pdf_filename)
                     with open(pdf_path, 'wb') as f:
-                        f.write(pdf_content)
+                        f.write(zf.read(pdf_files[0]))
                     logger.debug(f"PDF guardado: {pdf_path}")
 
-                return f"{base_name}.xml"
+                return xml_filename, invoice_data
         except Exception as e:
             logger.error(f"Error procesando ZIP: {str(e)}")
-            return None
+            return None, None
 
     def _parse_xml(self, xml_content: bytes) -> Optional[InvoiceMetadata]:
         try:
@@ -217,18 +242,27 @@ class InvoiceProcessorService:
             if tag_name == 'AttachedDocument':
                 # Intentar extraer ID de la factura original
                 invoice_id = self._xpath_text(root, '//*[local-name()="ParentDocumentID"]')
-                
-                # Intentar extraer fecha
-                issue_date = self._xpath_text(root, '//*[local-name()="ParentDocumentLineReference"]//*[local-name()="IssueDate"]')
-                if not issue_date:
-                    issue_date = self._xpath_text(root, '//*[local-name()="IssueDate"]')
-                
-                # Intentar extraer el nombre del emisor (SenderParty suele ser el emisor en el AttachedDocument)
                 supplier_name = self._xpath_text(root, '//*[local-name()="SenderParty"]//*[local-name()="RegistrationName"]')
-                if not supplier_name:
-                    supplier_name = self._xpath_text(root, '//*[local-name()="SenderParty"]//*[local-name()="Name"]')
                 
+                # Para facturas de la DIAN, el AttachedDocument suele contener el XML real embebido en CDATA
+                description = self._xpath_text(root, '//*[local-name()="Attachment"]//*[local-name()="Description"]')
+                if description and ('<Invoice' in description or '<CreditNote' in description):
+                    try:
+                        # Extraer el XML interno
+                        start_tag = '<Invoice' if '<Invoice' in description else '<CreditNote'
+                        end_tag = '</Invoice>' if '<Invoice' in description else '</CreditNote>'
+                        xml_start = description.find(start_tag)
+                        xml_end = description.rfind(end_tag) + len(end_tag)
+                        inner_xml = description[xml_start:xml_end]
+                        
+                        inner_root = etree.fromstring(inner_xml.encode('utf-8'))
+                        return self._extract_invoice_metadata(inner_root)
+                    except Exception as e:
+                        logger.debug(f"Error parseando XML interno de AttachedDocument: {e}")
+
+                # Fallback: Si no hay XML interno o falla, intentar metadatos básicos del contenedor
                 if invoice_id and supplier_name:
+                    issue_date = self._xpath_text(root, '//*[local-name()="IssueDate"]')
                     return InvoiceMetadata(
                         invoice_number=invoice_id,
                         issue_date=issue_date or datetime.now().strftime('%Y-%m-%d'),
@@ -243,23 +277,65 @@ class InvoiceProcessorService:
 
     def _extract_invoice_metadata(self, element) -> Optional[InvoiceMetadata]:
         try:
-            # Usamos local-name() para ignorar prefijos de namespace que varían entre versiones de UBL
-            invoice_id = self._xpath_text(element, '//*[local-name()="ID"]')
-            issue_date = self._xpath_text(element, '//*[local-name()="IssueDate"]')
-            supplier_name = self._xpath_text(element, '//*[local-name()="AccountingSupplierParty"]//*[local-name()="RegistrationName"]')
-            nit = self._xpath_text(element, '//*[local-name()="AccountingSupplierParty"]//*[local-name()="CompanyID"]')
+            # 1. Identificar ID y Fecha
+            invoice_id = None
+            issue_date = None
+            for child in element:
+                ln = etree.QName(child).localname
+                if ln == 'ID' and not invoice_id: invoice_id = child.text
+                if ln == 'IssueDate' and not issue_date: issue_date = child.text
 
-            if not invoice_id or not supplier_name:
+            if not invoice_id:
+                invoice_id = self._xpath_text(element, '//*[local-name()="ID"]')
+
+            # 2. Proveedor y NIT
+            supplier_name = self._xpath_text(element, '//*[local-name()="AccountingSupplierParty"]//*[local-name()="RegistrationName"]') or \
+                            self._xpath_text(element, '//*[local-name()="PartyName"]//*[local-name()="Name"]')
+            
+            nit = self._xpath_text(element, '//*[local-name()="AccountingSupplierParty"]//*[local-name()="CompanyID"]') or \
+                  self._xpath_text(element, '//*[local-name()="SenderParty"]//*[local-name()="CompanyID"]')
+
+            if not supplier_name:
                 return None
 
             return InvoiceMetadata(
-                invoice_number=invoice_id,
+                invoice_number=invoice_id or "SIN_NUMERO",
                 issue_date=issue_date or datetime.now().strftime('%Y-%m-%d'),
                 supplier_name=supplier_name,
                 nit=nit or ""
             )
-        except Exception:
+        except Exception as e:
+            logger.error(f"Error minimal en _extract_invoice_metadata: {e}")
             return None
+
+    def _extract_detailed_taxes(self, element) -> Dict[tuple[str, float], float]:
+        """
+        Extrae y agrupa impuestos por (Código de Esquema, Tarifa %).
+        """
+        taxes = {}
+        tax_totals = element.xpath('/*[local-name()="Invoice" or local-name()="CreditNote"]/*[local-name()="TaxTotal"]')
+        if not tax_totals:
+            tax_totals = element.xpath('//*[local-name()="TaxTotal"]')
+
+        for tt in tax_totals:
+            subtotals = tt.xpath('./*[local-name()="TaxSubtotal"]')
+            if subtotals:
+                for sub in subtotals:
+                    scheme_id = self._xpath_text(sub, './/*[local-name()="TaxScheme"]/*[local-name()="ID"]')
+                    percent = self._get_float(sub, './*[local-name()="Percent"]')
+                    amount = self._get_float(sub, './*[local-name()="TaxAmount"]')
+                    if scheme_id:
+                        key = (scheme_id, percent)
+                        taxes[key] = taxes.get(key, 0.0) + amount
+            else:
+                # Si no hay subtotales, intentar sacar del TaxTotal (asumimos tarifa 0 o no especificada)
+                scheme_id = self._xpath_text(tt, './/*[local-name()="TaxScheme"]/*[local-name()="ID"]')
+                amount = self._get_float(tt, './*[local-name()="TaxAmount"]')
+                if scheme_id:
+                    key = (scheme_id, 0.0)
+                    taxes[key] = taxes.get(key, 0.0) + amount
+        
+        return taxes
 
     def _xpath_text(self, element, xpath_query: str) -> Optional[str]:
         try:
@@ -272,3 +348,13 @@ class InvoiceProcessorService:
         except Exception:
             pass
         return None
+
+    def _get_float(self, element, xpath_query: str) -> float:
+        val = self._xpath_text(element, xpath_query)
+        try:
+            if not val:
+                return 0.0
+            f_val = float(val)
+            return f_val if not math.isnan(f_val) else 0.0
+        except:
+            return 0.0

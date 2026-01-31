@@ -7158,3 +7158,688 @@ Traceback (most recent call last):
   File "D:\ProgramFiles\Anaconda\Lib\site-packages\google\oauth2\_client.py", line 69, in _handle_error_response
     raise exceptions.RefreshError(
 google.auth.exceptions.RefreshError: ('invalid_grant: Bad Request', {'error': 'invalid_grant', 'error_description': 'Bad Request'})
+2026-01-30 20:22:55,008 - api - INFO - Iniciando API. Log en: F:\1. Cloud\4. AI\1. Antigravity\Facturas\backend\app.log
+2026-01-30 20:23:02,395 - api - INFO - Petición GET /api/v1/invoices/stats - Filtros: None a None
+2026-01-30 20:23:02,396 - database - INFO - Inicializando connection pool: min=1, max=10
+2026-01-30 20:23:02,459 - database - INFO - Connection pool inicializado correctamente
+2026-01-30 20:23:02,468 - api - INFO - Petición GET /api/v1/invoices/stats - Filtros: None a None
+2026-01-30 20:23:04,928 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2026-01-01 a 2026-01-30, Prov: None
+2026-01-30 20:23:04,929 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:23:04,930 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:23:07,444 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2025-01-01 a 2025-12-31, Prov: None
+2026-01-30 20:23:07,446 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:23:07,448 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:23:10,809 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 0002-01-01 a 2025-12-31, Prov: None
+2026-01-30 20:23:10,811 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:23:10,812 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:23:11,055 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 0020-01-01 a 2025-12-31, Prov: None
+2026-01-30 20:23:11,057 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:23:11,058 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:23:11,442 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 0202-01-01 a 2025-12-31, Prov: None
+2026-01-30 20:23:11,444 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:23:11,444 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:23:11,805 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2025-01-01 a 2025-12-31, Prov: None
+2026-01-30 20:23:11,806 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:23:11,808 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:23:15,463 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2025-01-01 a 0002-12-31, Prov: None
+2026-01-30 20:23:15,466 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:23:15,467 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:23:15,694 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2025-01-01 a 0020-12-31, Prov: None
+2026-01-30 20:23:15,696 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:23:15,696 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:23:16,628 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2025-01-01 a 0202-12-31, Prov: None
+2026-01-30 20:23:16,630 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:23:16,631 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:23:17,343 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2025-01-01 a 2024-12-31, Prov: None
+2026-01-30 20:23:17,346 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:23:17,347 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:23:41,246 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 0002-01-01 a 2024-12-31, Prov: None
+2026-01-30 20:23:41,248 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:23:41,249 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:23:41,534 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 0020-01-01 a 2024-12-31, Prov: None
+2026-01-30 20:23:41,535 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:23:41,536 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:23:41,839 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 0202-01-01 a 2024-12-31, Prov: None
+2026-01-30 20:23:41,840 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:23:41,842 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:23:42,487 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2025-01-01 a 2024-12-31, Prov: None
+2026-01-30 20:23:42,489 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:23:42,490 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:23:44,592 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:23:44,594 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:23:44,894 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:23:44,896 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:23:45,234 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:23:45,236 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:23:45,572 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:23:45,573 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:23:46,830 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: None a 2024-12-31, Prov: None
+2026-01-30 20:23:46,832 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:23:46,832 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:23:48,358 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 0002-01-01 a 2024-12-31, Prov: None
+2026-01-30 20:23:48,360 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:23:48,361 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:23:48,607 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 0020-01-01 a 2024-12-31, Prov: None
+2026-01-30 20:23:48,609 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:23:48,610 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:23:48,839 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 0202-01-01 a 2024-12-31, Prov: None
+2026-01-30 20:23:48,840 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:23:48,842 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:23:49,290 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2023-01-01 a 2024-12-31, Prov: None
+2026-01-30 20:23:49,292 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:23:49,293 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:24:00,390 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2026-01-01 a 2026-01-30, Prov: None
+2026-01-30 20:24:00,394 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:24:00,394 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:24:02,389 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2025-12-01 a 2025-12-31, Prov: None
+2026-01-30 20:24:02,392 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:24:02,392 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:24:04,061 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2025-10-30 a 2026-01-30, Prov: None
+2026-01-30 20:24:04,063 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:24:04,064 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:24:05,776 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2025-07-30 a 2026-01-30, Prov: None
+2026-01-30 20:24:05,778 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:24:05,778 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:24:07,270 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2026-01-01 a 2026-01-30, Prov: None
+2026-01-30 20:24:07,272 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:24:07,272 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:24:08,559 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2025-01-01 a 2025-12-31, Prov: None
+2026-01-30 20:24:08,561 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:24:08,562 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:24:09,962 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2025-01-30 a 2026-01-30, Prov: None
+2026-01-30 20:24:09,965 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:24:09,967 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:24:23,186 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2025-01-30 a 2026-01-30, Prov: None
+2026-01-30 20:24:23,187 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:24:23,188 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:24:24,638 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: 2025-01-30 a 2026-01-30
+2026-01-30 20:24:24,638 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:24:24,640 - api - INFO - Petición GET /api/v1/invoices - Filtros: 2025-01-30 a 2026-01-30, Prov: None
+2026-01-30 20:24:48,593 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2025-01-30 a 2026-01-30, Prov: None
+2026-01-30 20:24:48,596 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:24:48,597 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:26:04,754 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2025-01-01 a 2025-12-31, Prov: None
+2026-01-30 20:26:04,756 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:26:04,758 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:32:19,898 - api - INFO - Petición GET /api/v1/invoices/stats - Filtros: None a None
+2026-01-30 20:32:19,904 - api - INFO - Petición GET /api/v1/invoices/stats - Filtros: None a None
+2026-01-30 20:41:51,243 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2026-01-01 a 2026-01-30, Prov: None
+2026-01-30 20:41:51,246 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:41:51,248 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:41:54,725 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2026-01-01 a 2026-01-30, Prov: None
+2026-01-30 20:41:57,254 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2026-01-01 a 2026-01-30, Prov: None
+2026-01-30 20:41:58,734 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2026-01-01 a 2026-01-30, Prov: None
+2026-01-30 20:41:59,795 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2026-01-01 a 2026-01-30, Prov: None
+2026-01-30 20:42:02,223 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2025-01-01 a 2025-12-31, Prov: None
+2026-01-30 20:42:02,226 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:42:02,227 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:42:03,836 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2025-01-01 a 2025-12-31, Prov: None
+2026-01-30 20:42:04,826 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2025-01-01 a 2025-12-31, Prov: None
+2026-01-30 20:43:40,281 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: 2025-01-01 a 2025-12-31
+2026-01-30 20:43:40,282 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:43:40,283 - api - INFO - Petición GET /api/v1/invoices - Filtros: 2025-01-01 a 2025-12-31, Prov: None
+2026-01-30 20:43:44,156 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: 2025-01-30 a 2026-01-30
+2026-01-30 20:43:44,158 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:43:44,160 - api - INFO - Petición GET /api/v1/invoices - Filtros: 2025-01-30 a 2026-01-30, Prov: None
+2026-01-30 20:43:45,705 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: 2025-01-01 a 2025-12-31
+2026-01-30 20:43:45,706 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:43:45,708 - api - INFO - Petición GET /api/v1/invoices - Filtros: 2025-01-01 a 2025-12-31, Prov: None
+2026-01-30 20:44:36,853 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2025-01-01 a 2025-12-31, Prov: None
+2026-01-30 20:44:36,856 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 20:44:36,856 - api - INFO - Proveedores encontrados: 0
+2026-01-30 20:44:38,662 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas/2026, Preview: True, Filtros: 2025-01-01 a 2025-12-31, Prov: None
+2026-01-30 20:58:22,744 - api - INFO - Iniciando API. Log en: F:\1. Cloud\4. AI\1. Antigravity\Facturas\backend\app.log
+2026-01-30 20:58:34,445 - api - INFO - Petición GET /api/v1/invoices/stats - Filtros: None a None
+2026-01-30 20:58:34,445 - database - INFO - Inicializando connection pool: min=1, max=10
+2026-01-30 20:58:34,495 - database - INFO - Connection pool inicializado correctamente
+2026-01-30 20:58:34,504 - api - INFO - Petición GET /api/v1/invoices/stats - Filtros: None a None
+2026-01-30 20:58:48,384 - api - INFO - Petición GET /api/v1/invoices/process-stream - Dir: /app/data/Facturas, Límite: 50, Query: None
+2026-01-30 20:58:48,423 - gmail_service - INFO - Inicializando servicio de Gmail...
+2026-01-30 20:58:48,423 - gmail_service - INFO - Cargando token desde F:\1. Cloud\4. AI\1. Antigravity\Facturas\backend\token.json
+2026-01-30 20:58:48,434 - gmail_service - INFO - Token expirado, intentando refrescar...
+2026-01-30 20:58:48,988 - gmail_service - INFO - Nuevo token guardado en F:\1. Cloud\4. AI\1. Antigravity\Facturas\backend\token.json
+2026-01-30 20:58:48,990 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2026-01-30 20:58:49,005 - invoice_processor - INFO - Iniciando procesamiento de facturas en: /app/data/Facturas
+2026-01-30 20:58:49,005 - invoice_processor - INFO - Creando directorio de destino: /app/data/Facturas
+2026-01-30 20:58:50,715 - gmail_service - INFO - Búsqueda finalizada. Query: '(in:inbox OR category:purchases) -label:Factura_Procesada'. Encontrados: 398
+2026-01-30 20:58:50,715 - invoice_processor - INFO - Se encontraron 398 correos sin procesar.
+2026-01-30 20:58:50,715 - invoice_processor - INFO - Aplicando límite de 50 correos.
+2026-01-30 20:58:50,715 - invoice_processor - INFO - Final: Se procesarán 50 correos en este lote.
+2026-01-30 20:58:50,972 - invoice_processor - INFO - Procesando correo de: efacturacoordiutil@coordiutil.com.co (ID: 1862de6bc13fc56f)
+2026-01-30 20:58:51,211 - invoice_processor - INFO - Escaneando hilo 1862de6bc13fc56f para buscar el correo original con el ZIP...
+2026-01-30 20:58:51,456 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1862de6bc13fc56f) de: efacturacoordiutil@coordiutil.com.co el 2023-02-07
+2026-01-30 20:58:51,774 - invoice_processor - INFO - Factura identificada: 2023-02-07 Coordiutil SAS
+2026-01-30 20:58:51,775 - invoice_processor - INFO - Correo 1862de6bc13fc56f procesado exitosamente. Archivos: 1
+2026-01-30 20:58:52,801 - invoice_processor - INFO - Procesando correo de: "siesafe@siesa.com" <siesafe@siesa.com> (ID: 19001200ccc5de9c)
+2026-01-30 20:58:53,036 - invoice_processor - INFO - Escaneando hilo 19001200ccc5de9c para buscar el correo original con el ZIP...
+2026-01-30 20:58:53,334 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 19001200ccc5de9c) de: "siesafe@siesa.com" <siesafe@siesa.com> el 2024-06-10
+2026-01-30 20:58:53,808 - invoice_processor - INFO - Factura identificada: 2024-05-24 COOPERATIVA COLANTA
+2026-01-30 20:58:53,809 - invoice_processor - INFO - Correo 19001200ccc5de9c procesado exitosamente. Archivos: 1
+2026-01-30 20:58:54,825 - invoice_processor - INFO - Procesando correo de: "siesafe@siesa.com" <siesafe@siesa.com> (ID: 190274e82fad00b9)
+2026-01-30 20:58:55,062 - invoice_processor - INFO - Escaneando hilo 190274e82fad00b9 para buscar el correo original con el ZIP...
+2026-01-30 20:58:55,363 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 190274e82fad00b9) de: "siesafe@siesa.com" <siesafe@siesa.com> el 2024-06-17
+2026-01-30 20:58:55,839 - invoice_processor - INFO - Factura identificada: 2024-06-17 CALORCOL SAS
+2026-01-30 20:58:55,840 - invoice_processor - INFO - Correo 190274e82fad00b9 procesado exitosamente. Archivos: 1
+2026-01-30 20:58:56,867 - invoice_processor - INFO - Procesando correo de: facturactscolombia@cen.biz (ID: 1902ee38a3cef766)
+2026-01-30 20:58:57,099 - invoice_processor - INFO - Escaneando hilo 1902ee38a3cef766 para buscar el correo original con el ZIP...
+2026-01-30 20:58:57,409 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1902ee38a3cef766) de: facturactscolombia@cen.biz el 2024-06-19
+2026-01-30 20:58:57,763 - invoice_processor - INFO - Factura identificada: 2024-06-18 PRICESMART COLOMBIA SAS
+2026-01-30 20:58:57,764 - invoice_processor - INFO - Correo 1902ee38a3cef766 procesado exitosamente. Archivos: 1
+2026-01-30 20:58:58,785 - invoice_processor - INFO - Procesando correo de: "CAPIRO VIVERO S.A.S" <tesoreria@capirovivero.com> (ID: 19035e712a17c25c)
+2026-01-30 20:58:59,035 - invoice_processor - INFO - Escaneando hilo 19035e712a17c25c para buscar el correo original con el ZIP...
+2026-01-30 20:58:59,255 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 19035e712a17c25c) de: "CAPIRO VIVERO S.A.S" <tesoreria@capirovivero.com> el 2024-06-20
+2026-01-30 20:58:59,718 - invoice_processor - INFO - Factura identificada: 2024-06-20 CAPIRO VIVERO SAS
+2026-01-30 20:58:59,719 - invoice_processor - INFO - Correo 19035e712a17c25c procesado exitosamente. Archivos: 1
+2026-01-30 20:59:00,712 - invoice_processor - INFO - Procesando correo de: "CAPIRO VIVERO S.A.S" <tesoreria@capirovivero.com> (ID: 1903cc9c0ceba623)
+2026-01-30 20:59:00,938 - invoice_processor - INFO - Escaneando hilo 1903cc9c0ceba623 para buscar el correo original con el ZIP...
+2026-01-30 20:59:01,189 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1903cc9c0ceba623) de: "CAPIRO VIVERO S.A.S" <tesoreria@capirovivero.com> el 2024-06-21
+2026-01-30 20:59:01,444 - invoice_processor - INFO - Factura identificada: 2024-06-21 CAPIRO VIVERO SAS
+2026-01-30 20:59:01,445 - invoice_processor - INFO - Correo 1903cc9c0ceba623 procesado exitosamente. Archivos: 1
+2026-01-30 20:59:02,615 - invoice_processor - INFO - Procesando correo de: "IMPACTO SOLAR S.A.S" <facturacionelectronica@impactosolar.com.co> (ID: 1905bc88752ae060)
+2026-01-30 20:59:02,864 - invoice_processor - INFO - Escaneando hilo 1905bc88752ae060 para buscar el correo original con el ZIP...
+2026-01-30 20:59:03,137 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1905bc88752ae060) de: "IMPACTO SOLAR S.A.S" <facturacionelectronica@impactosolar.com.co> el 2024-06-27
+2026-01-30 20:59:03,566 - invoice_processor - INFO - Factura identificada: 2024-06-27 IMPACTO SOLAR SAS
+2026-01-30 20:59:03,568 - invoice_processor - INFO - Correo 1905bc88752ae060 procesado exitosamente. Archivos: 1
+2026-01-30 20:59:04,592 - invoice_processor - INFO - Procesando correo de: "ATEB Facturación" <ateb.facturacion@ateb.com.co> (ID: 1906a82cff7add8d)
+2026-01-30 20:59:04,820 - invoice_processor - INFO - Escaneando hilo 1906a82cff7add8d para buscar el correo original con el ZIP...
+2026-01-30 20:59:05,048 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1906a82cff7add8d) de: "ATEB Facturación" <ateb.facturacion@ateb.com.co> el 2024-06-30
+2026-01-30 20:59:05,569 - invoice_processor - INFO - Factura identificada: 2024-06-30 BOHEMIAN FLOWERS SAS
+2026-01-30 20:59:05,570 - invoice_processor - INFO - Correo 1906a82cff7add8d procesado exitosamente. Archivos: 1
+2026-01-30 20:59:06,586 - invoice_processor - INFO - Procesando correo de: "siesafe@siesa.com" <siesafe@siesa.com> (ID: 1906f41d122f6b75)
+2026-01-30 20:59:06,827 - invoice_processor - INFO - Escaneando hilo 1906f41d122f6b75 para buscar el correo original con el ZIP...
+2026-01-30 20:59:07,154 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1906f41d122f6b75) de: "siesafe@siesa.com" <siesafe@siesa.com> el 2024-07-01
+2026-01-30 20:59:07,626 - invoice_processor - INFO - Factura identificada: 2024-07-01 COOPERATIVA COLANTA
+2026-01-30 20:59:07,628 - invoice_processor - INFO - Correo 1906f41d122f6b75 procesado exitosamente. Archivos: 1
+2026-01-30 20:59:08,640 - invoice_processor - INFO - Procesando correo de: Semantica ERP <correo@97593574.t-sender-sib.com> (ID: 1907abe9ec25c291)
+2026-01-30 20:59:08,872 - invoice_processor - INFO - Escaneando hilo 1907abe9ec25c291 para buscar el correo original con el ZIP...
+2026-01-30 20:59:09,116 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1907abe9ec25c291) de: Semantica ERP <correo@97593574.t-sender-sib.com> el 2024-07-03
+2026-01-30 20:59:09,435 - invoice_processor - INFO - Factura identificada: 2024-07-03 VELOENVIOS SAS
+2026-01-30 20:59:09,436 - invoice_processor - INFO - Correo 1907abe9ec25c291 procesado exitosamente. Archivos: 1
+2026-01-30 20:59:10,429 - invoice_processor - INFO - Procesando correo de: "ATEB Facturación" <ateb.facturacion@ateb.com.co> (ID: 1907ecd97ef07a32)
+2026-01-30 20:59:10,663 - invoice_processor - INFO - Escaneando hilo 1907ecd97ef07a32 para buscar el correo original con el ZIP...
+2026-01-30 20:59:10,910 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1907ecd97ef07a32) de: "ATEB Facturación" <ateb.facturacion@ateb.com.co> el 2024-07-04
+2026-01-30 20:59:11,332 - invoice_processor - INFO - Factura identificada: 2024-07-04 ZEOCOL SAS
+2026-01-30 20:59:11,334 - invoice_processor - INFO - Correo 1907ecd97ef07a32 procesado exitosamente. Archivos: 1
+2026-01-30 20:59:12,348 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 1907f437aa5da60d)
+2026-01-30 20:59:12,574 - invoice_processor - INFO - Escaneando hilo 1907f437aa5da60d para buscar el correo original con el ZIP...
+2026-01-30 20:59:12,800 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1907f437aa5da60d) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-07-04
+2026-01-30 20:59:13,066 - invoice_processor - INFO - Factura identificada: 2024-07-04 F2X SAS
+2026-01-30 20:59:13,067 - invoice_processor - INFO - Correo 1907f437aa5da60d procesado exitosamente. Archivos: 1
+2026-01-30 20:59:14,087 - invoice_processor - INFO - Procesando correo de: Velocity-x <noreply@velocity-x.co> (ID: 19098a7990de2fbd)
+2026-01-30 20:59:14,321 - invoice_processor - INFO - Escaneando hilo 19098a7990de2fbd para buscar el correo original con el ZIP...
+2026-01-30 20:59:14,560 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 19098a7990de2fbd) de: Velocity-x <noreply@velocity-x.co> el 2024-07-09
+2026-01-30 20:59:14,878 - invoice_processor - INFO - Factura identificada: 2024-07-09 SOF COCINAS VIRTUALES SAS
+2026-01-30 20:59:14,878 - invoice_processor - INFO - Correo 19098a7990de2fbd procesado exitosamente. Archivos: 1
+2026-01-30 20:59:15,880 - invoice_processor - INFO - Procesando correo de: "siesafe@siesa.com" <siesafe@siesa.com> (ID: 19099cc0def6cace)
+2026-01-30 20:59:16,106 - invoice_processor - INFO - Escaneando hilo 19099cc0def6cace para buscar el correo original con el ZIP...
+2026-01-30 20:59:16,599 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 19099cc0def6cace) de: "siesafe@siesa.com" <siesafe@siesa.com> el 2024-07-09
+2026-01-30 20:59:17,068 - invoice_processor - INFO - Factura identificada: 2024-07-09 COOPERATIVA COLANTA
+2026-01-30 20:59:17,069 - invoice_processor - INFO - Correo 19099cc0def6cace procesado exitosamente. Archivos: 1
+2026-01-30 20:59:18,097 - invoice_processor - INFO - Procesando correo de: "siesafe@siesa.com" <siesafe@siesa.com> (ID: 1909a2e80c541e37)
+2026-01-30 20:59:18,331 - invoice_processor - INFO - Escaneando hilo 19099cc0def6cace para buscar el correo original con el ZIP...
+2026-01-30 20:59:18,929 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 19099cc0def6cace) de: "siesafe@siesa.com" <siesafe@siesa.com> el 2024-07-09
+2026-01-30 20:59:19,190 - invoice_processor - INFO - Factura identificada: 2024-07-09 COOPERATIVA COLANTA
+2026-01-30 20:59:19,190 - invoice_processor - INFO - La factura 2024-07-09 COOPERATIVA COLANTA ya existe. Saltando.
+2026-01-30 20:59:19,192 - invoice_processor - INFO - Correo 1909a2e80c541e37 procesado exitosamente. Archivos: 1
+2026-01-30 20:59:20,229 - invoice_processor - INFO - Procesando correo de: "siesafe@siesa.com" <siesafe@siesa.com> (ID: 1909a8b83e14fbf2)
+2026-01-30 20:59:20,473 - invoice_processor - INFO - Escaneando hilo 19099cc0def6cace para buscar el correo original con el ZIP...
+2026-01-30 20:59:20,927 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 19099cc0def6cace) de: "siesafe@siesa.com" <siesafe@siesa.com> el 2024-07-09
+2026-01-30 20:59:21,190 - invoice_processor - INFO - Factura identificada: 2024-07-09 COOPERATIVA COLANTA
+2026-01-30 20:59:21,190 - invoice_processor - INFO - La factura 2024-07-09 COOPERATIVA COLANTA ya existe. Saltando.
+2026-01-30 20:59:21,190 - invoice_processor - INFO - Correo 1909a8b83e14fbf2 procesado exitosamente. Archivos: 1
+2026-01-30 20:59:22,221 - invoice_processor - INFO - Procesando correo de: "CAPIRO VIVERO S.A.S" <tesoreria@capirovivero.com> (ID: 1909db740377c573)
+2026-01-30 20:59:22,444 - invoice_processor - INFO - Escaneando hilo 1909db740377c573 para buscar el correo original con el ZIP...
+2026-01-30 20:59:22,676 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1909db740377c573) de: "CAPIRO VIVERO S.A.S" <tesoreria@capirovivero.com> el 2024-07-10
+2026-01-30 20:59:23,155 - invoice_processor - INFO - Factura identificada: 2024-07-10 CAPIRO VIVERO SAS
+2026-01-30 20:59:23,157 - invoice_processor - INFO - Correo 1909db740377c573 procesado exitosamente. Archivos: 1
+2026-01-30 20:59:24,149 - invoice_processor - INFO - Procesando correo de: "CAPIRO VIVERO S.A.S" <tesoreria@capirovivero.com> (ID: 190c61d0274e8863)
+2026-01-30 20:59:24,385 - invoice_processor - INFO - Escaneando hilo 190c61d0274e8863 para buscar el correo original con el ZIP...
+2026-01-30 20:59:24,633 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 190c61d0274e8863) de: "CAPIRO VIVERO S.A.S" <tesoreria@capirovivero.com> el 2024-07-18
+2026-01-30 20:59:24,944 - invoice_processor - INFO - Factura identificada: 2024-07-18 CAPIRO VIVERO SAS
+2026-01-30 20:59:24,946 - invoice_processor - INFO - Correo 190c61d0274e8863 procesado exitosamente. Archivos: 1
+2026-01-30 20:59:25,954 - invoice_processor - INFO - Procesando correo de: "CAPIRO VIVERO S.A.S" <tesoreria@capirovivero.com> (ID: 190c6207d2ab8de1)
+2026-01-30 20:59:26,203 - invoice_processor - INFO - Escaneando hilo 190c6207d2ab8de1 para buscar el correo original con el ZIP...
+2026-01-30 20:59:26,444 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 190c6207d2ab8de1) de: "CAPIRO VIVERO S.A.S" <tesoreria@capirovivero.com> el 2024-07-18
+2026-01-30 20:59:26,694 - invoice_processor - INFO - Factura identificada: 2024-07-18 CAPIRO VIVERO SAS
+2026-01-30 20:59:26,694 - invoice_processor - INFO - La factura 2024-07-18 CAPIRO VIVERO SAS ya existe. Saltando.
+2026-01-30 20:59:26,696 - invoice_processor - INFO - Correo 190c6207d2ab8de1 procesado exitosamente. Archivos: 1
+2026-01-30 20:59:27,889 - invoice_processor - INFO - Procesando correo de: "CAPIRO VIVERO S.A.S" <tesoreria@capirovivero.com> (ID: 190c68dd38e78070)
+2026-01-30 20:59:28,120 - invoice_processor - INFO - Escaneando hilo 190c68dd38e78070 para buscar el correo original con el ZIP...
+2026-01-30 20:59:28,360 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 190c68dd38e78070) de: "CAPIRO VIVERO S.A.S" <tesoreria@capirovivero.com> el 2024-07-18
+2026-01-30 20:59:28,629 - invoice_processor - INFO - Factura identificada: 2024-07-18 CAPIRO VIVERO SAS
+2026-01-30 20:59:28,629 - invoice_processor - INFO - La factura 2024-07-18 CAPIRO VIVERO SAS ya existe. Saltando.
+2026-01-30 20:59:28,629 - invoice_processor - INFO - Correo 190c68dd38e78070 procesado exitosamente. Archivos: 1
+2026-01-30 20:59:29,644 - invoice_processor - INFO - Procesando correo de: factura-electronica@clauserp.com (ID: 190e003fe8841819)
+2026-01-30 20:59:29,866 - invoice_processor - INFO - Escaneando hilo 190e003fe8841819 para buscar el correo original con el ZIP...
+2026-01-30 20:59:30,111 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 190e003fe8841819) de: factura-electronica@clauserp.com el 2024-07-23
+2026-01-30 20:59:30,570 - invoice_processor - INFO - Factura identificada: 2024-07-23 MATERIALES MAESTRO COLOMBIA SAS
+2026-01-30 20:59:30,573 - invoice_processor - INFO - Correo 190e003fe8841819 procesado exitosamente. Archivos: 1
+2026-01-30 20:59:31,564 - invoice_processor - INFO - Procesando correo de: facturactscolombia@cen.biz (ID: 190e16a294b62c5c)
+2026-01-30 20:59:31,802 - invoice_processor - INFO - Escaneando hilo 190e16a294b62c5c para buscar el correo original con el ZIP...
+2026-01-30 20:59:32,029 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 190e16a294b62c5c) de: facturactscolombia@cen.biz el 2024-07-23
+2026-01-30 20:59:32,498 - invoice_processor - INFO - Factura identificada: 2024-07-23 PRICESMART COLOMBIA SAS
+2026-01-30 20:59:32,498 - invoice_processor - INFO - Correo 190e16a294b62c5c procesado exitosamente. Archivos: 1
+2026-01-30 20:59:33,694 - invoice_processor - INFO - Procesando correo de: factura-electronica@clauserp.com (ID: 190e5ed17ebeac91)
+2026-01-30 20:59:33,925 - invoice_processor - INFO - Escaneando hilo 190e5ed17ebeac91 para buscar el correo original con el ZIP...
+2026-01-30 20:59:34,149 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 190e5ed17ebeac91) de: factura-electronica@clauserp.com el 2024-07-24
+2026-01-30 20:59:34,607 - invoice_processor - INFO - Factura identificada: 2024-07-24 MATERIALES MAESTRO COLOMBIA SAS
+2026-01-30 20:59:34,608 - invoice_processor - INFO - Correo 190e5ed17ebeac91 procesado exitosamente. Archivos: 1
+2026-01-30 20:59:35,614 - invoice_processor - INFO - Procesando correo de: Plantas Del Tambo Sas <no-responder@worldoffice.com.co> (ID: 190eb35b90b43724)
+2026-01-30 20:59:35,841 - invoice_processor - INFO - Escaneando hilo 190eb35b90b43724 para buscar el correo original con el ZIP...
+2026-01-30 20:59:36,089 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 190eb35b90b43724) de: Plantas Del Tambo Sas <no-responder@worldoffice.com.co> el 2024-07-25
+2026-01-30 20:59:36,423 - invoice_processor - INFO - Factura identificada: 2024-07-25 PLANTAS DEL TAMBO SAS
+2026-01-30 20:59:36,425 - invoice_processor - INFO - Correo 190eb35b90b43724 procesado exitosamente. Archivos: 1
+2026-01-30 20:59:37,430 - invoice_processor - INFO - Procesando correo de: Faduquin Sas <no-responder@worldoffice.com.co> (ID: 190eb462f249fbe1)
+2026-01-30 20:59:37,660 - invoice_processor - INFO - Escaneando hilo 190eb462f249fbe1 para buscar el correo original con el ZIP...
+2026-01-30 20:59:37,923 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 190eb462f249fbe1) de: Faduquin Sas <no-responder@worldoffice.com.co> el 2024-07-25
+2026-01-30 20:59:38,280 - invoice_processor - INFO - Factura identificada: 2024-07-25 FADUQUIN SAS
+2026-01-30 20:59:38,282 - invoice_processor - INFO - Correo 190eb462f249fbe1 procesado exitosamente. Archivos: 1
+2026-01-30 20:59:39,301 - invoice_processor - INFO - Procesando correo de: Plantas Del Tambo Sas <no-responder@worldoffice.com.co> (ID: 190eb54d25bd79c1)
+2026-01-30 20:59:39,527 - invoice_processor - INFO - Escaneando hilo 190eb54d25bd79c1 para buscar el correo original con el ZIP...
+2026-01-30 20:59:39,769 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 190eb54d25bd79c1) de: Plantas Del Tambo Sas <no-responder@worldoffice.com.co> el 2024-07-25
+2026-01-30 20:59:40,268 - invoice_processor - INFO - Factura identificada: 2024-07-25 PLANTAS DEL TAMBO SAS
+2026-01-30 20:59:40,268 - invoice_processor - INFO - La factura 2024-07-25 PLANTAS DEL TAMBO SAS ya existe. Saltando.
+2026-01-30 20:59:40,268 - invoice_processor - INFO - Correo 190eb54d25bd79c1 procesado exitosamente. Archivos: 1
+2026-01-30 20:59:41,274 - invoice_processor - INFO - Procesando correo de: factura-electronica@clauserp.com (ID: 190efc74739f6492)
+2026-01-30 20:59:41,514 - invoice_processor - INFO - Escaneando hilo 190efc74739f6492 para buscar el correo original con el ZIP...
+2026-01-30 20:59:41,757 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 190efc74739f6492) de: factura-electronica@clauserp.com el 2024-07-26
+2026-01-30 20:59:42,269 - invoice_processor - INFO - Factura identificada: 2024-07-26 MATERIALES MAESTRO COLOMBIA SAS
+2026-01-30 20:59:42,270 - invoice_processor - INFO - Correo 190efc74739f6492 procesado exitosamente. Archivos: 1
+2026-01-30 20:59:43,261 - invoice_processor - INFO - Procesando correo de: factura-electronica@clauserp.com (ID: 190f491397fab2c0)
+2026-01-30 20:59:43,487 - invoice_processor - INFO - Escaneando hilo 190f491397fab2c0 para buscar el correo original con el ZIP...
+2026-01-30 20:59:43,709 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 190f491397fab2c0) de: factura-electronica@clauserp.com el 2024-07-27
+2026-01-30 20:59:44,214 - invoice_processor - INFO - Factura identificada: 2024-07-27 MATERIALES MAESTRO COLOMBIA SAS
+2026-01-30 20:59:44,214 - invoice_processor - INFO - Correo 190f491397fab2c0 procesado exitosamente. Archivos: 1
+2026-01-30 20:59:45,229 - invoice_processor - INFO - Procesando correo de: Facturatech <mesadecontrol@facturatech.co> (ID: 190f5cab7cd96eb6)
+2026-01-30 20:59:45,465 - invoice_processor - INFO - Escaneando hilo 190f5cab7cd96eb6 para buscar el correo original con el ZIP...
+2026-01-30 20:59:45,704 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 190f5cab7cd96eb6) de: Facturatech <mesadecontrol@facturatech.co> el 2024-07-27
+2026-01-30 20:59:46,206 - invoice_processor - INFO - Factura identificada: 2024-07-27 AGROBOLIVAR FLOWERS SAS
+2026-01-30 20:59:46,209 - invoice_processor - INFO - Correo 190f5cab7cd96eb6 procesado exitosamente. Archivos: 1
+2026-01-30 20:59:47,223 - invoice_processor - INFO - Procesando correo de: "CAPIRO VIVERO S.A.S" <tesoreria@capirovivero.com> (ID: 1910a1d9d5de77e5)
+2026-01-30 20:59:47,457 - invoice_processor - INFO - Escaneando hilo 1910a1d9d5de77e5 para buscar el correo original con el ZIP...
+2026-01-30 20:59:47,698 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1910a1d9d5de77e5) de: "CAPIRO VIVERO S.A.S" <tesoreria@capirovivero.com> el 2024-07-31
+2026-01-30 20:59:47,947 - invoice_processor - INFO - Factura identificada: 2024-07-31 CAPIRO VIVERO SAS
+2026-01-30 20:59:47,948 - invoice_processor - INFO - Correo 1910a1d9d5de77e5 procesado exitosamente. Archivos: 1
+2026-01-30 20:59:48,991 - invoice_processor - INFO - Procesando correo de: factura-electronica@clauserp.com (ID: 1910a2943b0d1306)
+2026-01-30 20:59:49,227 - invoice_processor - INFO - Escaneando hilo 1910a2943b0d1306 para buscar el correo original con el ZIP...
+2026-01-30 20:59:49,449 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1910a2943b0d1306) de: factura-electronica@clauserp.com el 2024-07-31
+2026-01-30 20:59:49,743 - invoice_processor - INFO - Factura identificada: 2024-07-31 MATERIALES MAESTRO COLOMBIA SAS
+2026-01-30 20:59:49,744 - invoice_processor - INFO - Correo 1910a2943b0d1306 procesado exitosamente. Archivos: 1
+2026-01-30 20:59:50,748 - invoice_processor - INFO - Procesando correo de: "siesafe@siesa.com" <siesafe@siesa.com> (ID: 1910b50155953f5b)
+2026-01-30 20:59:50,982 - invoice_processor - INFO - Escaneando hilo 1910b50155953f5b para buscar el correo original con el ZIP...
+2026-01-30 20:59:51,361 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1910b50155953f5b) de: "siesafe@siesa.com" <siesafe@siesa.com> el 2024-08-01
+2026-01-30 20:59:51,803 - invoice_processor - INFO - Factura identificada: 2024-07-31 COOPERATIVA COLANTA
+2026-01-30 20:59:51,804 - invoice_processor - INFO - Correo 1910b50155953f5b procesado exitosamente. Archivos: 1
+2026-01-30 20:59:52,822 - invoice_processor - INFO - Procesando correo de: Plantas Del Tambo Sas <no-responder@worldoffice.com.co> (ID: 1910f7f178131d1c)
+2026-01-30 20:59:53,064 - invoice_processor - INFO - Escaneando hilo 1910f7f178131d1c para buscar el correo original con el ZIP...
+2026-01-30 20:59:53,311 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1910f7f178131d1c) de: Plantas Del Tambo Sas <no-responder@worldoffice.com.co> el 2024-08-01
+2026-01-30 20:59:53,764 - invoice_processor - INFO - Factura identificada: 2024-08-01 PLANTAS DEL TAMBO SAS
+2026-01-30 20:59:53,766 - invoice_processor - INFO - Correo 1910f7f178131d1c procesado exitosamente. Archivos: 1
+2026-01-30 20:59:54,779 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 1912928fdd12638b)
+2026-01-30 20:59:55,005 - invoice_processor - INFO - Escaneando hilo 1912928fdd12638b para buscar el correo original con el ZIP...
+2026-01-30 20:59:55,234 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1912928fdd12638b) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-08-06
+2026-01-30 20:59:55,700 - invoice_processor - INFO - Factura identificada: 2024-08-06 F2X SAS
+2026-01-30 20:59:55,701 - invoice_processor - INFO - Correo 1912928fdd12638b procesado exitosamente. Archivos: 1
+2026-01-30 20:59:56,726 - invoice_processor - INFO - Procesando correo de: facturae@documentox.com (ID: 1912a3a5b902c517)
+2026-01-30 20:59:56,968 - invoice_processor - INFO - Escaneando hilo 1912a3a5b902c517 para buscar el correo original con el ZIP...
+2026-01-30 20:59:57,206 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1912a3a5b902c517) de: facturae@documentox.com el 2024-08-07
+2026-01-30 20:59:57,623 - invoice_processor - INFO - Factura identificada: 2024-08-06 INVERSIONES RAMEJ SAS
+2026-01-30 20:59:57,625 - invoice_processor - INFO - Correo 1912a3a5b902c517 procesado exitosamente. Archivos: 1
+2026-01-30 20:59:58,645 - invoice_processor - INFO - Procesando correo de: factura-electronica@clauserp.com (ID: 19151e8bee17a0fc)
+2026-01-30 20:59:58,868 - invoice_processor - INFO - Escaneando hilo 19151e8bee17a0fc para buscar el correo original con el ZIP...
+2026-01-30 20:59:59,095 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 19151e8bee17a0fc) de: factura-electronica@clauserp.com el 2024-08-14
+2026-01-30 20:59:59,549 - invoice_processor - INFO - Factura identificada: 2024-08-14 MATERIALES MAESTRO COLOMBIA SAS
+2026-01-30 20:59:59,549 - invoice_processor - INFO - Correo 19151e8bee17a0fc procesado exitosamente. Archivos: 1
+2026-01-30 21:00:00,698 - invoice_processor - INFO - Procesando correo de: "siesafe@siesa.com" <siesafe@siesa.com> (ID: 1915c536d2dba5f9)
+2026-01-30 21:00:00,947 - invoice_processor - INFO - Escaneando hilo 1915c536d2dba5f9 para buscar el correo original con el ZIP...
+2026-01-30 21:00:01,229 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1915c536d2dba5f9) de: "siesafe@siesa.com" <siesafe@siesa.com> el 2024-08-16
+2026-01-30 21:00:01,691 - invoice_processor - INFO - Factura identificada: 2024-08-16 COOPERATIVA COLANTA
+2026-01-30 21:00:01,693 - invoice_processor - INFO - Correo 1915c536d2dba5f9 procesado exitosamente. Archivos: 1
+2026-01-30 21:00:02,724 - invoice_processor - INFO - Procesando correo de: efacturahomecenter@homecenter.co (ID: 191718e624c5ccd3)
+2026-01-30 21:00:02,964 - invoice_processor - INFO - Escaneando hilo 191718e624c5ccd3 para buscar el correo original con el ZIP...
+2026-01-30 21:00:03,213 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 191718e624c5ccd3) de: efacturahomecenter@homecenter.co el 2024-08-20
+2026-01-30 21:00:03,768 - invoice_processor - INFO - Factura identificada: 2024-08-20 SODIMAC COLOMBIA SA
+2026-01-30 21:00:03,769 - invoice_processor - INFO - Correo 191718e624c5ccd3 procesado exitosamente. Archivos: 1
+2026-01-30 21:00:04,812 - invoice_processor - INFO - Procesando correo de: "siesafe@siesa.com" <siesafe@siesa.com> (ID: 191719d42f25b688)
+2026-01-30 21:00:05,036 - invoice_processor - INFO - Escaneando hilo 191719d42f25b688 para buscar el correo original con el ZIP...
+2026-01-30 21:00:05,597 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 191719d42f25b688) de: "siesafe@siesa.com" <siesafe@siesa.com> el 2024-08-20
+2026-01-30 21:00:06,094 - invoice_processor - INFO - Factura identificada: 2024-08-20 AGROFACIL SAS
+2026-01-30 21:00:06,140 - invoice_processor - INFO - Correo 191719d42f25b688 procesado exitosamente. Archivos: 1
+2026-01-30 21:00:07,188 - invoice_processor - INFO - Procesando correo de: "siesafe@siesa.com" <siesafe@siesa.com> (ID: 191858f0c06b0ebe)
+2026-01-30 21:00:07,412 - invoice_processor - INFO - Escaneando hilo 191858f0c06b0ebe para buscar el correo original con el ZIP...
+2026-01-30 21:00:07,777 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 191858f0c06b0ebe) de: "siesafe@siesa.com" <siesafe@siesa.com> el 2024-08-24
+2026-01-30 21:00:08,310 - invoice_processor - INFO - Factura identificada: 2024-08-24 COOPERATIVA COLANTA
+2026-01-30 21:00:08,312 - invoice_processor - INFO - Correo 191858f0c06b0ebe procesado exitosamente. Archivos: 1
+2026-01-30 21:00:09,354 - invoice_processor - INFO - Procesando correo de: "siesafe@siesa.com" <siesafe@siesa.com> (ID: 191859fc6a88cbb8)
+2026-01-30 21:00:09,589 - invoice_processor - INFO - Escaneando hilo 191858f0c06b0ebe para buscar el correo original con el ZIP...
+2026-01-30 21:00:10,008 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 191858f0c06b0ebe) de: "siesafe@siesa.com" <siesafe@siesa.com> el 2024-08-24
+2026-01-30 21:00:10,414 - invoice_processor - INFO - Factura identificada: 2024-08-24 COOPERATIVA COLANTA
+2026-01-30 21:00:10,416 - invoice_processor - INFO - La factura 2024-08-24 COOPERATIVA COLANTA ya existe. Saltando.
+2026-01-30 21:00:10,416 - invoice_processor - INFO - Correo 191859fc6a88cbb8 procesado exitosamente. Archivos: 1
+2026-01-30 21:00:11,462 - invoice_processor - INFO - Procesando correo de: "SOCIEDAD COLOMBIANA DE ORQUIDEOLOGÍA" <facturacion@siigo.com> (ID: 19193fca26f04d72)
+2026-01-30 21:00:11,701 - invoice_processor - INFO - Escaneando hilo 19193fca26f04d72 para buscar el correo original con el ZIP...
+2026-01-30 21:00:11,948 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 19193fca26f04d72) de: "SOCIEDAD COLOMBIANA DE ORQUIDEOLOGÍA" <facturacion@siigo.com> el 2024-08-27
+2026-01-30 21:00:12,479 - invoice_processor - INFO - Factura identificada: 2024-08-27 SOCIEDAD COLOMBIANA DE ORQUIDE
+2026-01-30 21:00:12,481 - invoice_processor - INFO - Correo 19193fca26f04d72 procesado exitosamente. Archivos: 1
+2026-01-30 21:00:13,509 - invoice_processor - INFO - Procesando correo de: factura-electronica@clauserp.com (ID: 1919aa7df5163585)
+2026-01-30 21:00:13,811 - invoice_processor - INFO - Escaneando hilo 1919aa7df5163585 para buscar el correo original con el ZIP...
+2026-01-30 21:00:14,040 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1919aa7df5163585) de: factura-electronica@clauserp.com el 2024-08-28
+2026-01-30 21:00:14,333 - invoice_processor - INFO - Factura identificada: 2024-08-28 MATERIALES MAESTRO COLOMBIA SAS
+2026-01-30 21:00:14,334 - invoice_processor - INFO - Correo 1919aa7df5163585 procesado exitosamente. Archivos: 1
+2026-01-30 21:00:15,380 - invoice_processor - INFO - Procesando correo de: factura-electronica@clauserp.com (ID: 191c31c8851a57b3)
+2026-01-30 21:00:15,607 - invoice_processor - INFO - Escaneando hilo 191c31c8851a57b3 para buscar el correo original con el ZIP...
+2026-01-30 21:00:15,848 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 191c31c8851a57b3) de: factura-electronica@clauserp.com el 2024-09-05
+2026-01-30 21:00:16,220 - invoice_processor - INFO - Factura identificada: 2024-09-05 MATERIALES MAESTRO COLOMBIA SAS
+2026-01-30 21:00:16,223 - invoice_processor - INFO - Correo 191c31c8851a57b3 procesado exitosamente. Archivos: 1
+2026-01-30 21:00:17,294 - invoice_processor - INFO - Procesando correo de: facturae@documentox.com (ID: 191c3e9fbaccfd82)
+2026-01-30 21:00:17,525 - invoice_processor - INFO - Escaneando hilo 191c3e9fbaccfd82 para buscar el correo original con el ZIP...
+2026-01-30 21:00:17,776 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 191c3e9fbaccfd82) de: facturae@documentox.com el 2024-09-05
+2026-01-30 21:00:18,337 - invoice_processor - INFO - Factura identificada: 2024-09-05 CAPIRO VIVERO SAS
+2026-01-30 21:00:18,339 - invoice_processor - INFO - Correo 191c3e9fbaccfd82 procesado exitosamente. Archivos: 1
+2026-01-30 21:00:19,483 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 191c93e76bb3f7f7)
+2026-01-30 21:00:19,727 - invoice_processor - INFO - Escaneando hilo 191c93e76bb3f7f7 para buscar el correo original con el ZIP...
+2026-01-30 21:00:19,984 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 191c93e76bb3f7f7) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-09-06
+2026-01-30 21:00:20,260 - invoice_processor - INFO - Factura identificada: 2024-09-06 F2X SAS
+2026-01-30 21:00:20,261 - invoice_processor - INFO - Correo 191c93e76bb3f7f7 procesado exitosamente. Archivos: 1
+2026-01-30 21:00:21,270 - invoice_processor - INFO - Procesando correo de: facturae@documentox.com (ID: 191dcbf288df3c1a)
+2026-01-30 21:00:21,492 - invoice_processor - INFO - Escaneando hilo 191dcbf288df3c1a para buscar el correo original con el ZIP...
+2026-01-30 21:00:21,739 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 191dcbf288df3c1a) de: facturae@documentox.com el 2024-09-10
+2026-01-30 21:00:22,048 - invoice_processor - INFO - Factura identificada: 2024-09-10 INVERSIONES RAMEJ SAS
+2026-01-30 21:00:22,048 - invoice_processor - INFO - Correo 191dcbf288df3c1a procesado exitosamente. Archivos: 1
+2026-01-30 21:00:23,088 - invoice_processor - INFO - Procesando correo de: factura-electronica@clauserp.com (ID: 191e14f75cfd8cd9)
+2026-01-30 21:00:23,308 - invoice_processor - INFO - Escaneando hilo 191e14f75cfd8cd9 para buscar el correo original con el ZIP...
+2026-01-30 21:00:23,534 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 191e14f75cfd8cd9) de: factura-electronica@clauserp.com el 2024-09-11
+2026-01-30 21:00:23,969 - invoice_processor - INFO - Factura identificada: 2024-09-11 MATERIALES MAESTRO COLOMBIA SAS
+2026-01-30 21:00:23,971 - invoice_processor - INFO - Correo 191e14f75cfd8cd9 procesado exitosamente. Archivos: 1
+2026-01-30 21:00:25,166 - invoice_processor - INFO - Procesando correo de: factura-electronica@clauserp.com (ID: 191e153ef33a5a44)
+2026-01-30 21:00:25,402 - invoice_processor - INFO - Escaneando hilo 191e153ef33a5a44 para buscar el correo original con el ZIP...
+2026-01-30 21:00:25,630 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 191e153ef33a5a44) de: factura-electronica@clauserp.com el 2024-09-11
+2026-01-30 21:00:25,917 - invoice_processor - INFO - Factura identificada: 2024-09-11 MATERIALES MAESTRO COLOMBIA SAS
+2026-01-30 21:00:25,917 - invoice_processor - INFO - La factura 2024-09-11 MATERIALES MAESTRO COLOMBIA SAS ya existe. Saltando.
+2026-01-30 21:00:25,918 - invoice_processor - INFO - Correo 191e153ef33a5a44 procesado exitosamente. Archivos: 1
+2026-01-30 21:00:26,956 - invoice_processor - INFO - Procesando correo de: factura-electronica@clauserp.com (ID: 1920b3a9d5f3a20e)
+2026-01-30 21:00:27,189 - invoice_processor - INFO - Escaneando hilo 1920b3a9d5f3a20e para buscar el correo original con el ZIP...
+2026-01-30 21:00:27,425 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1920b3a9d5f3a20e) de: factura-electronica@clauserp.com el 2024-09-19
+2026-01-30 21:00:27,986 - invoice_processor - INFO - Factura identificada: 2024-09-19 MATERIALES MAESTRO COLOMBIA SAS
+2026-01-30 21:00:27,987 - invoice_processor - INFO - Correo 1920b3a9d5f3a20e procesado exitosamente. Archivos: 1
+2026-01-30 21:00:52,081 - api - INFO - Petición GET /api/v1/invoices/stats - Filtros: None a None
+2026-01-30 21:03:40,853 - api - INFO - Petición GET /api/v1/invoices/stats - Filtros: None a None
+2026-01-30 21:03:40,858 - api - INFO - Petición GET /api/v1/invoices/stats - Filtros: None a None
+2026-01-30 21:03:49,360 - api - INFO - Petición GET /api/v1/invoices/process-stream - Dir: /app/data/Facturas, Límite: 50, Query: None
+2026-01-30 21:03:49,361 - gmail_service - INFO - Inicializando servicio de Gmail...
+2026-01-30 21:03:49,361 - gmail_service - INFO - Cargando token desde F:\1. Cloud\4. AI\1. Antigravity\Facturas\backend\token.json
+2026-01-30 21:03:49,372 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2026-01-30 21:03:49,374 - invoice_processor - INFO - Iniciando procesamiento de facturas en: /app/data/Facturas
+2026-01-30 21:03:51,232 - gmail_service - INFO - Búsqueda finalizada. Query: '(in:inbox OR category:purchases) -label:Factura_Procesada'. Encontrados: 348
+2026-01-30 21:03:51,232 - invoice_processor - INFO - Se encontraron 348 correos sin procesar.
+2026-01-30 21:03:51,233 - invoice_processor - INFO - Aplicando límite de 50 correos.
+2026-01-30 21:03:51,233 - invoice_processor - INFO - Final: Se procesarán 50 correos en este lote.
+2026-01-30 21:03:51,464 - invoice_processor - INFO - Procesando correo de: facturae@documentox.com (ID: 1920b46d3640293a)
+2026-01-30 21:03:51,693 - invoice_processor - INFO - Escaneando hilo 1920b46d3640293a para buscar el correo original con el ZIP...
+2026-01-30 21:03:51,930 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1920b46d3640293a) de: facturae@documentox.com el 2024-09-19
+2026-01-30 21:03:52,216 - invoice_processor - INFO - Factura identificada: 2024-09-19 CAPIRO VIVERO SAS
+2026-01-30 21:03:52,217 - invoice_processor - INFO - Correo 1920b46d3640293a procesado exitosamente. Archivos: 1
+2026-01-30 21:03:53,242 - invoice_processor - INFO - Procesando correo de: facturactscolombia@cen.biz (ID: 19225c86eb5ea47b)
+2026-01-30 21:03:53,486 - invoice_processor - INFO - Escaneando hilo 19225c86eb5ea47b para buscar el correo original con el ZIP...
+2026-01-30 21:03:54,144 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 19225c86eb5ea47b) de: facturactscolombia@cen.biz el 2024-09-24
+2026-01-30 21:03:54,437 - invoice_processor - INFO - Factura identificada: 2024-09-24 PRICESMART COLOMBIA SAS
+2026-01-30 21:03:54,438 - invoice_processor - INFO - Correo 19225c86eb5ea47b procesado exitosamente. Archivos: 1
+2026-01-30 21:03:55,481 - invoice_processor - INFO - Procesando correo de: facturae@documentox.com (ID: 1922a6b93bfcb4f0)
+2026-01-30 21:03:55,739 - invoice_processor - INFO - Escaneando hilo 1922a6b93bfcb4f0 para buscar el correo original con el ZIP...
+2026-01-30 21:03:55,965 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1922a6b93bfcb4f0) de: facturae@documentox.com el 2024-09-25
+2026-01-30 21:03:56,248 - invoice_processor - INFO - Factura identificada: 2024-09-25 CAPIRO VIVERO SAS
+2026-01-30 21:03:56,249 - invoice_processor - INFO - Correo 1922a6b93bfcb4f0 procesado exitosamente. Archivos: 1
+2026-01-30 21:03:57,292 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 19248ee87c14114b)
+2026-01-30 21:03:57,524 - invoice_processor - INFO - Escaneando hilo 19248ee87c14114b para buscar el correo original con el ZIP...
+2026-01-30 21:03:57,768 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 19248ee87c14114b) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-10-01
+2026-01-30 21:03:58,201 - invoice_processor - INFO - Factura identificada: 2024-10-01 F2X SAS
+2026-01-30 21:03:58,203 - invoice_processor - INFO - Correo 19248ee87c14114b procesado exitosamente. Archivos: 1
+2026-01-30 21:03:59,225 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 19249df0983bd0cd)
+2026-01-30 21:03:59,450 - invoice_processor - INFO - Escaneando hilo 19249df0983bd0cd para buscar el correo original con el ZIP...
+2026-01-30 21:03:59,702 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 19249df0983bd0cd) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-10-01
+2026-01-30 21:04:00,136 - invoice_processor - INFO - Factura identificada: 2024-10-01 F2X SAS
+2026-01-30 21:04:00,137 - invoice_processor - INFO - La factura 2024-10-01 F2X SAS ya existe. Saltando.
+2026-01-30 21:04:00,138 - invoice_processor - INFO - Correo 19249df0983bd0cd procesado exitosamente. Archivos: 1
+2026-01-30 21:04:01,147 - invoice_processor - INFO - Procesando correo de: facturactscolombia@cen.biz (ID: 1924a20221aca92d)
+2026-01-30 21:04:01,373 - invoice_processor - INFO - Escaneando hilo 1924a20221aca92d para buscar el correo original con el ZIP...
+2026-01-30 21:04:01,691 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1924a20221aca92d) de: facturactscolombia@cen.biz el 2024-10-01
+2026-01-30 21:04:01,972 - invoice_processor - INFO - Factura identificada: 2024-10-01 PRICESMART COLOMBIA SAS
+2026-01-30 21:04:01,974 - invoice_processor - INFO - Correo 1924a20221aca92d procesado exitosamente. Archivos: 1
+2026-01-30 21:04:03,003 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 192549d35dc6cf12)
+2026-01-30 21:04:03,244 - invoice_processor - INFO - Escaneando hilo 192549d35dc6cf12 para buscar el correo original con el ZIP...
+2026-01-30 21:04:03,490 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 192549d35dc6cf12) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-10-03
+2026-01-30 21:04:03,918 - invoice_processor - INFO - Factura identificada: 2024-10-02 F2X SAS
+2026-01-30 21:04:03,920 - invoice_processor - INFO - Correo 192549d35dc6cf12 procesado exitosamente. Archivos: 1
+2026-01-30 21:04:04,958 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 1926cc882b687834)
+2026-01-30 21:04:05,199 - invoice_processor - INFO - Escaneando hilo 1926cc882b687834 para buscar el correo original con el ZIP...
+2026-01-30 21:04:05,431 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1926cc882b687834) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-10-08
+2026-01-30 21:04:05,858 - invoice_processor - INFO - Factura identificada: 2024-10-08 F2X SAS
+2026-01-30 21:04:05,860 - invoice_processor - INFO - Correo 1926cc882b687834 procesado exitosamente. Archivos: 1
+2026-01-30 21:04:06,881 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 1926e108962b68ae)
+2026-01-30 21:04:07,110 - invoice_processor - INFO - Escaneando hilo 1926e108962b68ae para buscar el correo original con el ZIP...
+2026-01-30 21:04:07,343 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1926e108962b68ae) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-10-08
+2026-01-30 21:04:07,761 - invoice_processor - INFO - Factura identificada: 2024-10-08 F2X SAS
+2026-01-30 21:04:07,761 - invoice_processor - INFO - La factura 2024-10-08 F2X SAS ya existe. Saltando.
+2026-01-30 21:04:07,761 - invoice_processor - INFO - Correo 1926e108962b68ae procesado exitosamente. Archivos: 1
+2026-01-30 21:04:08,769 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 1926e2388b7df853)
+2026-01-30 21:04:09,002 - invoice_processor - INFO - Escaneando hilo 1926e2388b7df853 para buscar el correo original con el ZIP...
+2026-01-30 21:04:09,244 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1926e2388b7df853) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-10-08
+2026-01-30 21:04:09,656 - invoice_processor - INFO - Factura identificada: 2024-10-08 F2X SAS
+2026-01-30 21:04:09,656 - invoice_processor - INFO - La factura 2024-10-08 F2X SAS ya existe. Saltando.
+2026-01-30 21:04:09,656 - invoice_processor - INFO - Correo 1926e2388b7df853 procesado exitosamente. Archivos: 1
+2026-01-30 21:04:10,671 - invoice_processor - INFO - Procesando correo de: factura-electronica@clauserp.com (ID: 19277655cf2c8ed8)
+2026-01-30 21:04:10,896 - invoice_processor - INFO - Escaneando hilo 19277655cf2c8ed8 para buscar el correo original con el ZIP...
+2026-01-30 21:04:11,122 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 19277655cf2c8ed8) de: factura-electronica@clauserp.com el 2024-10-10
+2026-01-30 21:04:11,579 - invoice_processor - INFO - Factura identificada: 2024-10-10 MATERIALES MAESTRO COLOMBIA SAS
+2026-01-30 21:04:11,580 - invoice_processor - INFO - Correo 19277655cf2c8ed8 procesado exitosamente. Archivos: 1
+2026-01-30 21:04:12,585 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 192a2bb4b9f87bfd)
+2026-01-30 21:04:12,817 - invoice_processor - INFO - Escaneando hilo 192a2bb4b9f87bfd para buscar el correo original con el ZIP...
+2026-01-30 21:04:13,046 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 192a2bb4b9f87bfd) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-10-19
+2026-01-30 21:04:13,299 - invoice_processor - INFO - Factura identificada: 2024-10-18 F2X SAS
+2026-01-30 21:04:13,302 - invoice_processor - INFO - Correo 192a2bb4b9f87bfd procesado exitosamente. Archivos: 1
+2026-01-30 21:04:14,325 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 192a326df1d19aaf)
+2026-01-30 21:04:14,568 - invoice_processor - INFO - Escaneando hilo 192a326df1d19aaf para buscar el correo original con el ZIP...
+2026-01-30 21:04:14,808 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 192a326df1d19aaf) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-10-19
+2026-01-30 21:04:15,261 - invoice_processor - INFO - Factura identificada: 2024-10-18 F2X SAS
+2026-01-30 21:04:15,261 - invoice_processor - INFO - La factura 2024-10-18 F2X SAS ya existe. Saltando.
+2026-01-30 21:04:15,261 - invoice_processor - INFO - Correo 192a326df1d19aaf procesado exitosamente. Archivos: 1
+2026-01-30 21:04:16,263 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 192ba453daa376fe)
+2026-01-30 21:04:16,498 - invoice_processor - INFO - Escaneando hilo 192ba453daa376fe para buscar el correo original con el ZIP...
+2026-01-30 21:04:16,739 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 192ba453daa376fe) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-10-23
+2026-01-30 21:04:17,190 - invoice_processor - INFO - Factura identificada: 2024-10-23 F2X SAS
+2026-01-30 21:04:17,191 - invoice_processor - INFO - Correo 192ba453daa376fe procesado exitosamente. Archivos: 1
+2026-01-30 21:04:18,205 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 192bb8b14173e81c)
+2026-01-30 21:04:18,436 - invoice_processor - INFO - Escaneando hilo 192bb8b14173e81c para buscar el correo original con el ZIP...
+2026-01-30 21:04:18,663 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 192bb8b14173e81c) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-10-23
+2026-01-30 21:04:19,074 - invoice_processor - INFO - Factura identificada: 2024-10-23 F2X SAS
+2026-01-30 21:04:19,074 - invoice_processor - INFO - La factura 2024-10-23 F2X SAS ya existe. Saltando.
+2026-01-30 21:04:19,074 - invoice_processor - INFO - Correo 192bb8b14173e81c procesado exitosamente. Archivos: 1
+2026-01-30 21:04:20,068 - invoice_processor - INFO - Procesando correo de: facturactscolombia@cen.biz (ID: 192bba21c020a1ad)
+2026-01-30 21:04:20,295 - invoice_processor - INFO - Escaneando hilo 192bba21c020a1ad para buscar el correo original con el ZIP...
+2026-01-30 21:04:20,698 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 192bba21c020a1ad) de: facturactscolombia@cen.biz el 2024-10-23
+2026-01-30 21:04:21,083 - invoice_processor - INFO - Factura identificada: 2024-10-23 PRICESMART COLOMBIA SAS
+2026-01-30 21:04:21,086 - invoice_processor - INFO - Correo 192bba21c020a1ad procesado exitosamente. Archivos: 1
+2026-01-30 21:04:22,112 - invoice_processor - INFO - Procesando correo de: "DOCTOS ELECTRÓNICOS AIS-FACTURA" <doctoselectronicos_ais@altintegralesdesoftware.com> (ID: 192c46ac78912fc6)
+2026-01-30 21:04:22,349 - invoice_processor - INFO - Escaneando hilo 192c46ac78912fc6 para buscar el correo original con el ZIP...
+2026-01-30 21:04:22,587 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 192c46ac78912fc6) de: "DOCTOS ELECTRÓNICOS AIS-FACTURA" <doctoselectronicos_ais@altintegralesdesoftware.com> el 2024-10-25
+2026-01-30 21:04:23,046 - invoice_processor - INFO - Factura identificada: 2024-10-25 Vivero el buen sembrador
+2026-01-30 21:04:23,048 - invoice_processor - INFO - Correo 192c46ac78912fc6 procesado exitosamente. Archivos: 1
+2026-01-30 21:04:24,073 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 192cb4ccf2d5e478)
+2026-01-30 21:04:24,303 - invoice_processor - INFO - Escaneando hilo 192cb4ccf2d5e478 para buscar el correo original con el ZIP...
+2026-01-30 21:04:24,540 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 192cb4ccf2d5e478) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-10-27
+2026-01-30 21:04:24,896 - invoice_processor - INFO - Factura identificada: 2024-10-26 F2X SAS
+2026-01-30 21:04:24,897 - invoice_processor - INFO - Correo 192cb4ccf2d5e478 procesado exitosamente. Archivos: 1
+2026-01-30 21:04:25,905 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 192cc02ef923c735)
+2026-01-30 21:04:26,154 - invoice_processor - INFO - Escaneando hilo 192cc02ef923c735 para buscar el correo original con el ZIP...
+2026-01-30 21:04:26,384 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 192cc02ef923c735) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-10-27
+2026-01-30 21:04:26,684 - invoice_processor - INFO - Factura identificada: 2024-10-26 F2X SAS
+2026-01-30 21:04:26,685 - invoice_processor - INFO - La factura 2024-10-26 F2X SAS ya existe. Saltando.
+2026-01-30 21:04:26,685 - invoice_processor - INFO - Correo 192cc02ef923c735 procesado exitosamente. Archivos: 1
+2026-01-30 21:04:27,732 - invoice_processor - INFO - Procesando correo de: facturae@documentox.com (ID: 192de0b844eb8115)
+2026-01-30 21:04:27,963 - invoice_processor - INFO - Escaneando hilo 192de0b844eb8115 para buscar el correo original con el ZIP...
+2026-01-30 21:04:28,188 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 192de0b844eb8115) de: facturae@documentox.com el 2024-10-30
+2026-01-30 21:04:28,682 - invoice_processor - INFO - Factura identificada: 2024-10-30 CAPIRO VIVERO SAS
+2026-01-30 21:04:28,684 - invoice_processor - INFO - Correo 192de0b844eb8115 procesado exitosamente. Archivos: 1
+2026-01-30 21:04:29,703 - invoice_processor - INFO - Procesando correo de: factura-electronica@clauserp.com (ID: 192e30cad24fc033)
+2026-01-30 21:04:29,939 - invoice_processor - INFO - Escaneando hilo 192e30cad24fc033 para buscar el correo original con el ZIP...
+2026-01-30 21:04:30,175 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 192e30cad24fc033) de: factura-electronica@clauserp.com el 2024-10-31
+2026-01-30 21:04:30,435 - invoice_processor - INFO - Factura identificada: 2024-10-31 MATERIALES MAESTRO COLOMBIA SAS
+2026-01-30 21:04:30,436 - invoice_processor - INFO - Correo 192e30cad24fc033 procesado exitosamente. Archivos: 1
+2026-01-30 21:04:31,446 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 192fccacf27df17f)
+2026-01-30 21:04:31,690 - invoice_processor - INFO - Escaneando hilo 192fccacf27df17f para buscar el correo original con el ZIP...
+2026-01-30 21:04:31,923 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 192fccacf27df17f) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-11-05
+2026-01-30 21:04:32,202 - invoice_processor - INFO - Factura identificada: 2024-11-05 F2X SAS
+2026-01-30 21:04:32,203 - invoice_processor - INFO - Correo 192fccacf27df17f procesado exitosamente. Archivos: 1
+2026-01-30 21:04:33,209 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 192fda7290511589)
+2026-01-30 21:04:33,427 - invoice_processor - INFO - Escaneando hilo 192fda7290511589 para buscar el correo original con el ZIP...
+2026-01-30 21:04:33,652 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 192fda7290511589) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-11-05
+2026-01-30 21:04:33,916 - invoice_processor - INFO - Factura identificada: 2024-11-05 F2X SAS
+2026-01-30 21:04:33,916 - invoice_processor - INFO - La factura 2024-11-05 F2X SAS ya existe. Saltando.
+2026-01-30 21:04:33,916 - invoice_processor - INFO - Correo 192fda7290511589 procesado exitosamente. Archivos: 1
+2026-01-30 21:04:34,906 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 19303dcf02ee366f)
+2026-01-30 21:04:35,137 - invoice_processor - INFO - Escaneando hilo 19303dcf02ee366f para buscar el correo original con el ZIP...
+2026-01-30 21:04:35,373 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 19303dcf02ee366f) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-11-06
+2026-01-30 21:04:35,805 - invoice_processor - INFO - Factura identificada: 2024-11-06 F2X SAS
+2026-01-30 21:04:35,806 - invoice_processor - INFO - Correo 19303dcf02ee366f procesado exitosamente. Archivos: 1
+2026-01-30 21:04:36,819 - invoice_processor - INFO - Procesando correo de: Plantas Del Tambo Sas <no-responder@worldoffice.com.co> (ID: 1930d5f4ee3548dd)
+2026-01-30 21:04:37,047 - invoice_processor - INFO - Escaneando hilo 1930d5f4ee3548dd para buscar el correo original con el ZIP...
+2026-01-30 21:04:37,300 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1930d5f4ee3548dd) de: Plantas Del Tambo Sas <no-responder@worldoffice.com.co> el 2024-11-08
+2026-01-30 21:04:37,631 - invoice_processor - INFO - Factura identificada: 2024-11-08 PLANTAS DEL TAMBO SAS
+2026-01-30 21:04:37,633 - invoice_processor - INFO - Correo 1930d5f4ee3548dd procesado exitosamente. Archivos: 1
+2026-01-30 21:04:38,675 - invoice_processor - INFO - Procesando correo de: "siesafe@siesa.com" <siesafe@siesa.com> (ID: 1932c5ce3ba14daa)
+2026-01-30 21:04:38,899 - invoice_processor - INFO - Escaneando hilo 1932c5ce3ba14daa para buscar el correo original con el ZIP...
+2026-01-30 21:04:39,174 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1932c5ce3ba14daa) de: "siesafe@siesa.com" <siesafe@siesa.com> el 2024-11-14
+2026-01-30 21:04:39,448 - invoice_processor - INFO - Factura identificada: 2024-11-14 COOPERATIVA COLANTA
+2026-01-30 21:04:39,448 - invoice_processor - INFO - Correo 1932c5ce3ba14daa procesado exitosamente. Archivos: 1
+2026-01-30 21:04:40,466 - invoice_processor - INFO - Procesando correo de: "Plataforma Digital S.A.S." <facturacion@siigo.com> (ID: 1932cc359825e541)
+2026-01-30 21:04:40,702 - invoice_processor - INFO - Escaneando hilo 1932cc359825e541 para buscar el correo original con el ZIP...
+2026-01-30 21:04:40,935 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1932cc359825e541) de: "Plataforma Digital S.A.S." <facturacion@siigo.com> el 2024-11-14
+2026-01-30 21:04:41,257 - invoice_processor - INFO - Factura identificada: 2024-11-14 Plataforma  Digital SAS
+2026-01-30 21:04:41,258 - invoice_processor - INFO - Correo 1932cc359825e541 procesado exitosamente. Archivos: 1
+2026-01-30 21:04:42,270 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 193454ceceac4a17)
+2026-01-30 21:04:42,512 - invoice_processor - INFO - Escaneando hilo 193454ceceac4a17 para buscar el correo original con el ZIP...
+2026-01-30 21:04:42,744 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 193454ceceac4a17) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-11-19
+2026-01-30 21:04:42,984 - invoice_processor - INFO - Factura identificada: 2024-11-19 F2X SAS
+2026-01-30 21:04:42,985 - invoice_processor - INFO - Correo 193454ceceac4a17 procesado exitosamente. Archivos: 1
+2026-01-30 21:04:44,043 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 193463f00e232126)
+2026-01-30 21:04:44,269 - invoice_processor - INFO - Escaneando hilo 193463f00e232126 para buscar el correo original con el ZIP...
+2026-01-30 21:04:44,506 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 193463f00e232126) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-11-19
+2026-01-30 21:04:44,946 - invoice_processor - INFO - Factura identificada: 2024-11-19 F2X SAS
+2026-01-30 21:04:44,946 - invoice_processor - INFO - La factura 2024-11-19 F2X SAS ya existe. Saltando.
+2026-01-30 21:04:44,946 - invoice_processor - INFO - Correo 193463f00e232126 procesado exitosamente. Archivos: 1
+2026-01-30 21:04:45,951 - invoice_processor - INFO - Procesando correo de: facturactscolombia@cen.biz (ID: 1934677b60019d0b)
+2026-01-30 21:04:46,176 - invoice_processor - INFO - Escaneando hilo 1934677b60019d0b para buscar el correo original con el ZIP...
+2026-01-30 21:04:46,462 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1934677b60019d0b) de: facturactscolombia@cen.biz el 2024-11-19
+2026-01-30 21:04:46,722 - invoice_processor - INFO - Factura identificada: 2024-11-19 PRICESMART COLOMBIA SAS
+2026-01-30 21:04:46,725 - invoice_processor - INFO - Correo 1934677b60019d0b procesado exitosamente. Archivos: 1
+2026-01-30 21:04:47,794 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 193467a1c6b8debb)
+2026-01-30 21:04:48,034 - invoice_processor - INFO - Escaneando hilo 193467a1c6b8debb para buscar el correo original con el ZIP...
+2026-01-30 21:04:48,273 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 193467a1c6b8debb) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-11-19
+2026-01-30 21:04:48,678 - invoice_processor - INFO - Factura identificada: 2024-11-19 F2X SAS
+2026-01-30 21:04:48,678 - invoice_processor - INFO - La factura 2024-11-19 F2X SAS ya existe. Saltando.
+2026-01-30 21:04:48,679 - invoice_processor - INFO - Correo 193467a1c6b8debb procesado exitosamente. Archivos: 1
+2026-01-30 21:04:49,683 - invoice_processor - INFO - Procesando correo de: "DOCTOS ELECTRÓNICOS AIS-FACTURA" <doctoselectronicos_ais@altintegralesdesoftware.com> (ID: 1934a902541ed3a3)
+2026-01-30 21:04:49,910 - invoice_processor - INFO - Escaneando hilo 1934a902541ed3a3 para buscar el correo original con el ZIP...
+2026-01-30 21:04:50,140 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1934a902541ed3a3) de: "DOCTOS ELECTRÓNICOS AIS-FACTURA" <doctoselectronicos_ais@altintegralesdesoftware.com> el 2024-11-20
+2026-01-30 21:04:50,932 - invoice_processor - INFO - Factura identificada: 2024-11-20 Vivero el buen sembrador
+2026-01-30 21:04:50,934 - invoice_processor - INFO - Correo 1934a902541ed3a3 procesado exitosamente. Archivos: 1
+2026-01-30 21:04:51,948 - invoice_processor - INFO - Procesando correo de: notification@kiai.co (ID: 19359ffd8dbf909f)
+2026-01-30 21:04:52,194 - invoice_processor - INFO - Escaneando hilo 19359ffd8dbf909f para buscar el correo original con el ZIP...
+2026-01-30 21:04:52,462 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 19359ffd8dbf909f) de: notification@kiai.co el 2024-11-23
+2026-01-30 21:04:52,723 - invoice_processor - INFO - Factura identificada: 2024-11-23 TRANSPORTES RAPIDO OCHOA SA
+2026-01-30 21:04:52,724 - invoice_processor - INFO - Correo 19359ffd8dbf909f procesado exitosamente. Archivos: 1
+2026-01-30 21:04:53,739 - invoice_processor - INFO - Procesando correo de: "siesafe@siesa.com" <siesafe@siesa.com> (ID: 1936ffd666fb1fba)
+2026-01-30 21:04:53,974 - invoice_processor - INFO - Escaneando hilo 1936ffd666fb1fba para buscar el correo original con el ZIP...
+2026-01-30 21:04:54,348 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1936ffd666fb1fba) de: "siesafe@siesa.com" <siesafe@siesa.com> el 2024-11-27
+2026-01-30 21:04:54,777 - invoice_processor - INFO - Factura identificada: 2024-11-27 COOPERATIVA COLANTA
+2026-01-30 21:04:54,778 - invoice_processor - INFO - Correo 1936ffd666fb1fba procesado exitosamente. Archivos: 1
+2026-01-30 21:04:55,779 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 19373eb05ce7d579)
+2026-01-30 21:04:56,020 - invoice_processor - INFO - Escaneando hilo 19373eb05ce7d579 para buscar el correo original con el ZIP...
+2026-01-30 21:04:56,256 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 19373eb05ce7d579) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-11-28
+2026-01-30 21:04:56,669 - invoice_processor - INFO - Factura identificada: 2024-11-28 F2X SAS
+2026-01-30 21:04:56,672 - invoice_processor - INFO - Correo 19373eb05ce7d579 procesado exitosamente. Archivos: 1
+2026-01-30 21:04:57,747 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 19375b072a00fe0f)
+2026-01-30 21:04:57,966 - invoice_processor - INFO - Escaneando hilo 19375b072a00fe0f para buscar el correo original con el ZIP...
+2026-01-30 21:04:58,198 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 19375b072a00fe0f) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-11-29
+2026-01-30 21:04:58,628 - invoice_processor - INFO - Factura identificada: 2024-11-28 F2X SAS
+2026-01-30 21:04:58,629 - invoice_processor - INFO - La factura 2024-11-28 F2X SAS ya existe. Saltando.
+2026-01-30 21:04:58,629 - invoice_processor - INFO - Correo 19375b072a00fe0f procesado exitosamente. Archivos: 1
+2026-01-30 21:04:59,627 - invoice_processor - INFO - Procesando correo de: "siesafe@siesa.com" <siesafe@siesa.com> (ID: 1937f1dfdc2bb6a1)
+2026-01-30 21:04:59,866 - invoice_processor - INFO - Escaneando hilo 1937f1dfdc2bb6a1 para buscar el correo original con el ZIP...
+2026-01-30 21:05:00,166 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1937f1dfdc2bb6a1) de: "siesafe@siesa.com" <siesafe@siesa.com> el 2024-11-30
+2026-01-30 21:05:00,482 - invoice_processor - INFO - Factura identificada: 2024-11-30 COOPERATIVA COLANTA
+2026-01-30 21:05:00,483 - invoice_processor - INFO - Correo 1937f1dfdc2bb6a1 procesado exitosamente. Archivos: 1
+2026-01-30 21:05:01,505 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 1938d94a89020114)
+2026-01-30 21:05:01,753 - invoice_processor - INFO - Escaneando hilo 1938d94a89020114 para buscar el correo original con el ZIP...
+2026-01-30 21:05:01,983 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1938d94a89020114) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-12-03
+2026-01-30 21:05:02,255 - invoice_processor - INFO - Factura identificada: 2024-12-03 F2X SAS
+2026-01-30 21:05:02,256 - invoice_processor - INFO - Correo 1938d94a89020114 procesado exitosamente. Archivos: 1
+2026-01-30 21:05:03,279 - invoice_processor - INFO - Procesando correo de: facturactscolombia@cen.biz (ID: 1938e5d4599b14fc)
+2026-01-30 21:05:03,513 - invoice_processor - INFO - Escaneando hilo 1938e5d4599b14fc para buscar el correo original con el ZIP...
+2026-01-30 21:05:03,834 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1938e5d4599b14fc) de: facturactscolombia@cen.biz el 2024-12-03
+2026-01-30 21:05:04,281 - invoice_processor - INFO - Factura identificada: 2024-12-03 PRICESMART COLOMBIA SAS
+2026-01-30 21:05:04,283 - invoice_processor - INFO - Correo 1938e5d4599b14fc procesado exitosamente. Archivos: 1
+2026-01-30 21:05:05,290 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 1938e6be063271ec)
+2026-01-30 21:05:05,511 - invoice_processor - INFO - Escaneando hilo 1938e6be063271ec para buscar el correo original con el ZIP...
+2026-01-30 21:05:05,734 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 1938e6be063271ec) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-12-03
+2026-01-30 21:05:06,167 - invoice_processor - INFO - Factura identificada: 2024-12-03 F2X SAS
+2026-01-30 21:05:06,168 - invoice_processor - INFO - La factura 2024-12-03 F2X SAS ya existe. Saltando.
+2026-01-30 21:05:06,168 - invoice_processor - INFO - Correo 1938e6be063271ec procesado exitosamente. Archivos: 1
+2026-01-30 21:05:07,208 - invoice_processor - INFO - Procesando correo de: factura-electronica@clauserp.com (ID: 19397d2889ed8fb2)
+2026-01-30 21:05:07,444 - invoice_processor - INFO - Escaneando hilo 19397d2889ed8fb2 para buscar el correo original con el ZIP...
+2026-01-30 21:05:07,669 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 19397d2889ed8fb2) de: factura-electronica@clauserp.com el 2024-12-05
+2026-01-30 21:05:08,074 - invoice_processor - INFO - Factura identificada: 2024-12-05 MATERIALES MAESTRO COLOMBIA SAS
+2026-01-30 21:05:08,075 - invoice_processor - INFO - Correo 19397d2889ed8fb2 procesado exitosamente. Archivos: 1
+2026-01-30 21:05:09,096 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 193a26322ea7e07b)
+2026-01-30 21:05:09,329 - invoice_processor - INFO - Escaneando hilo 193a26322ea7e07b para buscar el correo original con el ZIP...
+2026-01-30 21:05:09,570 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 193a26322ea7e07b) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-12-07
+2026-01-30 21:05:09,986 - invoice_processor - INFO - Factura identificada: 2024-12-07 F2X SAS
+2026-01-30 21:05:09,986 - invoice_processor - INFO - Correo 193a26322ea7e07b procesado exitosamente. Archivos: 1
+2026-01-30 21:05:10,994 - invoice_processor - INFO - Procesando correo de: "siesafe@siesa.com" <siesafe@siesa.com> (ID: 193acc2eb495ddea)
+2026-01-30 21:05:11,241 - invoice_processor - INFO - Escaneando hilo 193acc2eb495ddea para buscar el correo original con el ZIP...
+2026-01-30 21:05:11,540 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 193acc2eb495ddea) de: "siesafe@siesa.com" <siesafe@siesa.com> el 2024-12-09
+2026-01-30 21:05:11,852 - invoice_processor - INFO - Factura identificada: 2024-12-09 COOPERATIVA COLANTA
+2026-01-30 21:05:11,853 - invoice_processor - INFO - Correo 193acc2eb495ddea procesado exitosamente. Archivos: 1
+2026-01-30 21:05:12,882 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 193b23eb4ba83aa8)
+2026-01-30 21:05:13,120 - invoice_processor - INFO - Escaneando hilo 193b23eb4ba83aa8 para buscar el correo original con el ZIP...
+2026-01-30 21:05:13,348 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 193b23eb4ba83aa8) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-12-10
+2026-01-30 21:05:13,673 - invoice_processor - INFO - Factura identificada: 2024-12-10 F2X SAS
+2026-01-30 21:05:13,674 - invoice_processor - INFO - Correo 193b23eb4ba83aa8 procesado exitosamente. Archivos: 1
+2026-01-30 21:05:14,694 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 193b26cb65fb0c24)
+2026-01-30 21:05:14,928 - invoice_processor - INFO - Escaneando hilo 193b26cb65fb0c24 para buscar el correo original con el ZIP...
+2026-01-30 21:05:15,169 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 193b26cb65fb0c24) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-12-10
+2026-01-30 21:05:15,605 - invoice_processor - INFO - Factura identificada: 2024-12-10 F2X SAS
+2026-01-30 21:05:15,605 - invoice_processor - INFO - La factura 2024-12-10 F2X SAS ya existe. Saltando.
+2026-01-30 21:05:15,605 - invoice_processor - INFO - Correo 193b26cb65fb0c24 procesado exitosamente. Archivos: 1
+2026-01-30 21:05:16,643 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 193b3a0d06d84521)
+2026-01-30 21:05:16,881 - invoice_processor - INFO - Escaneando hilo 193b3a0d06d84521 para buscar el correo original con el ZIP...
+2026-01-30 21:05:17,122 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 193b3a0d06d84521) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-12-11
+2026-01-30 21:05:17,396 - invoice_processor - INFO - Factura identificada: 2024-12-10 F2X SAS
+2026-01-30 21:05:17,396 - invoice_processor - INFO - La factura 2024-12-10 F2X SAS ya existe. Saltando.
+2026-01-30 21:05:17,396 - invoice_processor - INFO - Correo 193b3a0d06d84521 procesado exitosamente. Archivos: 1
+2026-01-30 21:05:18,415 - invoice_processor - INFO - Procesando correo de: factura-electronica@clauserp.com (ID: 193b76e0f011acd2)
+2026-01-30 21:05:18,642 - invoice_processor - INFO - Escaneando hilo 193b76e0f011acd2 para buscar el correo original con el ZIP...
+2026-01-30 21:05:18,888 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 193b76e0f011acd2) de: factura-electronica@clauserp.com el 2024-12-11
+2026-01-30 21:05:19,164 - invoice_processor - INFO - Factura identificada: 2024-12-11 MATERIALES MAESTRO COLOMBIA SAS
+2026-01-30 21:05:19,166 - invoice_processor - INFO - Correo 193b76e0f011acd2 procesado exitosamente. Archivos: 1
+2026-01-30 21:05:20,196 - invoice_processor - INFO - Procesando correo de: "FIJACIONES OROZCO S.A.S." <notificaciones@thefactoryhka.com.co> (ID: 193db585b1148815)
+2026-01-30 21:05:20,440 - invoice_processor - INFO - Escaneando hilo 193db585b1148815 para buscar el correo original con el ZIP...
+2026-01-30 21:05:20,670 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 193db585b1148815) de: "FIJACIONES OROZCO S.A.S." <notificaciones@thefactoryhka.com.co> el 2024-12-18
+2026-01-30 21:05:21,143 - invoice_processor - INFO - Factura identificada: 2024-12-18 FIJACIONES OROZCO SAS
+2026-01-30 21:05:21,146 - invoice_processor - INFO - Correo 193db585b1148815 procesado exitosamente. Archivos: 1
+2026-01-30 21:05:22,159 - invoice_processor - INFO - Procesando correo de: "LaFactura.co" <notificaciones@int.lafactura.co> (ID: 193dbb4c2a677f88)
+2026-01-30 21:05:22,390 - invoice_processor - INFO - Escaneando hilo 193dbb4c2a677f88 para buscar el correo original con el ZIP...
+2026-01-30 21:05:22,630 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 193dbb4c2a677f88) de: "LaFactura.co" <notificaciones@int.lafactura.co> el 2024-12-18
+2026-01-30 21:05:23,088 - invoice_processor - INFO - Factura identificada: 2024-12-18 F2X SAS
+2026-01-30 21:05:23,089 - invoice_processor - INFO - Correo 193dbb4c2a677f88 procesado exitosamente. Archivos: 1
+2026-01-30 21:05:24,126 - invoice_processor - INFO - Procesando correo de: facturactscolombia@cen.biz (ID: 193dbd49cea1fd70)
+2026-01-30 21:05:24,369 - invoice_processor - INFO - Escaneando hilo 193dbd49cea1fd70 para buscar el correo original con el ZIP...
+2026-01-30 21:05:24,736 - invoice_processor - INFO - Encontrado ZIP en mensaje index 0 (ID: 193dbd49cea1fd70) de: facturactscolombia@cen.biz el 2024-12-18
+2026-01-30 21:05:25,260 - invoice_processor - INFO - Factura identificada: 2024-12-18 PRICESMART COLOMBIA SAS
+2026-01-30 21:05:25,262 - invoice_processor - INFO - Correo 193dbd49cea1fd70 procesado exitosamente. Archivos: 1
+2026-01-30 21:05:39,249 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas, Preview: True, Filtros: 2026-01-01 a 2026-01-30, Prov: None
+2026-01-30 21:05:39,251 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 21:05:39,252 - api - INFO - Proveedores encontrados: 0
+2026-01-30 21:05:48,276 - api - INFO - Petición POST /api/v1/invoices/import-db - Dir: /app/data/Facturas, Preview: True, Filtros: 2025-01-01 a 2025-12-31, Prov: None
+2026-01-30 21:05:48,279 - api - INFO - Petición GET /api/v1/invoices/providers - Filtros: None a None
+2026-01-30 21:05:48,279 - api - INFO - Proveedores encontrados: 0

@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 from src.application.services.invoice_processor_service import InvoiceProcessorService
 from src.application.services.exporter_service import ExporterService
@@ -8,6 +8,7 @@ from src.infrastructure.external.google_gmail_service import GoogleGmailService
 from src.infrastructure.database.postgres_factura_repository import PostgresFacturaRepository
 import os
 import asyncio
+import json
 import subprocess
 import logging
 import sys
@@ -20,6 +21,8 @@ load_dotenv()
 
 # Configuración
 EXPORT_DIRECTORY = os.getenv('EXPORT_DIRECTORY', '/app/data/Facturas/Exportadas')
+FACTURAS_PENDIENTES = os.getenv('FACTURAS_PENDIENTES', '/app/data/Facturas')
+
 
 # Configurar Logging - Usar ruta absoluta
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -134,11 +137,12 @@ async def process_invoices(request: ProcessRequest):
         gmail_service = GoogleGmailService(CREDENTIALS_PATH, TOKEN_PATH)
         processor = InvoiceProcessorService(gmail_service)
         
-        process_data = processor.process_all_new_invoices(request.target_directory, request.max_emails)
+        actual_directory = request.target_directory or FACTURAS_PENDIENTES
+        process_data = processor.process_all_new_invoices(actual_directory, request.max_emails)
         results = process_data["results"]
         stats = process_data["stats"]
         
-        logger.info(f"Proceso completado. Resultados: {len(results)} correos.")
+        logger.info(f"Proceso completado en {actual_directory}. Resultados: {len(results)} correos.")
         return {
             "status": "completed",
             "results": results,
@@ -151,6 +155,36 @@ async def process_invoices(request: ProcessRequest):
     except Exception as e:
         logger.error(f"Error crítico en process_invoices: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+@app.get("/api/v1/invoices/process-stream")
+async def process_invoices_stream(
+    target_directory: Optional[str] = Query(None),
+    max_emails: int = Query(5),
+    search_query: Optional[str] = Query(None)
+):
+    actual_directory = target_directory or FACTURAS_PENDIENTES
+    logger.info(f"Petición GET /api/v1/invoices/process-stream - Dir: {actual_directory}, Límite: {max_emails}, Query: {search_query}")
+    
+    async def event_generator():
+        try:
+            if not os.path.exists(CREDENTIALS_PATH):
+                yield f"data: {json.dumps({'type': 'error', 'message': f'Falta credentials.json en {CREDENTIALS_PATH}'})}\n\n"
+                return
+
+            gmail_service = GoogleGmailService(CREDENTIALS_PATH, TOKEN_PATH)
+            processor = InvoiceProcessorService(gmail_service)
+            
+            # Corremos el generador de procesamiento
+            for event in processor.process_all_new_invoices_generator(actual_directory, max_emails, search_query):
+                yield f"data: {json.dumps(event)}\n\n"
+                # Pequeño delay opcional para suavizar la UI si el proceso es muy rápido (opcional)
+                await asyncio.sleep(0.01)
+                
+        except Exception as e:
+            logger.error(f"Error en streaming: {str(e)}", exc_info=True)
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 @app.post("/api/v1/invoices/import-db")
 async def import_invoices_to_db(request: ProcessRequest):

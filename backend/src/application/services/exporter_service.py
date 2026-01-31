@@ -21,167 +21,147 @@ class ExporterService:
     def parse_xml_invoice(self, file_path: str) -> tuple[Optional[Dict[str, Any]], Optional[str]]:
         """Extrae metadatos de un archivo XML de factura. Retorna (data, error_msg)"""
         try:
+            from src.application.services.invoice_processor_service import InvoiceProcessorService
+            # Para evitar duplicar lógica compleja, usamos el parseador base si es posible
+            # o replicamos la lógica robusta aquí.
+            
             tree = etree.parse(file_path)
             root = tree.getroot()
             
             # Manejar AttachedDocument con Invoice embebido
-            if etree.QName(root).localname == 'AttachedDocument':
-                description = self._get_text(root, '//*[local-name()="Attachment"]//*[local-name()="Description"]')
-                if description and '<Invoice' in description:
-                    xml_start = description.find('<Invoice')
-                    xml_end = description.rfind('</Invoice>') + len('</Invoice>')
-                    inner_xml = description[xml_start:xml_end]
-                    root = etree.fromstring(inner_xml.encode('utf-8'))
+            tag_name = etree.QName(root).localname
+            inner_root = root
+            is_credit_note = tag_name == 'CreditNote'
 
-            # Extraer metadatos - IMPORTANTE: Iterar SOLO hijos directos para evitar UBLExtensions
+            if tag_name == 'AttachedDocument':
+                description = self._get_text(root, '//*[local-name()="Attachment"]//*[local-name()="Description"]')
+                if description and ('<Invoice' in description or '<CreditNote' in description):
+                    start_tag = '<Invoice' if '<Invoice' in description else '<CreditNote'
+                    end_tag = '</Invoice>' if '<Invoice' in description else '</CreditNote>'
+                    xml_start = description.find(start_tag)
+                    xml_end = description.rfind(end_tag) + len(end_tag)
+                    inner_xml = description[xml_start:xml_end]
+                    inner_root = etree.fromstring(inner_xml.encode('utf-8'))
+                    is_credit_note = etree.QName(inner_root).localname == 'CreditNote'
+
+            # Extraer Metadatos Básicos (ID, Fecha, Proveedor, NIT)
             invoice_id = None
             issue_date = None
-            
-            # Intentar primero con ParentDocumentID (AttachedDocument)
-            invoice_id = self._get_text(root, '//*[local-name()="ParentDocumentID"]')
-            
-            # Buscar ID e IssueDate en los hijos directos del root (evita UBLExtensions)
-            for child in root:
-                localname = etree.QName(child).localname
-                if localname == 'IssueDate' and child.text and not issue_date:
-                    issue_date = child.text
-                elif localname == 'ID' and child.text and not invoice_id:
-                    invoice_id = child.text
-            
-            supplier_name = self._get_text(root, '//*[local-name()="SenderParty"]//*[local-name()="RegistrationName"]') or \
-                            self._get_text(root, '//*[local-name()="AccountingSupplierParty"]//*[local-name()="RegistrationName"]') or \
-                            self._get_text(root, '//*[local-name()="PartyName"]//*[local-name()="Name"]')
-            
-            nit = self._get_text(root, '//*[local-name()="SenderParty"]//*[local-name()="CompanyID"]') or \
-                  self._get_text(root, '//*[local-name()="AccountingSupplierParty"]//*[local-name()="CompanyID"]')
-
-            # DEBUG INICIAL: Ver qué tipo de documento es y qué valores extrae
-            # doc_type = etree.QName(root).localname
-            # print(f"\n📄 DEBUG INICIO - Archivo: {os.path.basename(file_path)}")
-            # print(f"  Tipo de documento: {doc_type}")
-            # print(f"  Proveedor (inicial): {supplier_name}")
-            # print(f"  NIT (inicial): {nit}")
-            # print(f"  Invoice ID (inicial): {invoice_id}")
-            # print(f"  Fecha (inicial): {issue_date}")
-
-            # Intentar extraer valores financieros del documento principal
-            total_amount = self._get_text(root, '//*[local-name()="LegalMonetaryTotal"]//*[local-name()="PayableAmount"]')
-            tax_amount = self._get_text(root, '//*[local-name()="TaxTotal"]/*[local-name()="TaxAmount"]')
-            subtotal = self._get_text(root, '//*[local-name()="LegalMonetaryTotal"]//*[local-name()="LineExtensionAmount"]')
-            allowance = self._get_text(root, '//*[local-name()="LegalMonetaryTotal"]//*[local-name()="AllowanceTotalAmount"]')
-
-            # Si es un AttachedDocument, SIEMPRE buscar en el XML embebido (Invoice o CreditNote)
-            # para obtener los datos reales del documento, no del contenedor
-            is_credit_note = False
-            if etree.QName(root).localname == 'AttachedDocument':
-                # Buscar en el Description del Attachment
-                description = self._get_text(root, '//*[local-name()="Attachment"]//*[local-name()="Description"]')
-                if description:
-                    # Buscar Invoice o CreditNote embebido
-                    inner_xml_start = -1
-                    inner_xml_end = -1
-                    
-                    for doc_type in ['<Invoice', '<CreditNote']:
-                        if doc_type in description:
-                            inner_xml_start = description.find(doc_type)
-                            close_tag = '</Invoice>' if doc_type == '<Invoice' else '</CreditNote>'
-                            inner_xml_end = description.rfind(close_tag) + len(close_tag)
-                            is_credit_note = (doc_type == '<CreditNote')
-                            break
-                    
-                    if inner_xml_start != -1 and inner_xml_end != -1:
-                        try:
-                            inner_xml = description[inner_xml_start:inner_xml_end]
-                            inner_root = etree.fromstring(inner_xml.encode('utf-8'))
-                            
-                            # Extraer valores del documento embebido (PRIORITARIO)
-                            inner_total = self._get_text(inner_root, '//*[local-name()="LegalMonetaryTotal"]//*[local-name()="PayableAmount"]')
-                            inner_tax = self._get_text(inner_root, '//*[local-name()="TaxTotal"]/*[local-name()="TaxAmount"]')
-                            inner_subtotal = self._get_text(inner_root, '//*[local-name()="LegalMonetaryTotal"]//*[local-name()="LineExtensionAmount"]')
-                            inner_allowance = self._get_text(inner_root, '//*[local-name()="LegalMonetaryTotal"]//*[local-name()="AllowanceTotalAmount"]')
-                            
-                            # Sobrescribir con valores del documento interno si existen
-                            if inner_total:
-                                total_amount = inner_total
-                            if inner_tax:
-                                tax_amount = inner_tax
-                            if inner_subtotal:
-                                subtotal = inner_subtotal
-                            if inner_allowance:
-                                allowance = inner_allowance
-                            
-                            # También extraer NIT, proveedor, fecha e ID del documento interno (PRIORITARIO)
-                            inner_nit = self._get_text(inner_root, '//*[local-name()="AccountingSupplierParty"]//*[local-name()="CompanyID"]') or \
-                                       self._get_text(inner_root, '//*[local-name()="SenderParty"]//*[local-name()="CompanyID"]')
-                            if inner_nit:
-                                nit = inner_nit
-                            
-                            inner_supplier = self._get_text(inner_root, '//*[local-name()="AccountingSupplierParty"]//*[local-name()="RegistrationName"]') or \
-                                           self._get_text(inner_root, '//*[local-name()="PartyName"]//*[local-name()="Name"]')
-                            if inner_supplier:
-                                supplier_name = inner_supplier
-                            
-                            # DEBUG: Ver qué estamos extrayendo
-                            # print(f"\n🔍 DEBUG - Procesando AttachedDocument:")
-                            # print(f"  NIT: {nit}")
-                            # print(f"  Proveedor: {supplier_name}")
-                            # print(f"  Fecha (antes): {issue_date}")
-                            # print(f"  Invoice ID (antes): {invoice_id}")
-                            
-                            # IMPORTANTE: Extraer fecha e ID excluyendo UBLExtensions
-                            # Las extensiones pueden tener <ID> y <IssueDate> con valores diferentes
-                            # Buscamos directamente como hijos del elemento raíz (Invoice/CreditNote)
-                            for child in inner_root:
-                                localname = etree.QName(child).localname
-                                if localname == 'IssueDate' and child.text:
-                                    # print(f"  ✅ Encontré IssueDate directo: {child.text}")
-                                    issue_date = child.text
-                                elif localname == 'ID' and child.text:
-                                    # print(f"  ✅ Encontré ID directo: {child.text}")
-                                    invoice_id = child.text
-                            
-                            # print(f"  Fecha (después): {issue_date}")
-                            # print(f"  Invoice ID (después): {invoice_id}")
-                        except Exception as e:
-                            # Si falla el parseo del XML interno, continuamos con los valores que ya tenemos
-                            # print(f"❌ ERROR en parsing embebido: {e}")
-                            pass
+            for child in inner_root:
+                ln = etree.QName(child).localname
+                if ln == 'ID' and not invoice_id: invoice_id = child.text
+                if ln == 'IssueDate' and not issue_date: issue_date = child.text
 
             if not invoice_id:
-                return None, "No se encontró ID de factura o ParentDocumentID en el XML"
-            if not supplier_name:
-                return None, "No se encontró el nombre del proveedor en el XML"
+                invoice_id = self._get_text(inner_root, '//*[local-name()="ID"]')
 
-            # Convertir a float y aplicar valores negativos si es nota crédito
-            subtotal_val = float(subtotal or 0)
-            descuentos_val = float(allowance or 0)
-            iva_val = float(tax_amount or 0)
-            total_val = float(total_amount or 0)
+            supplier_name = self._get_text(inner_root, '//*[local-name()="AccountingSupplierParty"]//*[local-name()="RegistrationName"]') or \
+                            self._get_text(inner_root, '//*[local-name()="PartyName"]//*[local-name()="Name"]')
             
-            # Los descuentos SIEMPRE son negativos (reducen el total)
-            if descuentos_val > 0:
-                descuentos_val = -descuentos_val
+            nit = self._get_text(inner_root, '//*[local-name()="AccountingSupplierParty"]//*[local-name()="CompanyID"]') or \
+                  self._get_text(inner_root, '//*[local-name()="SenderParty"]//*[local-name()="CompanyID"]')
+
+            if not invoice_id or not supplier_name:
+                return None, "No se pudo identificar Proveedor o Número de Factura"
+
+            # Valores Financieros
+            subtotal = self._get_float(inner_root, '//*[local-name()="LegalMonetaryTotal"]//*[local-name()="LineExtensionAmount"]')
+            total = self._get_float(inner_root, '//*[local-name()="LegalMonetaryTotal"]//*[local-name()="PayableAmount"]')
+            descuentos = self._get_float(inner_root, '//*[local-name()="LegalMonetaryTotal"]//*[local-name()="AllowanceTotalAmount"]')
+
+            # Extracción robusta de impuestos por tarifa
+            taxes = self._extract_detailed_taxes_internal(inner_root)
             
+            iva_19 = taxes.get(('01', 19.0), 0.0)
+            iva_5 = taxes.get(('01', 5.0), 0.0)
+            iva_0 = taxes.get(('01', 0.0), 0.0)
+            
+            # Sumar otras tarifas de IVA al 19%
+            iva_otros = sum(val for (code, pct), val in taxes.items() if code == '01' and pct not in [19.0, 5.0, 0.0])
+            iva_19 += iva_otros
+
+            inc = sum(val for (code, pct), val in taxes.items() if code == '04')
+            inc_bolsas = sum(val for (code, pct), val in taxes.items() if code == '22')
+            retefuente = sum(val for (code, pct), val in taxes.items() if code == '06')
+            
+            known_codes = {'01', '04', '22', '06'}
+            otros_imp_sum = sum(val for (code, pct), val in taxes.items() if code not in known_codes)
+
+            # Ajuste de Nota Crédito
             if is_credit_note:
-                subtotal_val = -abs(subtotal_val)
-                # descuentos_val ya es negativo, al invertir se vuelve positivo en nota crédito
-                descuentos_val = abs(descuentos_val)
-                iva_val = -abs(iva_val)
-                total_val = -abs(total_val)
+                subtotal = -abs(subtotal)
+                descuentos = abs(descuentos)
+                iva_19 = -abs(iva_19)
+                iva_5 = -abs(iva_5)
+                iva_0 = -abs(iva_0)
+                inc = -abs(inc)
+                inc_bolsas = -abs(inc_bolsas)
+                retefuente = -abs(retefuente)
+                otros_imp_sum = -abs(otros_imp_sum)
+                total = -abs(total)
+
+            # Validación de Integridad
+            validation_error = None
+            calc_total = subtotal - abs(descuentos) + iva_19 + iva_5 + iva_0 + inc + inc_bolsas + otros_imp_sum
+            diff = abs(calc_total - total)
+            if diff > 5.0:
+                validation_error = f"Inconsistencia: Calc({calc_total:,.0f}) != Real({total:,.0f})"
 
             return {
                 'fecha': issue_date,
                 'proveedor': supplier_name,
                 'nit': nit,
                 'factura': invoice_id,
-                'subtotal': subtotal_val,
-                'descuentos': descuentos_val,
-                'iva': iva_val,
-                'total': total_val,
-                'nombre_xml': os.path.basename(file_path)
+                'subtotal': subtotal,
+                'descuentos': descuentos,
+                'iva_19': iva_19,
+                'iva_5': iva_5,
+                'iva_0': iva_0,
+                'inc': inc,
+                'inc_bolsas': inc_bolsas,
+                'retefuente': retefuente,
+                'otros_impuestos': otros_imp_sum,
+                'total': total,
+                'nombre_xml': os.path.basename(file_path),
+                'nombre_pdf': os.path.basename(file_path).replace('.xml', '.pdf'),
+                'validation_error': validation_error,
+                'otros_conceptos': {'detalles_impuestos': {f"{c}_{p}": v for (c, p), v in taxes.items()}}
             }, None
         except Exception as e:
             return None, str(e)
+
+    def _get_float(self, element, xpath) -> float:
+        val = self._get_text(element, xpath)
+        try:
+            import math
+            f_val = float(val) if val else 0.0
+            return f_val if not math.isnan(f_val) else 0.0
+        except:
+            return 0.0
+
+    def _extract_detailed_taxes_internal(self, element) -> Dict[tuple[str, float], float]:
+        taxes = {}
+        tax_totals = element.xpath('/*[local-name()="Invoice" or local-name()="CreditNote"]/*[local-name()="TaxTotal"]')
+        if not tax_totals:
+            tax_totals = element.xpath('//*[local-name()="TaxTotal"]')
+
+        for tt in tax_totals:
+            subtotals = tt.xpath('./*[local-name()="TaxSubtotal"]')
+            if subtotals:
+                for sub in subtotals:
+                    scheme_id = self._get_text(sub, './/*[local-name()="TaxScheme"]/*[local-name()="ID"]')
+                    percent = self._get_float(sub, './*[local-name()="Percent"]')
+                    amount = self._get_float(sub, './*[local-name()="TaxAmount"]')
+                    if scheme_id:
+                        key = (scheme_id, percent)
+                        taxes[key] = taxes.get(key, 0.0) + amount
+            else:
+                scheme_id = self._get_text(tt, './/*[local-name()="TaxScheme"]/*[local-name()="ID"]')
+                amount = self._get_float(tt, './*[local-name()="TaxAmount"]')
+                if scheme_id:
+                    key = (scheme_id, 0.0)
+                    taxes[key] = taxes.get(key, 0.0) + amount
+        return taxes
 
     def import_to_db(self, directory: str, repository: Any, dry_run: bool = False, filters: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Procesa XMLs de un directorio y los guarda en la BD (o solo previsualiza)."""
@@ -193,6 +173,7 @@ class ExporterService:
         count_duplicates = 0
         count_errors = 0
         count_filtered = 0
+        count_inconsistent = 0
         results = []
         
         # Extraer filtros si existen
@@ -237,16 +218,27 @@ class ExporterService:
                 "subject": data.get('factura') if data else filename,
                 "subtotal": data.get('subtotal', 0) if data else 0,
                 "descuentos": data.get('descuentos', 0) if data else 0,
-                "iva": data.get('iva', 0) if data else 0,
+                "iva_19": data.get('iva_19', 0) if data else 0,
+                "iva_5": data.get('iva_5', 0) if data else 0,
+                "iva_0": data.get('iva_0', 0) if data else 0,
+                "inc": data.get('inc', 0) if data else 0,
+                "inc_bolsas": data.get('inc_bolsas', 0) if data else 0,
+                "retefuente": data.get('retefuente', 0) if data else 0,
+                "otros_impuestos": data.get('otros_impuestos', 0) if data else 0,
                 "total": data.get('total', 0) if data else 0,
                 "nombre_xml": filename,
+                "nombre_pdf": data.get('nombre_pdf') if data else None,
                 "attachments": [filename],
                 "status": "pending",
                 "message": None
             }
 
             if data:
-                if dry_run:
+                if data.get('validation_error'):
+                    count_inconsistent += 1
+                    res["status"] = "inconsistent"
+                    res["message"] = data['validation_error']
+                elif dry_run:
                     # En previsualización solo verificamos si ya existe
                     exists = repository.check_exists(data['nit'], data['factura'])
                     if exists:
@@ -293,9 +285,11 @@ class ExporterService:
                 "total": total_processed,
                 "successful": count_imported,
                 "duplicates": count_duplicates,
+                "inconsistent": count_inconsistent,
                 "errors": count_errors
             }
         }
+
 
     def export_from_db(self, repository: Any, filters: Dict[str, Any], formats: List[str], output_dir: str) -> Dict[str, Any]:
         """Genera archivos a partir de datos en la BD."""
@@ -319,8 +313,10 @@ class ExporterService:
             # Renombrar columnas para el Excel humano
             df_display = df.rename(columns={
                 'fecha': 'Fecha', 'proveedor': 'Proveedor', 'nit': 'NIT', 
-                'factura': 'Factura', 'subtotal': 'Subtotal', 'iva': 'IVA', 
-                'total': 'Total', 'nombre_xml': 'Archivo XML'
+                'factura': 'Factura', 'subtotal': 'Subtotal', 'descuentos': 'Descuentos',
+                'iva_19': 'IVA 19%', 'iva_5': 'IVA 5%', 'iva_0': 'IVA 0%', 
+                'inc': 'INC', 'inc_bolsas': 'INC Bolsas', 
+                'retefuente': 'Retefuente', 'total': 'Total', 'nombre_xml': 'Archivo XML'
             })
             df_display.to_excel(output_xlsx, index=False)
             generated_files.append({"type": "excel", "path": output_xlsx})
@@ -366,8 +362,8 @@ class ExporterService:
                 pdf.set_font("Arial", 'B', 10)
                 pdf.set_fill_color(240, 240, 240)
                 cols = [
-                    ("Fecha", 25), ("Proveedor", 70), ("NIT", 30), 
-                    ("Factura", 35), ("Subtotal", 30), ("IVA", 25), ("Total", 30)
+                    ("Fecha", 20), ("Proveedor", 50), ("Factura", 25), 
+                    ("Subtotal", 22), ("IVA 19%", 20), ("IVA 5%", 20), ("INC", 18), ("Total", 22)
                 ]
                 
                 for col_name, width in cols:
@@ -375,17 +371,17 @@ class ExporterService:
                 pdf.ln()
 
                 # Datos de la tabla
-                pdf.set_font("Arial", '', 9)
+                pdf.set_font("Arial", '', 7.5)
                 for item in data_list:
-                    pdf.cell(25, 8, str(item['fecha']), border=1)
-                    # Truncar proveedor si es muy largo
-                    prov = str(item['proveedor'])[:35]
-                    pdf.cell(70, 8, prov, border=1)
-                    pdf.cell(30, 8, str(item['nit']), border=1)
-                    pdf.cell(35, 8, str(item['factura']), border=1)
-                    pdf.cell(30, 8, f"{item['subtotal']:,.2f}", border=1, align='R')
-                    pdf.cell(25, 8, f"{item['iva']:,.2f}", border=1, align='R')
-                    pdf.cell(30, 8, f"{item['total']:,.2f}", border=1, align='R')
+                    pdf.cell(20, 8, str(item['fecha']), border=1)
+                    prov = str(item['proveedor'])[:25]
+                    pdf.cell(50, 8, prov, border=1)
+                    pdf.cell(25, 8, str(item['factura']), border=1)
+                    pdf.cell(22, 8, f"{item['subtotal']:,.0f}", border=1, align='R')
+                    pdf.cell(20, 8, f"{item['iva_19']:,.0f}", border=1, align='R')
+                    pdf.cell(20, 8, f"{item['iva_5']:,.0f}", border=1, align='R')
+                    pdf.cell(18, 8, f"{(item.get('inc') or 0):,.0f}", border=1, align='R')
+                    pdf.cell(22, 8, f"{item['total']:,.0f}", border=1, align='R')
                     pdf.ln()
 
                 pdf.output(output_pdf)
