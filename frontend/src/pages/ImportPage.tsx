@@ -11,7 +11,7 @@ import {
     ArrowUp,
     ArrowDown
 } from 'lucide-react';
-import { FilterBar } from '../components/organisms';
+import { FilterBar, TaxClassificationModal } from '../components/organisms';
 import { CurrencyValue } from '../components/atoms';
 import type { ImportStats, ProcessSortColumn, SortDirection } from '../types';
 
@@ -41,9 +41,17 @@ export function ImportPage({ providers: initialProviders, directory }: ImportPag
     const [selectedImportRows, setSelectedImportRows] = useState<Set<string>>(new Set());
     const [tableStatusFilter, setTableStatusFilter] = useState<'all' | 'success' | 'inconsistent' | 'error'>('all');
 
+    // Reprocess State
+    const [processingFilenames, setProcessingFilenames] = useState<string[] | null>(null);
+    const [invoiceContext, setInvoiceContext] = useState<string | undefined>(undefined);
+
     // Detail Modal State
     const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+    // Tax Classification Modal
+    const [missingTaxDefinitions, setMissingTaxDefinitions] = useState<any[]>([]);
+    const [isTaxModalOpen, setIsTaxModalOpen] = useState(false);
 
     // Sorting
     const [processSortColumn, setProcessSortColumn] = useState<ProcessSortColumn>('date');
@@ -99,9 +107,10 @@ export function ImportPage({ providers: initialProviders, directory }: ImportPag
         setActiveQuickFilter(type);
     };
 
-    const handleImportToDB = async (dryRun: boolean = false) => {
+    const handleImportToDB = async (dryRun: boolean = false, targetFiles: string[] | null = null, suppressModal: boolean = false) => {
         setStatus('loading');
         setIsPreviewMode(dryRun);
+        setInvoiceContext(undefined);
         try {
             const response = await fetch('/api/v1/invoices/import-db', {
                 method: 'POST',
@@ -111,11 +120,43 @@ export function ImportPage({ providers: initialProviders, directory }: ImportPag
                     dry_run: dryRun,
                     start_date: startDate || null,
                     end_date: endDate || null,
-                    provider: provider || null
+                    provider: provider || null,
+                    filenames: targetFiles || processingFilenames || null
                 }),
             });
             const data = await response.json();
             if (!response.ok) throw new Error(data.detail || 'Error al importar a base de datos');
+
+            // Check for missing tax definitions
+            const missingDefs = new Map<string, any>();
+            const contextInvoices: Set<string> = new Set();
+
+            if (data.results) {
+                data.results.forEach((res: any) => {
+                    if (res.otros_conceptos?.missing_tax_definitions) {
+                        res.otros_conceptos.missing_tax_definitions.forEach((def: any) => {
+                            missingDefs.set(def.code, def);
+                            const ctx = (res.sender && res.sender !== 'Sistema') ? `${res.sender} (${res.subject})` : res.nombre_xml;
+                            contextInvoices.add(ctx);
+                        });
+                    }
+                });
+            }
+
+            if (missingDefs.size > 0 && !suppressModal) {
+                setMissingTaxDefinitions(Array.from(missingDefs.values()));
+
+                // Build context string
+                if (contextInvoices.size === 1) {
+                    setInvoiceContext(Array.from(contextInvoices)[0]);
+                } else if (contextInvoices.size > 1) {
+                    const first = Array.from(contextInvoices)[0];
+                    setInvoiceContext(`${first} y ${contextInvoices.size - 1} más`);
+                }
+
+                setIsTaxModalOpen(true);
+            }
+
             setImportStats(data.stats);
             setProcessResults(data.results || []);
             setMessage(data.message);
@@ -127,12 +168,35 @@ export function ImportPage({ providers: initialProviders, directory }: ImportPag
         }
     };
 
+    const handleSaveTaxRules = async (rules: any[]) => {
+        try {
+            const response = await fetch('/api/v1/config/tax-rules', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rules }),
+            });
+
+            if (!response.ok) throw new Error('Error guardando reglas');
+
+            setIsTaxModalOpen(false);
+            setMissingTaxDefinitions([]);
+            setInvoiceContext(undefined);
+            // Re-run import/preview to apply new rules
+            // Uses processed filenames if we were reprocessing a subset
+            await handleImportToDB(isPreviewMode);
+        } catch (error) {
+            console.error(error);
+            alert('Error al guardar la configuración de impuestos.');
+        }
+    };
+
     const resetProcessState = () => {
         setStatus('idle');
         setMessage('');
         setImportStats(null);
         setProcessResults([]);
         setIsPreviewMode(false);
+        setProcessingFilenames(null);
     };
 
     const importFinancialSums = useMemo(() => {
@@ -220,7 +284,8 @@ export function ImportPage({ providers: initialProviders, directory }: ImportPag
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            handleImportToDB(true);
+            setProcessingFilenames(null); // Clear specific selection when filters change
+            handleImportToDB(true, null, true); // Suppress modal on filter change
         }, 500);
         return () => clearTimeout(timer);
     }, [startDate, endDate, provider]);
@@ -281,8 +346,27 @@ export function ImportPage({ providers: initialProviders, directory }: ImportPag
                                         >
                                             Cancelar
                                         </button>
+                                        {(selectedImportRows.size > 0) && (
+                                            <button
+                                                onClick={() => {
+                                                    const files = Array.from(selectedImportRows);
+                                                    console.log('Reprocesando archivos:', files); // Debug
+                                                    setProcessingFilenames(files);
+                                                    handleImportToDB(false, files, false);
+                                                }}
+                                                className="btn-primary"
+                                                style={{ padding: '0.4rem 1rem', backgroundColor: 'var(--accent-color)', fontSize: '0.75rem', height: '32px' }}
+                                                title="Re-leer y procesar solo las facturas seleccionadas"
+                                            >
+                                                <Database size={14} />
+                                                Reprocesar ({selectedImportRows.size})
+                                            </button>
+                                        )}
                                         <button
-                                            onClick={() => handleImportToDB(false)}
+                                            onClick={() => {
+                                                setProcessingFilenames(null);
+                                                handleImportToDB(false, null, false);
+                                            }}
                                             className="btn-primary"
                                             style={{ padding: '0.4rem 1rem', backgroundColor: 'var(--success-color)', fontSize: '0.75rem', height: '32px' }}
                                         >
@@ -316,13 +400,13 @@ export function ImportPage({ providers: initialProviders, directory }: ImportPag
             {/* Stats and Table */}
             {
                 status === 'success' && importStats && (
-                    <div style={{ marginBottom: '1rem' }}>
-                        <div className="data-card" style={{ padding: '0.75rem 1.25rem', background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '2rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 1 }}>
+                    <div style={{ marginBottom: '0.5rem' }}>
+                        <div className="data-card" style={{ padding: '0.5rem 1rem', background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
                                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '4px' }}>Procesamiento</span>
-                                        <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
+                                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '2px' }}>Procesamiento</span>
+                                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                                             <div style={{ textAlign: 'center' }}>
                                                 <div style={{ fontSize: '1rem', fontWeight: 800 }}>{importStats.total}</div>
                                                 <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>Total</div>
@@ -346,11 +430,11 @@ export function ImportPage({ providers: initialProviders, directory }: ImportPag
                                         </div>
                                     </div>
                                 </div>
-                                <div style={{ width: '1px', height: '32px', backgroundColor: 'var(--border-color)' }}></div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 2 }}>
+                                <div style={{ width: '1px', height: '24px', backgroundColor: 'var(--border-color)' }}></div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 2 }}>
                                     <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-                                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '4px' }}>Resumen Financiero</span>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '2px' }}>Resumen Financiero</span>
+                                        <div style={{ display: 'flex', justifyContent: 'flex-start', gap: '2rem', alignItems: 'center' }}>
                                             <div>
                                                 <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>Subtotal</div>
                                                 <div style={{ fontSize: '0.9rem', fontWeight: 700 }}><CurrencyValue value={importFinancialSums.subtotal} /></div>
@@ -473,7 +557,7 @@ export function ImportPage({ providers: initialProviders, directory }: ImportPag
                                             <td style={{ color: 'var(--text-secondary)', padding: '0.3rem 0.75rem', fontSize: '0.75rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{res.subject}</td>
                                             <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace' }}><CurrencyValue value={res.subtotal} /></td>
                                             <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace' }}><CurrencyValue value={-res.descuentos} /></td>
-                                            <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace' }}><CurrencyValue value={(res.iva_19 || 0) + (res.iva_5 || 0) + (res.iva_0 || 0) + (res.inc || 0)} /></td>
+                                            <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace' }}><CurrencyValue value={(res.iva_19 || 0) + (res.iva_5 || 0) + (res.iva_0 || 0) + (res.inc || 0) + (res.otros_impuestos || 0)} /></td>
                                             <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace' }}><CurrencyValue value={-(res.retefuente || 0) - (res.reteica || 0) - (res.reteiva || 0)} /></td>
                                             <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace', fontWeight: 600 }}><CurrencyValue value={res.total} /></td>
 
@@ -513,6 +597,15 @@ export function ImportPage({ providers: initialProviders, directory }: ImportPag
                     </div>
                 )
             }
+
+            {/* Tax Classification Modal */}
+            <TaxClassificationModal
+                isOpen={isTaxModalOpen}
+                definitions={missingTaxDefinitions}
+                onClose={() => setIsTaxModalOpen(false)}
+                onSave={handleSaveTaxRules}
+                invoiceContext={invoiceContext}
+            />
         </>
     );
 }

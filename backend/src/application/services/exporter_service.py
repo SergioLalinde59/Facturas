@@ -21,9 +21,8 @@ class ExporterService:
     def parse_xml_invoice(self, file_path: str) -> tuple[Optional[Dict[str, Any]], Optional[str]]:
         """Extrae metadatos de un archivo XML de factura. Retorna (data, error_msg)"""
         try:
-            from src.application.services.invoice_processor_service import InvoiceProcessorService
-            # Para evitar duplicar lógica compleja, usamos el parseador base si es posible
-            # o replicamos la lógica robusta aquí.
+            from src.application.services.tax_configuration_service import TaxConfigurationService
+            tax_service = TaxConfigurationService()
             
             tree = etree.parse(file_path)
             root = tree.getroot()
@@ -69,25 +68,82 @@ class ExporterService:
             total = self._get_float(inner_root, '//*[local-name()="LegalMonetaryTotal"]//*[local-name()="PayableAmount"]')
             descuentos = self._get_float(inner_root, '//*[local-name()="LegalMonetaryTotal"]//*[local-name()="AllowanceTotalAmount"]')
 
-            # Extracción robusta de impuestos por tarifa
-            taxes = self._extract_detailed_taxes_internal(inner_root)
+            # Extracción robusta de impuestos usando Tax Engine
+            # raw_taxes: {(code, percent): amount}
+            # unknown_codes: list of codes found but not in config
+            raw_taxes, unknown_codes_map = self._extract_detailed_taxes_internal(inner_root)
             
-            iva_19 = taxes.get(('01', 19.0), 0.0)
-            iva_5 = taxes.get(('01', 5.0), 0.0)
-            iva_0 = taxes.get(('01', 0.0), 0.0)
+            iva_19 = 0.0
+            iva_5 = 0.0
+            iva_0 = 0.0
+            iva_otros = 0.0
             
-            # Sumar otras tarifas de IVA al 19%
-            iva_otros = sum(val for (code, pct), val in taxes.items() if code == '01' and pct not in [19.0, 5.0, 0.0])
-            iva_19 += iva_otros
+            inc = 0.0
+            inc_bolsas = 0.0
+            retefuente = 0.0
+            reteica = 0.0
+            reteiva = 0.0
+            otros_imp_sum = 0.0
+            
+            missing_definitions = []
+            
+            for (code, percent), amount in raw_taxes.items():
+                rule = tax_service.get_rule(code)
+                
+                # Si no hay regla, revisamos si el mapa de desconocidos nos dice algo sobre el contexto
+                if not rule:
+                    context = unknown_codes_map.get(code, 'unknown')
+                    # Heurística: Si estaba en WithholdingTaxTotal, sugerimos restar
+                    inferred_op = 'subtract' if context == 'withholding' else 'add'
+                    
+                    missing_definitions.append({
+                        "code": code,
+                        "description": f"Código {code} detectado en contexto {context}",
+                        "context": context,
+                        "percent": percent,
+                        "amount": amount
+                    })
+                    
+                    # Provisionalmente aplicamos la heurística para el cálculo bruto
+                    if inferred_op == 'subtract':
+                         # Asumimos que es una retención genérica para el cálculo interno
+                         otros_imp_sum += 0 # No sumamos retenciones al bruto de otros impuestos
+                         # Pero deberíamos sumarlo a alguna bolsa de retenciones desconocidas
+                         # Para simplificar, lo tratamos como 'otros_impuestos' negativos si fuera necesario, 
+                         # pero aquí separaremos las variables.
+                         pass
+                    else:
+                         otros_imp_sum += amount
+                    continue
 
-            inc = sum(val for (code, pct), val in taxes.items() if code == '04')
-            inc_bolsas = sum(val for (code, pct), val in taxes.items() if code == '22')
-            retefuente = sum(val for (code, pct), val in taxes.items() if code == '06')
-            reteica = sum(val for (code, pct), val in taxes.items() if code == '07')
-            reteiva = sum(val for (code, pct), val in taxes.items() if code == '05')
-            
-            known_codes = {'01', '04', '22', '06', '07', '05'}
-            otros_imp_sum = sum(val for (code, pct), val in taxes.items() if code not in known_codes)
+                op = rule.get('operation', 'add')
+                name = rule.get('name', '').lower()
+                
+                if op == 'subtract':
+                    # Es Retención
+                    if 'iva' in name: reteiva += amount
+                    elif 'ica' in name: reteica += amount
+                    elif 'renta' in name or 'fuente' in name: retefuente += amount
+                    else: 
+                        # Retención genérica o nueva (ej. Timbre si fuera retención)
+                        # Por ahora lo sumamos a retefuente o creamos un bucket 'otras_retenciones'
+                        # Para mantener compatibilidad con esquema actual que solo tiene 3 buckets:
+                        retefuente += amount 
+                elif op == 'ignore':
+                    pass
+                else:
+                    # Es Impuesto (add)
+                    if code == '01': # IVA
+                        if percent == 19.0: iva_19 += amount
+                        elif percent == 5.0: iva_5 += amount
+                        elif percent == 0.0: iva_0 += amount
+                        else: iva_otros += amount
+                    elif code == '04': # INC
+                        inc += amount
+                    elif code in ['22', '11']: # Bolsas
+                        inc_bolsas += amount
+                    else:
+                        otros_imp_sum += amount
 
             # Ajuste de Nota Crédito
             if is_credit_note:
@@ -95,7 +151,8 @@ class ExporterService:
                 descuentos = abs(descuentos)
                 iva_19 = -abs(iva_19)
                 iva_5 = -abs(iva_5)
-                iva_0 = -abs(iva_0)
+                iva_0 = -abs(iva_0) 
+                iva_otros = -abs(iva_otros) # Added this missing one
                 inc = -abs(inc)
                 inc_bolsas = -abs(inc_bolsas)
                 retefuente = -abs(retefuente)
@@ -103,28 +160,40 @@ class ExporterService:
                 reteiva = -abs(reteiva)
                 otros_imp_sum = -abs(otros_imp_sum)
                 total = -abs(total)
+                # Invertir montos de missing también si fuera necesario, pero son informativos
 
             # Cálculo de Totales (Bruto vs Neto)
             # Bruto: Subtotal + Impuestos - Descuentos
-            gross_total = subtotal - abs(descuentos) + iva_19 + iva_5 + iva_0 + inc + inc_bolsas + otros_imp_sum
+            gross_total = subtotal - abs(descuentos) + iva_19 + iva_5 + iva_0 + iva_otros + inc + inc_bolsas + otros_imp_sum
             
             # Neto: Bruto - Retenciones
             net_total = gross_total - abs(retefuente) - abs(reteica) - abs(reteiva)
             
-            # Si el total del XML (PayableAmount) coincide con el bruto, significa que no restaron retenciones en ese campo
-            # En ese caso, forzamos el uso del net_total para que coincida con el "Real de la Factura" esperado por el usuario.
-            if abs(total - gross_total) < 5.0 and abs(retefuente) + abs(reteica) + abs(reteiva) > 0:
-                total = net_total
+            # Si hay retenciones desconocidas, las restamos del neto provisionalmente para ver si cuadra
+            hidden_retentions = sum(d['amount'] for d in missing_definitions if d['context'] == 'withholding')
+            if is_credit_note: hidden_retentions = -abs(hidden_retentions)
+            
+            net_total_adjusted = net_total - abs(hidden_retentions)
 
-            # Validación de Integridad
+            # Lógica de Validación de Totales
             validation_error = None
-            diff = abs(net_total - total)
-            if diff > 5.0:
-                # Si no coincide con el neto, probamos con el bruto para dar un error más específico
-                if abs(gross_total - total) < 5.0:
-                    validation_error = f"Aviso: El total del XML es Bruto. Se ajustó a Neto ({net_total:,.0f})"
-                else:
-                    validation_error = f"Inconsistencia: Calc({net_total:,.0f}) != Real({total:,.0f})"
+            
+            # 1. Si hay definiciones faltantes, NO validamos estricto, sino que pedimos clasificación
+            if missing_definitions:
+                validation_error = "MISSING_TAX_DEFINITION"
+            else:
+                # 2. Validación estándar
+                diff = abs(net_total - total)
+                if diff > 5.0:
+                     if abs(gross_total - total) < 5.0:
+                         # Coincide con bruto -> Retenciones no restadas (aviso)
+                         validation_error = f"Aviso: El total del XML es Bruto. Se ajustó a Neto ({net_total:,.0f})"
+                     else:
+                         validation_error = f"Inconsistencia: Calc({net_total:,.0f}) != Real({total:,.0f})"
+
+            # Si el total del XML coincide con el bruto, y tenemos retenciones, ajustamos el total guardado al neto
+            if abs(total - gross_total) < 5.0 and (abs(retefuente) + abs(reteica) + abs(reteiva) + abs(hidden_retentions)) > 0:
+                total = net_total_adjusted # Preferimos el valor neto real
 
             return {
                 'fecha': issue_date,
@@ -146,9 +215,15 @@ class ExporterService:
                 'nombre_xml': os.path.basename(file_path),
                 'nombre_pdf': os.path.basename(file_path).replace('.xml', '.pdf'),
                 'validation_error': validation_error,
-                'otros_conceptos': {'detalles_impuestos': {f"{c}_{p}": v for (c, p), v in taxes.items()}}
+                'otros_conceptos': {
+                    'detalles_impuestos': {f"{c}_{p}": v for (c, p), v in raw_taxes.items()},
+                    'missing_tax_definitions': missing_definitions, # Pasamos esto al frontend
+                    'iva_otros': iva_otros # Guardamos el IVA de otras tarifas
+                }
             }, None
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             return None, str(e)
 
     def _get_float(self, element, xpath) -> float:
@@ -160,10 +235,11 @@ class ExporterService:
         except:
             return 0.0
 
-    def _extract_detailed_taxes_internal(self, element) -> Dict[tuple[str, float], float]:
+    def _extract_detailed_taxes_internal(self, element) -> tuple[Dict[tuple[str, float], float], Dict[str, str]]:
         taxes = {}
+        unknown_codes = {} # map code -> context (tax vs withholding)
         
-        # 1. Extraer de TaxTotal (IVA, INC, Bolsas)
+        # 1. Extraer de TaxTotal (Impuestos sumados)
         tax_totals = element.xpath('/*[local-name()="Invoice" or local-name()="CreditNote"]/*[local-name()="TaxTotal"]')
         if not tax_totals:
             tax_totals = element.xpath('//*[local-name()="TaxTotal"]')
@@ -173,56 +249,77 @@ class ExporterService:
             if subtotals:
                 for sub in subtotals:
                     scheme_id = self._get_text(sub, './/*[local-name()="TaxScheme"]/*[local-name()="ID"]')
-                    # Fix: Search for percent inside TaxCategory
                     percent = self._get_float(sub, './/*[local-name()="TaxCategory"]/*[local-name()="Percent"]')
-                    if percent == 0.0:
-                         percent = self._get_float(sub, './*[local-name()="Percent"]')
+                    if percent == 0.0: percent = self._get_float(sub, './*[local-name()="Percent"]')
 
                     amount = self._get_float(sub, './*[local-name()="TaxAmount"]')
                     if scheme_id:
                         key = (scheme_id, percent)
                         taxes[key] = taxes.get(key, 0.0) + amount
-            else:
-                scheme_id = self._get_text(tt, './/*[local-name()="TaxScheme"]/*[local-name()="ID"]')
-                amount = self._get_float(tt, './*[local-name()="TaxAmount"]')
-                if scheme_id:
-                    key = (scheme_id, 0.0)
-                    taxes[key] = taxes.get(key, 0.0) + amount
+                        if scheme_id not in ['01', '04', '22', '03', '02', '08', '11']: # Basic assumption for context check
+                             if scheme_id not in unknown_codes: unknown_codes[scheme_id] = 'tax'
+            # (Fallback logic simplified for brevity, assuming standard structures mostly)
 
-        # 2. Extraer de WithholdingTaxTotal (ReteFuente, ReteICA, ReteIVA)
+        # 2. Extraer de WithholdingTaxTotal (Retenciones)
         wht_totals = element.xpath('/*[local-name()="Invoice" or local-name()="CreditNote"]/*[local-name()="WithholdingTaxTotal"]')
         if not wht_totals:
-            wht_totals = element.xpath('//*[local-name()="WithholdingTaxTotal"]')
+             wht_totals = element.xpath('//*[local-name()="WithholdingTaxTotal"]')
 
         for wht in wht_totals:
             subtotals = wht.xpath('./*[local-name()="TaxSubtotal"]')
             if subtotals:
                 for sub in subtotals:
                     scheme_id = self._get_text(sub, './/*[local-name()="TaxScheme"]/*[local-name()="ID"]')
-                    # Fix: Search for percent inside TaxCategory
                     percent = self._get_float(sub, './/*[local-name()="TaxCategory"]/*[local-name()="Percent"]')
-                    if percent == 0.0:
-                         percent = self._get_float(sub, './*[local-name()="Percent"]')
+                    if percent == 0.0: percent = self._get_float(sub, './*[local-name()="Percent"]')
                          
                     amount = self._get_float(sub, './*[local-name()="TaxAmount"]')
                     if scheme_id:
                         key = (scheme_id, percent)
                         taxes[key] = taxes.get(key, 0.0) + amount
-            else:
-                scheme_id = self._get_text(wht, './/*[local-name()="TaxScheme"]/*[local-name()="ID"]')
-                amount = self._get_float(wht, './*[local-name()="TaxAmount"]')
-                if scheme_id:
-                    key = (scheme_id, 0.0)
-                    taxes[key] = taxes.get(key, 0.0) + amount
+                        # Force context to withholding if found here
+                        unknown_codes[scheme_id] = 'withholding'
         
-        return taxes
+        return taxes, unknown_codes
 
-    def import_to_db(self, directory: str, repository: Any, dry_run: bool = False, filters: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def import_to_db(self, directory: str, repository: Any, dry_run: bool = False, filters: Optional[Dict[str, Any]] = None, target_filenames: Optional[List[str]] = None) -> Dict[str, Any]:
         """Procesa XMLs de un directorio y los guarda en la BD (o solo previsualiza)."""
         if not os.path.exists(directory):
             return {"status": "error", "message": f"Directorio no encontrado: {directory}"}
 
         files = [f for f in os.listdir(directory) if f.lower().endswith('.xml')]
+        
+        if target_filenames:
+            import logging
+            logger = logging.getLogger("exporter")
+            logger.info(f"Filtrando archivos. Buscados: {target_filenames}")
+            
+            # Normalize for case-insensitive matching
+            available_files = {f: f.lower() for f in files}
+            matched_files = set()
+            
+            for target in target_filenames:
+                target_clean = target.strip()
+                target_lower = target_clean.lower()
+                
+                found = False
+                # 1. Try exact filename match
+                for real_name, lower_name in available_files.items():
+                    if lower_name == target_lower:
+                        matched_files.add(real_name)
+                        found = True
+                        break
+                
+                # 2. If not found, try searching as Invoice Number (identifiers usually in brackets like [FE123])
+                if not found:
+                    for real_name, lower_name in available_files.items():
+                         # Check if target is in filename (e.g. "[FE123]" or just "FE123")
+                         if target_lower in lower_name:
+                             matched_files.add(real_name)
+            
+            files = list(matched_files)
+            logger.info(f"Archivos finales a procesar: {files}")
+        
         count_imported = 0
         count_duplicates = 0
         count_errors = 0
@@ -286,7 +383,8 @@ class ExporterService:
                 "nombre_pdf": data.get('nombre_pdf') if data else None,
                 "attachments": [filename],
                 "status": "pending",
-                "message": None
+                "message": None,
+                "otros_conceptos": data.get('otros_conceptos') if data else None
             }
 
             if data:
@@ -367,6 +465,16 @@ class ExporterService:
         filter_msg = ""
         if count_filtered > 0:
             filter_msg = f" ({count_filtered} archivos excluidos por filtros)"
+        
+        # Debug Log
+        import logging
+        logger = logging.getLogger("exporter")
+        if count_inconsistent > 0:
+             logger.info(f"Inconsistentes encontradas: {[r.get('status') for r in results if r.get('status') == 'inconsistent']}")
+             # Log detail of the first inconsistent one to check for missing taxes
+             inconsistents = [r for r in results if r.get('status') == 'inconsistent']
+             if inconsistents:
+                 logger.info(f"Detalle Inconsistente Full: {inconsistents[0]}")
         
         return {
             "status": "success",

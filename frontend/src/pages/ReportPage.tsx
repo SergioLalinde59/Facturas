@@ -119,6 +119,12 @@ export function ReportPage({ providers: initialProviders }: ReportPageProps) {
                         (b.iva_19 + b.iva_5 + b.iva_0 + (b.inc || 0))
                     );
                     break;
+                case 'retenciones':
+                    comparison = (
+                        ((a.retefuente || 0) + (a.reteica || 0) + (a.reteiva || 0)) -
+                        ((b.retefuente || 0) + (b.reteica || 0) + (b.reteiva || 0))
+                    );
+                    break;
                 case 'total': comparison = a.total - b.total; break;
             }
             return sortDirection === 'asc' ? comparison : -comparison;
@@ -317,18 +323,18 @@ export function ReportPage({ providers: initialProviders }: ReportPageProps) {
                             </button>
                         </div>
                     </div>
-                    <div className="data-card-content custom-scrollbar" style={{ overflow: 'auto', height: '700px' }}>
+                    <div className="data-card-content custom-scrollbar" style={{ overflowY: 'scroll', height: '750px' }}>
                         <table className="data-table">
                             <thead>
                                 <tr>
                                     <th className="sortable-header" onClick={() => handleSort('fecha')}><span>Fecha</span>{getSortIcon('fecha')}</th>
                                     <th className="sortable-header" onClick={() => handleSort('proveedor')}><span>Proveedor</span>{getSortIcon('proveedor')}</th>
-                                    <th className="sortable-header" onClick={() => handleSort('nit')}><span>NIT</span>{getSortIcon('nit')}</th>
+                                    <th className="sortable-header" onClick={() => handleSort('nit')}><span>Nit</span>{getSortIcon('nit')}</th>
                                     <th className="sortable-header" onClick={() => handleSort('factura')}><span>Factura</span>{getSortIcon('factura')}</th>
                                     <th className="sortable-header" style={{ textAlign: 'right' }} onClick={() => handleSort('subtotal')}><span>Subtotal</span>{getSortIcon('subtotal')}</th>
                                     <th className="sortable-header" style={{ textAlign: 'right' }} onClick={() => handleSort('descuentos')}><span>Descuentos</span>{getSortIcon('descuentos')}</th>
                                     <th className="sortable-header" style={{ textAlign: 'right' }} onClick={() => handleSort('impuestos')}><span>Impuestos</span>{getSortIcon('impuestos')}</th>
-                                    <th style={{ width: '100px', textAlign: 'right' }}><span>Reten.</span></th>
+                                    <th className="sortable-header" style={{ width: '100px', textAlign: 'right' }} onClick={() => handleSort('retenciones')}><span>Retenciones</span>{getSortIcon('retenciones')}</th>
                                     <th className="sortable-header" style={{ textAlign: 'right' }} onClick={() => handleSort('total')}><span>Total</span>{getSortIcon('total')}</th>
                                     <th style={{ width: '50px', textAlign: 'center' }}>PDF</th>
                                 </tr>

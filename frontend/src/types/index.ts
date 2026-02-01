@@ -54,7 +54,7 @@ export interface DashboardStats {
 
 export type AppView = 'dashboard' | 'extract' | 'import' | 'export' | 'report';
 
-export type SortColumn = 'fecha' | 'proveedor' | 'nit' | 'factura' | 'subtotal' | 'descuentos' | 'iva_19' | 'iva_5' | 'iva_0' | 'inc' | 'impuestos' | 'total';
+export type SortColumn = 'fecha' | 'proveedor' | 'nit' | 'factura' | 'subtotal' | 'descuentos' | 'iva_19' | 'iva_5' | 'iva_0' | 'inc' | 'impuestos' | 'retenciones' | 'total';
 export type SortDirection = 'asc' | 'desc';
 
 export type ProcessSortColumn = 'date' | 'sender' | 'nit' | 'subject' | 'subtotal' | 'descuentos' | 'impuestos' | 'retenciones' | 'iva' | 'iva_19' | 'iva_5' | 'iva_0' | 'inc' | 'total' | 'nombre_xml' | 'count' | 'status';

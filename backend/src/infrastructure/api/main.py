@@ -46,16 +46,20 @@ logging.basicConfig(
 logger = logging.getLogger("api")
 logger.info(f"Iniciando API. Log en: {LOG_PATH}")
 
+from src.api import config_api
+
 app = FastAPI(title="Gmail Invoice Processor API")
 
-# Configurar CORS robusto
+# Configurar CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Permitir el frontend
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(config_api.router, prefix="/api/v1/config", tags=["configuration"])
 
 class ProcessRequest(BaseModel):
     target_directory: Optional[str] = None
@@ -64,6 +68,7 @@ class ProcessRequest(BaseModel):
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     provider: Optional[str] = None
+    filenames: Optional[List[str]] = None
 
 CREDENTIALS_PATH = os.path.abspath("credentials.json")
 TOKEN_PATH = os.path.abspath("token.json")
@@ -195,7 +200,7 @@ async def process_invoices_stream(
 
 @app.post("/api/v1/invoices/import-db")
 async def import_invoices_to_db(request: ProcessRequest):
-    logger.info(f"Petición POST /api/v1/invoices/import-db - Dir: {request.target_directory}, Preview: {request.dry_run}, Filtros: {request.start_date} a {request.end_date}, Prov: {request.provider}")
+    logger.info(f"Petición POST /api/v1/invoices/import-db - Dir: {request.target_directory}, Preview: {request.dry_run}, Filtros: {request.start_date} a {request.end_date}, Prov: {request.provider}, Filenames: {len(request.filenames) if request.filenames else 0}")
     try:
         exporter = ExporterService()
         filters = {
@@ -205,7 +210,7 @@ async def import_invoices_to_db(request: ProcessRequest):
         }
         actual_directory = request.target_directory or FACTURAS_PENDIENTES
         logger.info(f"Importando desde directorio: {actual_directory}")
-        result = exporter.import_to_db(actual_directory, factura_repo, dry_run=request.dry_run, filters=filters)
+        result = exporter.import_to_db(actual_directory, factura_repo, dry_run=request.dry_run, filters=filters, target_filenames=request.filenames)
         return result
     except Exception as e:
         logger.error(f"Error en import_invoices_to_db: {str(e)}")
