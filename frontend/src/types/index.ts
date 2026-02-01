@@ -47,7 +47,7 @@ export interface DashboardStats {
     fecha_max: string | null;
 }
 
-export type AppView = 'dashboard' | 'extract' | 'import' | 'export' | 'report';
+export type AppView = 'dashboard' | 'extract' | 'import' | 'export' | 'report' | 'tax-master' | 'groupings' | 'tax-rates';
 
 export type SortColumn = 'fecha' | 'proveedor' | 'nit' | 'factura' | 'subtotal' | 'descuentos' | 'impuestos' | 'retenciones' | 'total';
 export type SortDirection = 'asc' | 'desc';

@@ -1,24 +1,22 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
     Mail,
     History,
     CheckCircle2,
     Trash2,
     FileCheck,
-    AlertCircle,
     Loader2,
     X,
     Play
 } from 'lucide-react';
 
-import type { ProcessingStats } from '../types';
+import type { ProcessingStats, ProcessSortColumn, SortDirection } from '../types';
+import { renderStatusBadge, formatProcessDate } from '../utils/uiUtils';
 
 interface ExtractionPageProps {
-    provider: string;
-    onProviderChange: (val: string) => void;
 }
 
-export function ExtractionPage({ provider, onProviderChange }: ExtractionPageProps) {
+export function ExtractionPage({ }: ExtractionPageProps) {
     const [maxEmails, setMaxEmails] = useState(50);
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [message, setMessage] = useState('');
@@ -26,52 +24,53 @@ export function ExtractionPage({ provider, onProviderChange }: ExtractionPagePro
     const [processResults, setProcessResults] = useState<any[]>([]);
     const [isExtractModalOpen, setIsExtractModalOpen] = useState(false);
 
-    // Helper functions
-    const renderStatusBadge = (status: string) => {
-        switch (status) {
-            case 'success':
-                return (
-                    <span className="badge badge-green">
-                        <span className="badge-dot"></span> ÉXITO
-                    </span>
-                );
-            case 'no_valid_invoices':
-            case 'trashed':
-                return (
-                    <span className="badge" style={{ backgroundColor: 'rgba(100, 116, 139, 0.1)', color: 'var(--text-secondary)' }}>
-                        <span className="badge-dot" style={{ backgroundColor: 'var(--text-secondary)' }}></span> OMITIDO
-                    </span>
-                );
-            case 'error':
-                return (
-                    <span className="badge badge-danger">
-                        <span className="badge-dot"></span> ERROR
-                    </span>
-                );
-            default:
-                return (
-                    <span className="badge badge-blue">
-                        <span className="badge-dot"></span> {status.toUpperCase()}
-                    </span>
-                );
-        }
-    };
+    // Sorting state for extraction process log
+    const [processSortColumn, setProcessSortColumn] = useState<ProcessSortColumn>('date');
+    const [processSortDirection, setProcessSortDirection] = useState<SortDirection>('desc');
 
-    const formatProcessDate = (dateStr: string) => {
-        try {
-            const isoDate = dateStr.includes('T') ? dateStr.split('T')[0] :
-                dateStr.includes(' ') ? dateStr.split(' ')[0] : dateStr;
+    const sortedProcessResults = useMemo(() => {
+        if (!processResults.length) return [];
 
-            const parts = isoDate.split(/[-/]/);
-            if (parts.length === 3) {
-                const y = parts[0].length === 4 ? parts[0] : parts[2];
-                const m = parts[1].padStart(2, '0');
-                const d = (parts[0].length === 4 ? parts[2] : parts[0]).padStart(2, '0');
-                return `${y}-${m}-${d}`;
+        return [...processResults].sort((a, b) => {
+            let comparison = 0;
+            switch (processSortColumn) {
+                case 'date':
+                    comparison = (a.date || '').localeCompare(b.date || '');
+                    break;
+                case 'sender':
+                    comparison = (a.sender || '').localeCompare(b.sender || '');
+                    break;
+                case 'nit':
+                    comparison = (a.nit || '').localeCompare(b.nit || '');
+                    break;
+                case 'subject':
+                    comparison = (a.subject || '').localeCompare(b.subject || '');
+                    break;
+                case 'subtotal': comparison = (a.subtotal || 0) - (b.subtotal || 0); break;
+                case 'descuentos': comparison = (a.descuentos || 0) - (b.descuentos || 0); break;
+                case 'total': comparison = (a.total || 0) - (b.total || 0); break;
+                case 'nombre_xml':
+                    comparison = (a.nombre_xml || '').localeCompare(b.nombre_xml || '');
+                    break;
+                case 'impuestos': comparison = (a.impuestos || 0) - (b.impuestos || 0); break;
+                case 'count':
+                    comparison = (a.attachments?.length || 0) - (b.attachments?.length || 0);
+                    break;
+                case 'status':
+                    comparison = (a.status || '').localeCompare(b.status || '');
+                    break;
+                case 'retenciones': comparison = (a.retenciones || 0) - (b.retenciones || 0); break;
             }
-            return isoDate;
-        } catch (e) {
-            return dateStr;
+            return processSortDirection === 'asc' ? comparison : -comparison;
+        });
+    }, [processResults, processSortColumn, processSortDirection]);
+
+    const handleSort = (column: ProcessSortColumn) => {
+        if (column === processSortColumn) {
+            setProcessSortDirection(processSortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+            setProcessSortColumn(column);
+            setProcessSortDirection('asc');
         }
     };
 
@@ -94,11 +93,7 @@ export function ExtractionPage({ provider, onProviderChange }: ExtractionPagePro
         try {
             console.log('Iniciando proceso con maxEmails:', maxEmails);
             const url = new URL('/api/v1/invoices/process-stream', window.location.origin);
-            // Directory is configured in backend via FACTURAS_PENDIENTES .env variable
             url.searchParams.append('max_emails', (maxEmails || 50).toString());
-            if (provider) {
-                url.searchParams.append('search_query', `subject:("${provider}")`);
-            }
 
             const response = await fetch(url.toString());
             if (!response.ok) throw new Error('Error al conectar con el servidor');
@@ -150,8 +145,6 @@ export function ExtractionPage({ provider, onProviderChange }: ExtractionPagePro
     return (
         <>
             <div className="filter-section">
-
-
                 <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center' }}>
                     <div className="form-group" style={{ width: '320px', textAlign: 'center' }}>
                         <label className="form-label" style={{ justifyContent: 'center' }}>
@@ -177,36 +170,6 @@ export function ExtractionPage({ provider, onProviderChange }: ExtractionPagePro
                     </div>
                 </div>
 
-                {/* We can use the provider filter here if we want to filter by subject, though App.tsx didn't expose it prominently for Extract view except in the generic filter area if it was shown. 
-            App.tsx line 499 uses `provider` state.
-            App.tsx FilterBar is hidden for 'extract' view?
-            Line 935: activeView !== 'report' && activeView !== 'extract' -> DirectoryInput shown.
-            Line 979: (activeView === 'export' || activeView === 'report' || activeView === 'import') -> FilterBar shown.
-            So 'extract' view DOES NOT show FilterBar (Date/Provider).
-            However, handleProcess uses `provider`. 
-            If the user CANNOT set provider in the UI for extract view, then passing it is useless.
-            I will omit the provider input for now to match App.tsx behavior, unless I see where provider is set for extract.
-            Ah, line 935 says DirectoryInput is NOT shown for extract either?
-            Wait, line 935: {activeView !== 'report' && activeView !== 'extract' && (... DirectoryInput ...)}
-            So DirectoryInput is HIDDEN for extract?
-            Line 495: if (directory) url.searchParams.append('target_directory', directory);
-            If it's hidden, how does the user select it?
-            Maybe it relies on the default or previous value? 
-            Or maybe I misread the condition.
-            `activeView !== 'report' && activeView !== 'extract'` means if it IS extract, don't show.
-            So Extract view doesn't show directory input? That seems odd if it needs a target directory.
-            Let's stick to what the code says. If it's hidden, I won't render it.
-            Actually, let's re-read line 935 carefully.
-            `activeView !== 'report' && activeView !== 'extract'` -> True only if view is dashboard, import, export.
-            So Extract view does NOT show DirectoryInput.
-            But `handleProcess` uses `directory`. `directory` has a default state in App.tsx.
-            Okay, I will NOT render DirectoryInput if the user logic hides it.
-            
-            Correction: I will follow the visual logic of App.tsx.
-            If Render logic says Hide, I Hide.
-        */}
-
-                {/* Action Button */}
                 <div className="filter-row" style={{ marginTop: '1.5rem', justifyContent: 'center' }}>
                     <button
                         onClick={handleProcess}
@@ -229,7 +192,6 @@ export function ExtractionPage({ provider, onProviderChange }: ExtractionPagePro
                 </div>
             </div>
 
-            {/* Summary Cards (shown in main view if stats exist) */}
             {stats && (status === 'success' || (status === 'loading' && stats.total_scanned > 0)) && (
                 <div className="summary-cards" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginTop: '2rem' }}>
                     <div className="summary-card">
@@ -263,7 +225,6 @@ export function ExtractionPage({ provider, onProviderChange }: ExtractionPagePro
                 </div>
             )}
 
-            {/* Extract Progress Modal */}
             {isExtractModalOpen && (
                 <div className="modal-overlay" style={{
                     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
@@ -275,7 +236,6 @@ export function ExtractionPage({ provider, onProviderChange }: ExtractionPagePro
                         width: '1080px', maxHeight: '90vh', display: 'flex', flexDirection: 'column',
                         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden'
                     }}>
-                        {/* Header */}
                         <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                 <div style={{ backgroundColor: 'var(--accent-light)', color: 'var(--accent-color)', width: 40, height: 40, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -300,9 +260,7 @@ export function ExtractionPage({ provider, onProviderChange }: ExtractionPagePro
                             )}
                         </div>
 
-                        {/* Body */}
                         <div className="custom-scrollbar" style={{ padding: '1.5rem', overflowY: 'auto', flex: 1 }}>
-                            {/* Progress Bar Area */}
                             {stats && stats.total_scanned > 0 && (
                                 <div style={{
                                     padding: '1.5rem',
@@ -329,7 +287,6 @@ export function ExtractionPage({ provider, onProviderChange }: ExtractionPagePro
                                 </div>
                             )}
 
-                            {/* Summary Small cards */}
                             {stats && (
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
                                     <div style={{ padding: '1rem', borderRadius: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', textAlign: 'center' }}>
@@ -351,20 +308,19 @@ export function ExtractionPage({ provider, onProviderChange }: ExtractionPagePro
                                 </div>
                             )}
 
-                            {/* Table Log */}
                             <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden' }}>
                                 <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
                                     <table className="data-table" style={{ fontSize: '0.75rem' }}>
                                         <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
                                             <tr>
-                                                <th>Fecha</th>
-                                                <th>Remitente</th>
-                                                <th>Asunto</th>
+                                                <th onClick={() => handleSort('date')} style={{ cursor: 'pointer' }}>Fecha {processSortColumn === 'date' && (processSortDirection === 'asc' ? '↑' : '↓')}</th>
+                                                <th onClick={() => handleSort('sender')} style={{ cursor: 'pointer' }}>Remitente {processSortColumn === 'sender' && (processSortDirection === 'asc' ? '↑' : '↓')}</th>
+                                                <th onClick={() => handleSort('subject')} style={{ cursor: 'pointer' }}>Asunto {processSortColumn === 'subject' && (processSortDirection === 'asc' ? '↑' : '↓')}</th>
                                                 <th style={{ textAlign: 'center' }}>Estado</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {processResults.map((res: any, idx: number) => (
+                                            {sortedProcessResults.map((res: any, idx: number) => (
                                                 <tr key={idx}>
                                                     <td style={{ whiteSpace: 'nowrap' }}>{formatProcessDate(res.date)}</td>
                                                     <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '250px' }}>{res.sender?.split('<')[0]}</td>
@@ -378,7 +334,6 @@ export function ExtractionPage({ provider, onProviderChange }: ExtractionPagePro
                             </div>
                         </div>
 
-                        {/* Footer */}
                         <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #e2e8f0', backgroundColor: '#f8fafc', display: 'flex', justifyContent: 'flex-end' }}>
                             <button
                                 onClick={() => setIsExtractModalOpen(false)}

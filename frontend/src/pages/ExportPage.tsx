@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { DirectoryInput } from '../components/molecules';
 import { FilterBar } from '../components/organisms';
+import { useDateFilters } from '../hooks/useDateFilters';
 
 interface ExportPageProps {
     directory: string;
@@ -17,50 +18,19 @@ interface ExportPageProps {
 }
 
 export function ExportPage({ directory, onDirectoryChange, onBrowse, providers: initialProviders }: ExportPageProps) {
-    const [startDate, setStartDate] = useState(() => {
-        const now = new Date();
-        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-    });
-    const [endDate, setEndDate] = useState(() => {
-        const now = new Date();
-        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    });
-    const [provider, setProvider] = useState('');
-    const [activeQuickFilter, setActiveQuickFilter] = useState<string>('current-month');
+    const {
+        startDate,
+        endDate,
+        setStartDate,
+        setEndDate,
+        activeQuickFilter,
+        applyQuickFilter
+    } = useDateFilters('current-month');
 
+    const [provider, setProvider] = useState('');
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [message, setMessage] = useState('');
     const [exportFormats, setExportFormats] = useState({ csv: true, excel: false, pdf: false });
-
-    const applyQuickFilter = (type: string) => {
-        const today = new Date();
-        const now = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-        let start = new Date(now);
-        let end = new Date(now);
-
-        switch (type) {
-            case 'current-month': start = new Date(now.getFullYear(), now.getMonth(), 1); break;
-            case 'last-month': start = new Date(now.getFullYear(), now.getMonth() - 1, 1); end = new Date(now.getFullYear(), now.getMonth(), 0); break;
-            case 'last-3-months': start = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate()); break;
-            case 'last-6-months': start = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate()); break;
-            case 'ytd': start = new Date(now.getFullYear(), 0, 1); break;
-            case 'last-year': start = new Date(now.getFullYear() - 1, 0, 1); end = new Date(now.getFullYear() - 1, 11, 31); break;
-            case 'last-12-months': start = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()); break;
-            default: return;
-        }
-
-        const formatDate = (date: Date) => {
-            const y = date.getFullYear();
-            const m = String(date.getMonth() + 1).padStart(2, '0');
-            const d = String(date.getDate()).padStart(2, '0');
-            return `${y}-${m}-${d}`;
-        };
-
-        setStartDate(formatDate(start));
-        if (type === 'last-month' || type === 'last-year') setEndDate(formatDate(end));
-        else setEndDate(formatDate(end)); // End is today usually
-        setActiveQuickFilter(type);
-    };
 
     const handleExportFromDB = async () => {
         const selectedFormats = Object.entries(exportFormats)
