@@ -82,18 +82,25 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
                     .dashboard-stats-ribbons .stat-card {
                         min-height: 85px;
                         padding: 0.75rem 1rem;
-                        width: 220px; /* Fixed width to ensure perfect centering alignment */
+                        flex: 1;
+                        min-width: 200px;
+                        max-width: 280px;
                     }
                     .dashboard-stats-ribbons .stat-card__value {
-                        font-size: 1.25rem;
+                        font-size: 1.125rem;
                     }
                     .dashboard-stats-ribbons .stat-card__icon-wrapper {
-                        width: 40px;
-                        height: 40px;
+                        width: 36px;
+                        height: 36px;
                     }
                     .dashboard-stats-ribbons .stat-card-grid {
-                        width: auto; /* Allow the grid to be only as wide as its cards */
-                        gap: 1.25rem;
+                        width: 100%;
+                        justify-content: center;
+                    }
+                    .dashboard-stats-ribbons .stat-card__label {
+                        font-size: 0.7rem;
+                        color: var(--color-text-secondary);
+                        /* text-transform restriction removed in StatCard.css */
                     }
                 `}</style>
 
@@ -102,28 +109,28 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
                     stats={[
                         {
                             id: 'range',
-                            label: 'Rango de Fechas',
+                            label: 'fecha',
                             value: dashboardStats.fecha_min ? `${dashboardStats.fecha_min} - ${dashboardStats.fecha_max}` : 'Sin datos',
                             icon: <Calendar size={20} />,
                             variant: 'info'
                         },
                         {
                             id: 'count',
-                            label: 'Total Facturas',
+                            label: 'no facturas',
                             value: dashboardStats.total_facturas.toLocaleString('es-CO'),
                             icon: <Receipt size={20} />,
                             variant: 'primary'
                         },
                         {
                             id: 'providers',
-                            label: 'Proveedores',
+                            label: 'no proveedores',
                             value: dashboardStats.total_proveedores,
                             icon: <Building2 size={20} />,
                             variant: 'info'
                         },
                         {
                             id: 'nits',
-                            label: 'NITs Únicos',
+                            label: 'nits únicos',
                             value: dashboardStats.total_nits,
                             icon: <Users size={20} />,
                             variant: 'info'
@@ -137,35 +144,35 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
                     stats={[
                         {
                             id: 'subtotal',
-                            label: 'Subtotal',
+                            label: 'subtotal',
                             value: <CurrencyValue value={dashboardStats.total_subtotal} />,
                             icon: <FileSpreadsheet size={20} />,
                             variant: 'primary'
                         },
                         {
                             id: 'descuentos',
-                            label: 'Descuentos',
+                            label: 'descuentos',
                             value: <CurrencyValue value={-dashboardStats.total_descuentos} />,
                             icon: <Percent size={20} />,
                             variant: 'error'
                         },
                         {
                             id: 'impuestos',
-                            label: 'Impuestos',
+                            label: 'impuestos',
                             value: <CurrencyValue value={dashboardStats.total_impuestos} />,
                             icon: <Percent size={20} />,
                             variant: 'warning'
                         },
                         {
                             id: 'retenciones',
-                            label: 'Retenciones',
+                            label: 'retenciones',
                             value: <CurrencyValue value={-dashboardStats.total_retenciones} />,
                             icon: <DollarSign size={20} />,
                             variant: 'error'
                         },
                         {
                             id: 'total',
-                            label: 'Monto Total',
+                            label: 'monto total',
                             value: <CurrencyValue value={dashboardStats.total_monto} />,
                             icon: <TrendingUp size={20} />,
                             variant: 'success'

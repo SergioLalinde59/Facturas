@@ -8,22 +8,13 @@ import {
   FileText,
   History,
   Database,
-  Calendar,
   LayoutDashboard,
-  TrendingUp,
-  Zap,
-  DollarSign,
-  Receipt,
-  Building2,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
   Play,
   Download,
   FolderOpen,
-  Users,
-  Percent,
-  Tag,
   Trash2,
   FileCheck,
   Eye,
@@ -35,7 +26,9 @@ import './App.css';
 // System Components
 import { CurrencyValue } from './components/atoms';
 import { DirectoryInput } from './components/molecules';
-import { Sidebar, FilterBar, StatCardGrid } from './components/organisms';
+import { Sidebar, FilterBar } from './components/organisms';
+import { DashboardPage } from './pages/DashboardPage';
+import { ReportPage } from './pages/ReportPage';
 
 
 interface ProcessingStats {
@@ -57,40 +50,7 @@ interface ImportStats {
   errors: number;
 }
 
-interface Invoice {
-  fecha: string;
-  nit: string;
-  proveedor: string;
-  factura: string;
-  subtotal: number;
-  descuentos: number;
-  iva_19: number;
-  iva_5: number;
-  iva_0: number;
-  inc: number;
-  inc_bolsas: number;
-  retefuente: number;
-  otros_impuestos: number;
-  total: number;
-  nombre_pdf: string;
-  nombre_xml: string;
-  fecha_creacion: string;
-}
 
-interface DashboardStats {
-  total_facturas: number;
-  total_subtotal: number;
-  total_descuentos: number;
-  total_iva_19: number;
-  total_iva_5: number;
-  total_iva_0: number;
-  total_inc: number;
-  total_monto: number;
-  total_proveedores: number;
-  total_nits: number;
-  fecha_min: string | null;
-  fecha_max: string | null;
-}
 
 type AppView = 'dashboard' | 'extract' | 'import' | 'export' | 'report';
 
@@ -131,21 +91,19 @@ function App() {
   const [stats, setStats] = useState<ProcessingStats | null>(null);
   const [importStats, setImportStats] = useState<ImportStats | null>(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
-  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
-  const [dashboardLoading, setDashboardLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [maxEmails, setMaxEmails] = useState(50);
   const [processResults, setProcessResults] = useState<any[]>([]);
-  const [reportData, setReportData] = useState<Invoice[]>([]);
   const [startDate, setStartDate] = useState(() => {
     const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+    return `${now.getFullYear()} -${String(now.getMonth() + 1).padStart(2, '0')}-01`;
   });
   const [endDate, setEndDate] = useState(() => {
     const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    return `${now.getFullYear()} -${String(now.getMonth() + 1).padStart(2, '0')} -${String(now.getDate()).padStart(2, '0')} `;
   });
   const [provider, setProvider] = useState('');
+  const [activeQuickFilter, setActiveQuickFilter] = useState('');
   const [providers, setProviders] = useState<string[]>([]);
   const [exportFormats, setExportFormats] = useState({ csv: true, excel: false, pdf: false });
 
@@ -156,68 +114,9 @@ function App() {
   const [isExtractModalOpen, setIsExtractModalOpen] = useState(false);
 
 
-  // Sorting state for report table
-  type SortColumn = 'fecha' | 'proveedor' | 'nit' | 'factura' | 'subtotal' | 'descuentos' | 'iva_19' | 'iva_5' | 'iva_0' | 'inc' | 'total';
-  type SortDirection = 'asc' | 'desc';
-  const [sortColumn, setSortColumn] = useState<SortColumn>('fecha');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-
-  // Sorted report data
-  const sortedReportData = useMemo(() => {
-    if (!reportData.length) return [];
-
-    return [...reportData].sort((a, b) => {
-      let comparison = 0;
-
-      switch (sortColumn) {
-        case 'fecha':
-          comparison = a.fecha.localeCompare(b.fecha);
-          break;
-        case 'proveedor':
-          comparison = a.proveedor.localeCompare(b.proveedor);
-          break;
-        case 'nit':
-          comparison = a.nit.localeCompare(b.nit);
-          break;
-        case 'factura':
-          comparison = a.factura.localeCompare(b.factura);
-          break;
-        case 'subtotal':
-          comparison = a.subtotal - b.subtotal;
-          break;
-        case 'iva_19':
-          comparison = a.iva_19 - b.iva_19;
-          break;
-        case 'iva_5':
-          comparison = a.iva_5 - b.iva_5;
-          break;
-        case 'iva_0':
-          comparison = a.iva_0 - b.iva_0;
-          break;
-        case 'inc':
-          comparison = (a.inc || 0) - (b.inc || 0);
-          break;
-        case 'total':
-          comparison = a.total - b.total;
-          break;
-      }
-
-      return sortDirection === 'asc' ? comparison : -comparison;
-    });
-  }, [reportData, sortColumn, sortDirection]);
-
-  // Handle column header click for sorting
-  const handleSort = (column: SortColumn) => {
-    if (sortColumn === column) {
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortColumn(column);
-      setSortDirection('asc');
-    }
-  };
-
   // Sorting state for extraction process log
-  type ProcessSortColumn = 'date' | 'sender' | 'nit' | 'subject' | 'subtotal' | 'descuentos' | 'impuestos' | 'iva' | 'iva_19' | 'iva_5' | 'iva_0' | 'inc' | 'total' | 'nombre_xml' | 'count' | 'status';
+  type SortDirection = 'asc' | 'desc';
+  type ProcessSortColumn = 'date' | 'sender' | 'nit' | 'subject' | 'subtotal' | 'descuentos' | 'impuestos' | 'retenciones' | 'iva' | 'iva_19' | 'iva_5' | 'iva_0' | 'inc' | 'total' | 'nombre_xml' | 'count' | 'status';
   const [processSortColumn, setProcessSortColumn] = useState<ProcessSortColumn>('date');
   const [processSortDirection, setProcessSortDirection] = useState<SortDirection>('desc');
 
@@ -233,7 +132,7 @@ function App() {
         const y = parts[0].length === 4 ? parts[0] : parts[2];
         const m = parts[1].padStart(2, '0');
         const d = (parts[0].length === 4 ? parts[2] : parts[0]).padStart(2, '0');
-        return `${y}-${m}-${d}`;
+        return `${y} -${m} -${d} `;
       }
       return isoDate;
     } catch (e) {
@@ -297,6 +196,11 @@ function App() {
         case 'status':
           comparison = (a.status || '').localeCompare(b.status || '');
           break;
+        case 'retenciones':
+          const retenA = (a.retefuente || 0) + (a.reteica || 0) + (a.reteiva || 0);
+          const retenB = (b.retefuente || 0) + (b.reteica || 0) + (b.reteiva || 0);
+          comparison = retenA - retenB;
+          break;
       }
       return processSortDirection === 'asc' ? comparison : -comparison;
     });
@@ -311,8 +215,6 @@ function App() {
     }
   };
 
-  // Quick Filter State
-  const [activeQuickFilter, setActiveQuickFilter] = useState<string>('current-month');
 
   // Memoized sums for the import view
   const importFinancialSums = useMemo(() => {
@@ -320,8 +222,9 @@ function App() {
       subtotal: acc.subtotal + (Number(r.subtotal) || 0),
       descuentos: acc.descuentos + (Number(r.descuentos) || 0),
       iva: acc.iva + (Number(r.iva) || Number(r.iva_19) || Number(r.iva_5) || 0),
-      total: acc.total + (Number(r.total) || 0)
-    }), { subtotal: 0, descuentos: 0, iva: 0, total: 0 });
+      total: acc.total + (Number(r.total) || 0),
+      retefuente: acc.retefuente + (Number(r.retefuente) || 0) + (Number(r.reteica) || 0) + (Number(r.reteiva) || 0)
+    }), { subtotal: 0, descuentos: 0, iva: 0, total: 0, retefuente: 0 });
   }, [processResults]);
 
   const applyQuickFilter = (type: string) => {
@@ -364,7 +267,7 @@ function App() {
       const y = date.getFullYear();
       const m = String(date.getMonth() + 1).padStart(2, '0');
       const d = String(date.getDate()).padStart(2, '0');
-      return `${y}-${m}-${d}`;
+      return `${y} -${m} -${d} `;
     };
 
     setStartDate(formatDate(start));
@@ -372,15 +275,6 @@ function App() {
     setActiveQuickFilter(type);
   };
 
-  // Get sort icon for column header
-  const getSortIcon = (column: SortColumn) => {
-    if (sortColumn !== column) {
-      return <ArrowUpDown size={14} style={{ opacity: 0.4 }} />;
-    }
-    return sortDirection === 'asc'
-      ? <ArrowUp size={14} style={{ color: 'var(--accent-color)' }} />
-      : <ArrowDown size={14} style={{ color: 'var(--accent-color)' }} />;
-  };
 
   const getProcessSortIcon = (column: ProcessSortColumn) => {
     if (processSortColumn !== column) {
@@ -418,53 +312,11 @@ function App() {
     if (activeView === 'export' || activeView === 'report' || activeView === 'import') fetchProviders();
   }, [activeView, startDate, endDate]);
 
-  // Cargar estadísticas del dashboard
+
+  // Automatic updates for Import view when filters change
   useEffect(() => {
-    const fetchDashboardStats = async () => {
-      setDashboardLoading(true);
-      try {
-        const response = await fetch('/api/v1/invoices/stats');
-        const data = await response.json();
-        setDashboardStats(data.stats);
-      } catch (err) {
-        console.error('Error fetching dashboard stats:', err);
-      } finally {
-        setDashboardLoading(false);
-      }
-    };
-    if (activeView === 'dashboard') fetchDashboardStats();
-  }, [activeView]);
-
-  const handleGetReport = async () => {
-    setStatus('loading');
-    setReportData([]);
-    try {
-      const query = new URLSearchParams();
-      if (startDate) query.append('start_date', startDate);
-      if (endDate) query.append('end_date', endDate);
-      if (provider) query.append('provider', provider);
-
-      const response = await fetch(`/api/v1/invoices?${query.toString()}`);
-      const data = await response.json();
-
-      if (!response.ok) throw new Error(data.detail || 'Error al consultar facturas');
-
-      setReportData(data.invoices || []);
-      setMessage(`Se encontraron ${data.count} facturas.`);
-      setStatus('success');
-    } catch (err: any) {
-      setMessage(err.message);
-      setStatus('error');
-    }
-  };
-
-  // Automatic report update when filters change
-  useEffect(() => {
-    if (activeView === 'report') {
-      handleGetReport();
-    } else if (activeView === 'import' && directory) {
+    if (activeView === 'import' && directory) {
       // Auto-trigger preview when filters change in import view
-      // Debounce could be added here if needed, but for now direct call
       handleImportToDB(true);
     }
   }, [activeView, startDate, endDate, provider, directory]);
@@ -496,7 +348,7 @@ function App() {
       }
       url.searchParams.append('max_emails', (maxEmails || 50).toString());
       if (provider) {
-        url.searchParams.append('search_query', `subject:("${provider}")`);
+        url.searchParams.append('search_query', `subject: ("${provider}")`);
       }
 
       const response = await fetch(url.toString());
@@ -526,11 +378,11 @@ function App() {
               } else if (event.type === 'item') {
                 setStats(event.stats);
                 setProcessResults(prev => [event.data, ...prev]);
-                setMessage(`Procesando: ${event.data.subject}`);
+                setMessage(`Procesando: ${event.data.subject} `);
               } else if (event.type === 'complete') {
                 setStats(event.stats);
                 setStatus('success');
-                setMessage(`Extracción completada. ${event.stats.successful} facturas guardadas.`);
+                setMessage(`Extracción completada.${event.stats.successful} facturas guardadas.`);
               } else if (event.type === 'error') {
                 throw new Error(event.message);
               }
@@ -620,7 +472,7 @@ function App() {
 
   const loadBrowserItems = async (path: string) => {
     try {
-      const response = await fetch(`/api/v1/utils/list-directory?path=${encodeURIComponent(path)}`);
+      const response = await fetch(`/ api / v1 / utils / list - directory ? path = ${encodeURIComponent(path)} `);
       if (!response.ok) throw new Error('Error al listar directorio');
       const data = await response.json();
       setBrowserItems(data.items);
@@ -793,146 +645,12 @@ function App() {
         <div className="content-area">
           {/* Dashboard View */}
           {activeView === 'dashboard' && (
-            <>
-              {dashboardLoading ? (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4rem' }}>
-                  <Loader2 size={32} className="animate-spin" color="var(--accent-color)" />
-                  <span style={{ marginLeft: '1rem', color: 'var(--text-secondary)' }}>Cargando estadísticas...</span>
-                </div>
-              ) : dashboardStats ? (
-                <>
-                  <div style={{ marginBottom: '1rem' }}>
-                    <StatCardGrid
-                      stats={[
-                        {
-                          id: 'range',
-                          label: 'Rango de Fechas',
-                          value: dashboardStats.fecha_min ? `${dashboardStats.fecha_min} - ${dashboardStats.fecha_max}` : 'Sin datos',
-                          icon: <Calendar size={20} />,
-                          variant: 'info'
-                        },
-                        {
-                          id: 'count',
-                          label: 'Total Facturas',
-                          value: dashboardStats.total_facturas.toLocaleString('es-CO'),
-                          icon: <Receipt size={20} />,
-                          variant: 'primary'
-                        },
-                        {
-                          id: 'providers',
-                          label: 'Proveedores',
-                          value: dashboardStats.total_proveedores,
-                          icon: <Building2 size={20} />,
-                          variant: 'info'
-                        },
-                        {
-                          id: 'nits',
-                          label: 'NITs Únicos',
-                          value: dashboardStats.total_nits,
-                          icon: <Users size={20} />,
-                          variant: 'info'
-                        },
-                        {
-                          id: 'subtotal',
-                          label: 'Subtotal',
-                          value: <CurrencyValue value={dashboardStats.total_subtotal} />,
-                          icon: <FileSpreadsheet size={20} />,
-                          variant: 'primary'
-                        },
-                        {
-                          id: 'iva_19',
-                          label: 'IVA 19%',
-                          value: <CurrencyValue value={dashboardStats.total_iva_19} />,
-                          icon: <Percent size={20} />,
-                          variant: 'warning'
-                        },
-                        {
-                          id: 'iva_5',
-                          label: 'IVA 5%',
-                          value: <CurrencyValue value={dashboardStats.total_iva_5} />,
-                          icon: <Percent size={20} />,
-                          variant: 'warning'
-                        },
-                        {
-                          id: 'iva_0',
-                          label: 'Exento/0%',
-                          value: <CurrencyValue value={dashboardStats.total_iva_0} />,
-                          icon: <Percent size={20} />,
-                          variant: 'info'
-                        },
-                        {
-                          id: 'inc',
-                          label: 'INC',
-                          value: <CurrencyValue value={dashboardStats.total_inc} />,
-                          icon: <Zap size={20} />,
-                          variant: 'warning'
-                        },
-                        {
-                          id: 'total',
-                          label: 'Monto Total',
-                          value: <CurrencyValue value={dashboardStats.total_monto} />,
-                          icon: <TrendingUp size={20} />,
-                          variant: 'success'
-                        }
-                      ]}
-                      columns={5}
-                    />
-                  </div>
-
-                  {/* Quick Actions */}
-                  <div className="data-card">
-                    <div className="data-card-header">
-                      <span className="data-card-title">Acciones Rápidas</span>
-                    </div>
-                    <div className="data-card-content" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                      <button
-                        className="btn-primary"
-                        onClick={() => setActiveView('extract')}
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                      >
-                        <Mail size={18} />
-                        Extraer de Gmail
-                      </button>
-                      <button
-                        className="btn-primary"
-                        onClick={() => setActiveView('import')}
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'var(--success-color)' }}
-                      >
-                        <Database size={18} />
-                        Cargar a BD
-                      </button>
-                      <button
-                        className="btn-primary"
-                        onClick={() => setActiveView('report')}
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#8b5cf6' }}
-                      >
-                        <FileText size={18} />
-                        Ver Reporte
-                      </button>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="data-card" style={{ padding: '2rem', textAlign: 'center' }}>
-                  <AlertCircle size={48} color="var(--text-muted)" style={{ marginBottom: '1rem' }} />
-                  <p style={{ color: 'var(--text-secondary)' }}>No hay datos disponibles. Comienza extrayendo facturas de Gmail.</p>
-                  <button
-                    className="btn-primary"
-                    onClick={() => setActiveView('extract')}
-                    style={{ marginTop: '1rem' }}
-                  >
-                    <Mail size={18} />
-                    Ir a Extracción
-                  </button>
-                </div>
-              )}
-            </>
+            <DashboardPage onNavigate={setActiveView} />
           )}
 
-          {/* Filter Section - Only for non-dashboard views */}
-          {activeView !== 'dashboard' && (
+          {activeView !== 'dashboard' && activeView !== 'report' && (
             <div className="filter-section">
-              {activeView !== 'report' && activeView !== 'extract' && (
+              {activeView !== 'extract' && (
                 <div style={{ marginBottom: '1rem' }}>
                   <DirectoryInput
                     label="Directorio de Trabajo"
@@ -976,7 +694,7 @@ function App() {
                 </div>
               )}
 
-              {(activeView === 'export' || activeView === 'report' || activeView === 'import') && (
+              {(activeView === 'export' || activeView === 'import') && (
                 <div style={{ position: 'relative' }}>
                   <FilterBar
                     quickFilters={[
@@ -1034,7 +752,7 @@ function App() {
                           <>
                             <div style={{ textAlign: 'right' }}>
                               <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', lineHeight: 1, marginBottom: '2px' }}>Previsualización</div>
-                              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--success-color)', lineHeight: 1 }}>{importStats.successful} Facturas</div>
+                              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--success-color)' }}>{importStats.successful} Facturas</div>
                             </div>
                             <div style={{ display: 'flex', gap: '0.4rem' }}>
                               <button
@@ -1140,35 +858,35 @@ function App() {
             </div>
           )}
 
+          {/* Report View */}
+          {activeView === 'report' && (
+            <ReportPage providers={providers} />
+          )}
+
           {/* Status Message */}
-          {status !== 'idle' && message && activeView !== 'extract' && (status !== 'success' || (activeView !== 'import' && activeView !== 'report')) && (
+          {status !== 'idle' && message && activeView !== 'extract' && activeView !== 'report' && (
             <div
               className="data-card"
               style={{
-                marginBottom: '1rem',
-                padding: '0.75rem 1rem',
-                borderColor: status === 'success' ? 'rgba(16, 185, 129, 0.3)' :
-                  status === 'error' ? 'rgba(239, 68, 68, 0.3)' : 'var(--border-color)',
-                backgroundColor: status === 'success' ? 'rgba(16, 185, 129, 0.05)' :
-                  status === 'error' ? 'rgba(239, 68, 68, 0.05)' : 'var(--bg-secondary)'
+                padding: '1rem',
+                borderRadius: '12px',
+                backgroundColor: status === 'loading' ? 'rgba(37, 99, 235, 0.05)' : status === 'success' ? 'rgba(16, 185, 129, 0.05)' : 'rgba(239, 68, 68, 0.05)',
+                border: '1px solid',
+                borderColor: status === 'loading' ? 'rgba(37, 99, 235, 0.1)' : status === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                marginBottom: '1.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem'
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                {status === 'success' ? (
-                  <CheckCircle2 size={18} color="var(--success-color)" />
-                ) : status === 'error' ? (
-                  <AlertCircle size={18} color="var(--danger-color)" />
-                ) : (
-                  <Loader2 size={18} className="animate-spin" color="var(--accent-color)" />
-                )}
-                <p style={{
-                  fontSize: '0.875rem',
-                  color: status === 'success' ? 'var(--success-color)' :
-                    status === 'error' ? 'var(--danger-color)' : 'var(--text-secondary)'
-                }}>
-                  {message}
-                </p>
-              </div>
+              {status === 'loading' && <Loader2 size={20} className="animate-spin" style={{ color: 'var(--accent-color)' }} />}
+              {status === 'success' && <CheckCircle2 size={20} style={{ color: 'var(--success-color)' }} />}
+              {status === 'error' && <AlertCircle size={20} style={{ color: 'var(--danger-color)' }} />}
+              <span style={{
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                color: status === 'loading' ? 'var(--accent-color)' : status === 'success' ? 'var(--success-color)' : 'var(--danger-color)'
+              }}>{message}</span>
             </div>
           )}
 
@@ -1259,6 +977,10 @@ function App() {
                           <div style={{ fontSize: '0.9rem', fontWeight: 700 }}><CurrencyValue value={importFinancialSums.iva} /></div>
                         </div>
                         <div>
+                          <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>Retenciones</div>
+                          <div style={{ fontSize: '0.9rem', fontWeight: 700, color: importFinancialSums.retefuente > 0 ? 'var(--danger-color)' : 'inherit' }}><CurrencyValue value={-importFinancialSums.retefuente} /></div>
+                        </div>
+                        <div>
                           <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>Total</div>
                           <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--success-color)' }}><CurrencyValue value={importFinancialSums.total} /></div>
                         </div>
@@ -1292,7 +1014,7 @@ function App() {
                         borderRadius: '6px',
                         border: '1px solid',
                         borderColor: tableStatusFilter === f.id ? f.color : 'var(--border-color)',
-                        backgroundColor: tableStatusFilter === f.id ? `${f.color}15` : 'transparent',
+                        backgroundColor: tableStatusFilter === f.id ? `${f.color} 15` : 'transparent',
                         color: tableStatusFilter === f.id ? f.color : 'var(--text-muted)',
                         cursor: 'pointer',
                         transition: 'all 0.2s'
@@ -1363,6 +1085,11 @@ function App() {
                           <th style={{ width: '110px', padding: '0.4rem 0.75rem', textAlign: 'right', cursor: 'pointer', position: 'sticky', top: 0, zIndex: 30, backgroundColor: 'var(--bg-input)' }} onClick={() => handleProcessSort('impuestos')}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.4rem' }}>
                               Impuestos {getProcessSortIcon('impuestos')}
+                            </div>
+                          </th>
+                          <th style={{ width: '100px', padding: '0.4rem 0.75rem', textAlign: 'right', cursor: 'pointer', position: 'sticky', top: 0, zIndex: 30, backgroundColor: 'var(--bg-input)' }} onClick={() => handleProcessSort('retenciones')}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.4rem' }}>
+                              Reten. {getProcessSortIcon('retenciones')}
                             </div>
                           </th>
                           <th style={{ width: '110px', padding: '0.4rem 0.75rem', textAlign: 'right', cursor: 'pointer', position: 'sticky', top: 0, zIndex: 30, backgroundColor: 'var(--bg-input)' }} onClick={() => handleProcessSort('total')}>
@@ -1473,6 +1200,9 @@ function App() {
                                 <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace' }}>
                                   <CurrencyValue value={(res.iva_19 || 0) + (res.iva_5 || 0) + (res.iva_0 || 0) + (res.inc || 0)} />
                                 </td>
+                                <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace' }}>
+                                  <CurrencyValue value={-(res.retefuente || 0) - (res.reteica || 0) - (res.reteiva || 0)} />
+                                </td>
                                 <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace', fontWeight: 600 }}>
                                   <CurrencyValue value={res.total} />
                                 </td>
@@ -1491,263 +1221,7 @@ function App() {
           )
           }
 
-          {
-            activeView === 'report' && status === 'success' && (
-              <div style={{ marginBottom: '1rem' }}>
-                <StatCardGrid
-                  stats={[
-                    {
-                      id: 'count',
-                      label: 'Facturas',
-                      value: reportData.length,
-                      icon: <Receipt size={18} />,
-                      variant: 'primary'
-                    },
-                    {
-                      id: 'providers',
-                      label: 'Proveedores',
-                      value: new Set(reportData.map(inv => inv.nit)).size,
-                      icon: <Building2 size={18} />,
-                      variant: 'info'
-                    },
-                    {
-                      id: 'subtotal',
-                      label: 'Subtotal',
-                      value: <CurrencyValue value={reportData.reduce((sum, inv) => sum + inv.subtotal, 0)} />,
-                      icon: <FileSpreadsheet size={18} />,
-                      variant: reportData.reduce((sum, inv) => sum + inv.subtotal, 0) >= 0 ? 'success' : 'error'
-                    },
-                    {
-                      id: 'descuentos',
-                      label: 'Descuentos',
-                      value: <CurrencyValue value={reportData.reduce((sum, inv) => sum + (inv.descuentos || 0), 0)} />,
-                      icon: <FileText size={18} />,
-                      variant: 'warning'
-                    },
-                    {
-                      id: 'iva',
-                      label: 'IVA Total',
-                      value: <CurrencyValue value={reportData.reduce((sum, inv) => sum + inv.iva_19 + inv.iva_5 + inv.iva_0, 0)} />,
-                      icon: <DollarSign size={18} />,
-                      variant: 'warning'
-                    },
-                    {
-                      id: 'inc',
-                      label: 'INC Total',
-                      value: <CurrencyValue value={reportData.reduce((sum, inv) => sum + (inv.inc || 0), 0)} />,
-                      icon: <Tag size={18} />,
-                      variant: 'warning'
-                    },
-                    {
-                      id: 'total',
-                      label: 'Total General',
-                      value: <CurrencyValue value={reportData.reduce((sum, inv) => sum + inv.total, 0)} />,
-                      icon: <TrendingUp size={18} />,
-                      variant: reportData.reduce((sum, inv) => sum + inv.total, 0) >= 0 ? 'success' : 'error'
-                    }
-                  ]}
-                  columns={6}
-                />
-              </div>
-            )
-          }
-
-          {/* Report Table */}
-          {
-            activeView === 'report' && status === 'success' && (
-              <div className="data-card">
-                <div className="data-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span className="data-card-title">Resultados</span>
-                  <div style={{ display: 'flex', gap: '16px' }}>
-                    <button
-                      onClick={() => {
-                        const formats = { excel: true, csv: false, pdf: false };
-                        setExportFormats(formats);
-                        handleExportFromDB(null, formats);
-                      }}
-                      className="btn-icon"
-                      title="Exportar a Excel"
-                      style={{
-                        color: '#16a34a',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '4px',
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <FileSpreadsheet size={24} />
-                      <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)' }}>EXCEL</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        const formats = { excel: false, csv: true, pdf: false };
-                        setExportFormats(formats);
-                        handleExportFromDB(null, formats);
-                      }}
-                      className="btn-icon"
-                      title="Exportar a CSV"
-                      style={{
-                        color: '#0284c7',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '4px',
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <Database size={24} />
-                      <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)' }}>CSV</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        const formats = { excel: false, csv: false, pdf: true };
-                        setExportFormats(formats);
-                        handleExportFromDB(null, formats);
-                      }}
-                      className="btn-icon"
-                      title="Exportar a PDF"
-                      style={{
-                        color: '#dc2626',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '4px',
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <Download size={24} />
-                      <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)' }}>PDF</span>
-                    </button>
-                  </div>
-                </div>
-                <div className="data-card-content" style={{ overflow: 'auto', maxHeight: 'calc(100vh - 250px)' }}>
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th className="sortable-header" onClick={() => handleSort('fecha')}>
-                          <span>Fecha</span>
-                          {getSortIcon('fecha')}
-                        </th>
-                        <th className="sortable-header" onClick={() => handleSort('proveedor')}>
-                          <span>Proveedor</span>
-                          {getSortIcon('proveedor')}
-                        </th>
-                        <th className="sortable-header" onClick={() => handleSort('nit')}>
-                          <span>NIT</span>
-                          {getSortIcon('nit')}
-                        </th>
-                        <th className="sortable-header" onClick={() => handleSort('factura')}>
-                          <span>Factura</span>
-                          {getSortIcon('factura')}
-                        </th>
-                        <th className="sortable-header" style={{ textAlign: 'right' }} onClick={() => handleSort('subtotal')}>
-                          <span>Subtotal</span>
-                          {getSortIcon('subtotal')}
-                        </th>
-                        <th className="sortable-header" style={{ textAlign: 'right' }} onClick={() => handleSort('descuentos')}>
-                          <span>Descuentos</span>
-                          {getSortIcon('descuentos')}
-                        </th>
-                        <th className="sortable-header" style={{ textAlign: 'right' }} onClick={() => handleSort('iva_19')}>
-                          <span>IVA 19%</span>
-                          {getSortIcon('iva_19')}
-                        </th>
-                        <th className="sortable-header" style={{ textAlign: 'right' }} onClick={() => handleSort('iva_5')}>
-                          <span>IVA 5%</span>
-                          {getSortIcon('iva_5')}
-                        </th>
-                        <th className="sortable-header" style={{ textAlign: 'right' }} onClick={() => handleSort('inc')}>
-                          <span>INC</span>
-                          {getSortIcon('inc')}
-                        </th>
-                        <th className="sortable-header" style={{ textAlign: 'right' }} onClick={() => handleSort('total')}>
-                          <span>Total</span>
-                          {getSortIcon('total')}
-                        </th>
-                        <th style={{ width: '50px', textAlign: 'center' }}>PDF</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sortedReportData.map((inv, idx) => (
-                        <tr key={`${inv.nit}-${inv.factura}-${idx}`}>
-                          <td>{inv.fecha}</td>
-                          <td style={{ fontWeight: 500 }}>{inv.proveedor}</td>
-                          <td className="font-mono" style={{ fontSize: '0.85rem' }}>{inv.nit}</td>
-                          <td className="font-mono" style={{ fontSize: '0.85rem' }}>{inv.factura}</td>
-                          <td style={{
-                            textAlign: 'right',
-                            fontWeight: 500
-                          }} className="font-mono">
-                            <CurrencyValue value={inv.subtotal} />
-                          </td>
-                          <td style={{
-                            textAlign: 'right',
-                            fontWeight: 500
-                          }} className="font-mono">
-                            <CurrencyValue value={inv.descuentos || 0} />
-                          </td>
-                          <td style={{
-                            textAlign: 'right',
-                            fontWeight: 500
-                          }} className="font-mono">
-                            <CurrencyValue value={inv.iva_19} />
-                          </td>
-                          <td style={{
-                            textAlign: 'right',
-                            fontWeight: 500
-                          }} className="font-mono">
-                            <CurrencyValue value={inv.iva_5} />
-                          </td>
-                          <td style={{
-                            textAlign: 'right',
-                            fontWeight: 500
-                          }} className="font-mono">
-                            <CurrencyValue value={inv.inc || 0} />
-                          </td>
-                          <td style={{
-                            textAlign: 'right',
-                            fontWeight: 600,
-                          }} className="font-mono">
-                            <CurrencyValue value={inv.total} />
-                          </td>
-                          <td style={{ textAlign: 'center' }}>
-                            <a
-                              href={`/api/v1/utils/view-file?path=/app/data/Facturas/${inv.fecha.substring(0, 4)}/${inv.nombre_xml.replace('.xml', '.pdf')}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="btn-icon"
-                              title="Ver PDF"
-                              style={{
-                                color: 'var(--danger-color)',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                padding: '4px',
-                                borderRadius: '4px',
-                                transition: 'background-color 0.2s'
-                              }}
-                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'}
-                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                            >
-                              <FileText size={18} />
-                            </a>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )
-          }
-          {/* Invoice Detail Modal */}
+          {/* Modal Sections */}
           {isDetailModalOpen && selectedInvoice && (
             <div className="modal-overlay" style={{
               position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
@@ -1948,7 +1422,7 @@ function App() {
                     <div style={{ width: '100%', maxWidth: '100%', height: '8px', backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: '4px', marginTop: '0.5rem', overflow: 'hidden' }}>
                       <div style={{
                         height: '100%',
-                        width: `${Math.min(100, ((stats.successful + stats.trashed + stats.errors) / stats.total_scanned) * 100)}%`,
+                        width: `${Math.min(100, ((stats.successful + stats.trashed + stats.errors) / stats.total_scanned) * 100)}% `,
                         backgroundColor: 'var(--accent-color)',
                         transition: 'width 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
                       }}></div>

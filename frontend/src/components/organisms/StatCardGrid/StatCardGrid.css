@@ -31,7 +31,24 @@
     gap: 1rem;
 }
 
+.stat-card-grid--cols-7 {
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.75rem;
+}
+
+@media (max-width: 1400px) {
+    .stat-card-grid--cols-7 {
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.5rem;
+    }
+}
+
 @media (max-width: 1280px) {
+    .stat-card-grid--cols-7 {
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.25rem;
+    }
+
     .stat-card-grid--cols-6 {
         grid-template-columns: repeat(3, 1fr);
     }
@@ -43,6 +60,10 @@
 }
 
 @media (max-width: 1024px) {
+    .stat-card-grid--cols-7 {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+    }
 
     .stat-card-grid--cols-6,
     .stat-card-grid--cols-3,

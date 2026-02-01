@@ -84,8 +84,9 @@ class ExporterService:
             inc_bolsas = sum(val for (code, pct), val in taxes.items() if code == '22')
             retefuente = sum(val for (code, pct), val in taxes.items() if code == '06')
             reteica = sum(val for (code, pct), val in taxes.items() if code == '07')
+            reteiva = sum(val for (code, pct), val in taxes.items() if code == '05')
             
-            known_codes = {'01', '04', '22', '06', '07'}
+            known_codes = {'01', '04', '22', '06', '07', '05'}
             otros_imp_sum = sum(val for (code, pct), val in taxes.items() if code not in known_codes)
 
             # Ajuste de Nota Crédito
@@ -99,6 +100,7 @@ class ExporterService:
                 inc_bolsas = -abs(inc_bolsas)
                 retefuente = -abs(retefuente)
                 reteica = -abs(reteica)
+                reteiva = -abs(reteiva)
                 otros_imp_sum = -abs(otros_imp_sum)
                 total = -abs(total)
 
@@ -107,11 +109,11 @@ class ExporterService:
             gross_total = subtotal - abs(descuentos) + iva_19 + iva_5 + iva_0 + inc + inc_bolsas + otros_imp_sum
             
             # Neto: Bruto - Retenciones
-            net_total = gross_total - abs(retefuente) - abs(reteica)
+            net_total = gross_total - abs(retefuente) - abs(reteica) - abs(reteiva)
             
             # Si el total del XML (PayableAmount) coincide con el bruto, significa que no restaron retenciones en ese campo
             # En ese caso, forzamos el uso del net_total para que coincida con el "Real de la Factura" esperado por el usuario.
-            if abs(total - gross_total) < 5.0 and abs(retefuente) + abs(reteica) > 0:
+            if abs(total - gross_total) < 5.0 and abs(retefuente) + abs(reteica) + abs(reteiva) > 0:
                 total = net_total
 
             # Validación de Integridad
@@ -138,6 +140,7 @@ class ExporterService:
                 'inc_bolsas': inc_bolsas,
                 'retefuente': retefuente,
                 'reteica': reteica,
+                'reteiva': reteiva,
                 'otros_impuestos': otros_imp_sum,
                 'total': total,
                 'nombre_xml': os.path.basename(file_path),
@@ -275,6 +278,8 @@ class ExporterService:
                 "inc": data.get('inc', 0) if data else 0,
                 "inc_bolsas": data.get('inc_bolsas', 0) if data else 0,
                 "retefuente": data.get('retefuente', 0) if data else 0,
+                "reteica": data.get('reteica', 0) if data else 0,
+                "reteiva": data.get('reteiva', 0) if data else 0,
                 "otros_impuestos": data.get('otros_impuestos', 0) if data else 0,
                 "total": data.get('total', 0) if data else 0,
                 "nombre_xml": filename,

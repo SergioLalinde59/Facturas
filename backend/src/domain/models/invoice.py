@@ -16,6 +16,7 @@ class InvoiceMetadata:
     inc_bolsas: float = 0.0
     retefuente: float = 0.0
     reteica: float = 0.0
+    reteiva: float = 0.0
     otros_impuestos: float = 0.0
     total: float = 0.0
     otros_conceptos: Optional[Dict[str, Any]] = None

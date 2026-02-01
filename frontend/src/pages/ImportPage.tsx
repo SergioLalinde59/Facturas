@@ -147,7 +147,7 @@ export function ImportPage({ providers: initialProviders }: ImportPageProps) {
                 (Number(r.otros_impuestos) || 0)
             ),
             total: acc.total + (Number(r.total) || 0),
-            retefuente: acc.retefuente + (Number(r.retefuente) || 0) + (Number(r.reteica) || 0)
+            retefuente: acc.retefuente + (Number(r.retefuente) || 0) + (Number(r.reteica) || 0) + (Number(r.reteiva) || 0)
         }), { subtotal: 0, descuentos: 0, iva: 0, total: 0, retefuente: 0 });
     }, [processResults]);
 
@@ -175,8 +175,8 @@ export function ImportPage({ providers: initialProviders }: ImportPageProps) {
                     comparison = taxesA - taxesB;
                     break;
                 case 'retenciones':
-                    const retenA = (a.retefuente || 0) + (a.reteica || 0);
-                    const retenB = (b.retefuente || 0) + (b.reteica || 0);
+                    const retenA = (a.retefuente || 0) + (a.reteica || 0) + (a.reteiva || 0);
+                    const retenB = (b.retefuente || 0) + (b.reteica || 0) + (b.reteiva || 0);
                     comparison = retenA - retenB;
                     break;
                 case 'count': comparison = (a.attachments?.length || 0) - (b.attachments?.length || 0); break;
@@ -479,7 +479,7 @@ export function ImportPage({ providers: initialProviders }: ImportPageProps) {
                                             <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace' }}><CurrencyValue value={res.subtotal} /></td>
                                             <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace' }}><CurrencyValue value={-res.descuentos} /></td>
                                             <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace' }}><CurrencyValue value={(res.iva_19 || 0) + (res.iva_5 || 0) + (res.iva_0 || 0) + (res.inc || 0)} /></td>
-                                            <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace' }}><CurrencyValue value={-(res.retefuente || 0) - (res.reteica || 0)} /></td>
+                                            <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace' }}><CurrencyValue value={-(res.retefuente || 0) - (res.reteica || 0) - (res.reteiva || 0)} /></td>
                                             <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace', fontWeight: 600 }}><CurrencyValue value={res.total} /></td>
                                             <td style={{ padding: '0.3rem 0.75rem', fontSize: '0.65rem', fontFamily: 'monospace', color: 'var(--accent-color)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={res.nombre_xml}>{res.nombre_xml || (res.attachments && res.attachments[0]) || ''}</td>
                                         </tr>

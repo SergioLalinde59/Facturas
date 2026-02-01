@@ -5,7 +5,6 @@ import {
     Building2,
     FileSpreadsheet,
     DollarSign,
-    Percent,
     TrendingUp,
     Receipt,
     Download,
@@ -15,7 +14,8 @@ import {
     Loader2,
     CheckCircle2,
     AlertCircle,
-    Database
+    Database,
+    Tag
 } from 'lucide-react';
 import { FilterBar, StatCardGrid } from '../components/organisms';
 import { CurrencyValue } from '../components/atoms';
@@ -115,8 +115,8 @@ export function ReportPage({ providers: initialProviders }: ReportPageProps) {
                 case 'subtotal': comparison = a.subtotal - b.subtotal; break;
                 case 'impuestos':
                     comparison = (
-                        (a.iva_19 + a.iva_5 + a.iva_0 + (a.inc || 0) + (a.inc_bolsas || 0) + (a.otros_impuestos || 0)) -
-                        (b.iva_19 + b.iva_5 + b.iva_0 + (b.inc || 0) + (b.inc_bolsas || 0) + (b.otros_impuestos || 0))
+                        (a.iva_19 + a.iva_5 + a.iva_0 + (a.inc || 0)) -
+                        (b.iva_19 + b.iva_5 + b.iva_0 + (b.inc || 0))
                     );
                     break;
                 case 'total': comparison = a.total - b.total; break;
@@ -255,32 +255,30 @@ export function ReportPage({ providers: initialProviders }: ReportPageProps) {
                                                 inv.iva_19 +
                                                 inv.iva_5 +
                                                 inv.iva_0 +
-                                                (inv.inc || 0) +
-                                                (inv.inc_bolsas || 0) +
-                                                (inv.otros_impuestos || 0),
+                                                (inv.inc || 0),
                                             0
                                         )}
                                     />
                                 ),
-                                icon: <Percent size={18} />,
+                                icon: <Tag size={18} />,
                                 variant: 'warning'
                             },
                             {
                                 id: 'retenciones',
                                 label: 'Retenciones',
-                                value: <CurrencyValue value={-reportData.reduce((sum, inv) => sum + (inv.retefuente || 0) + (inv.reteica || 0), 0)} />,
+                                value: <CurrencyValue value={-reportData.reduce((sum, inv) => sum + (inv.retefuente || 0) + (inv.reteica || 0) + (inv.reteiva || 0), 0)} />,
                                 icon: <DollarSign size={18} />,
                                 variant: 'error'
                             },
                             {
                                 id: 'total',
-                                label: 'Total General',
+                                label: 'Total',
                                 value: <CurrencyValue value={reportData.reduce((sum, inv) => sum + inv.total, 0)} />,
                                 icon: <TrendingUp size={18} />,
                                 variant: reportData.reduce((sum, inv) => sum + inv.total, 0) >= 0 ? 'success' : 'error'
                             }
                         ]}
-                        columns={6}
+                        columns={7}
                     />
                 </div>
             )}
@@ -349,13 +347,11 @@ export function ReportPage({ providers: initialProviders }: ReportPageProps) {
                                                 inv.iva_19 +
                                                 inv.iva_5 +
                                                 inv.iva_0 +
-                                                (inv.inc || 0) +
-                                                (inv.inc_bolsas || 0) +
-                                                (inv.otros_impuestos || 0)
+                                                (inv.inc || 0)
                                             } />
                                         </td>
                                         <td style={{ textAlign: 'right', fontWeight: 500 }} className="font-mono">
-                                            <CurrencyValue value={-(inv.retefuente || 0) - (inv.reteica || 0)} />
+                                            <CurrencyValue value={-(inv.retefuente || 0) - (inv.reteica || 0) - (inv.reteiva || 0)} />
                                         </td>
                                         <td style={{ textAlign: 'right', fontWeight: 600 }} className="font-mono"><CurrencyValue value={inv.total} /></td>
                                         <td style={{ textAlign: 'center' }}>

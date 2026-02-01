@@ -14,9 +14,9 @@ class PostgresFacturaRepository(FacturaRepository):
                 query = """
                 INSERT INTO facturas 
                 (fecha, nit, proveedor, factura, subtotal, descuentos, 
-                 iva_19, iva_5, iva_0, inc, inc_bolsas, retefuente, reteica,
+                 iva_19, iva_5, iva_0, inc, inc_bolsas, retefuente, reteica, reteiva,
                  otros_impuestos, total, otros_conceptos, nombre_pdf, nombre_xml)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (nit, factura) DO UPDATE SET
                     subtotal = EXCLUDED.subtotal,
                     descuentos = EXCLUDED.descuentos,
@@ -27,6 +27,7 @@ class PostgresFacturaRepository(FacturaRepository):
                     inc_bolsas = EXCLUDED.inc_bolsas,
                     retefuente = EXCLUDED.retefuente,
                     reteica = EXCLUDED.reteica,
+                    reteiva = EXCLUDED.reteiva,
                     otros_impuestos = EXCLUDED.otros_impuestos,
                     total = EXCLUDED.total,
                     otros_conceptos = EXCLUDED.otros_conceptos,
@@ -38,7 +39,7 @@ class PostgresFacturaRepository(FacturaRepository):
                     f['fecha'], f['nit'], f['proveedor'], f['factura'],
                     f.get('subtotal', 0), f.get('descuentos', 0),
                     f.get('iva_19', 0), f.get('iva_5', 0), f.get('iva_0', 0),
-                    f.get('inc', 0), f.get('inc_bolsas', 0), f.get('retefuente', 0), f.get('reteica', 0),
+                    f.get('inc', 0), f.get('inc_bolsas', 0), f.get('retefuente', 0), f.get('reteica', 0), f.get('reteiva', 0),
                     f.get('otros_impuestos', 0), f['total'],
                     json.dumps(f.get('otros_conceptos')) if f.get('otros_conceptos') else None,
                     f.get('nombre_pdf'), f.get('nombre_xml')
@@ -60,7 +61,7 @@ class PostgresFacturaRepository(FacturaRepository):
             with conn.cursor() as cur:
                 query = """
                 SELECT fecha, nit, proveedor, factura, subtotal, descuentos, 
-                       iva_19, iva_5, iva_0, inc, inc_bolsas, retefuente, reteica,
+                       iva_19, iva_5, iva_0, inc, inc_bolsas, retefuente, reteica, reteiva,
                        otros_impuestos, total, otros_conceptos, nombre_pdf, nombre_xml, fecha_creacion
                 FROM facturas
                 """
@@ -100,12 +101,13 @@ class PostgresFacturaRepository(FacturaRepository):
                         'inc_bolsas': float(row[10] or 0),
                         'retefuente': float(row[11] or 0),
                         'reteica': float(row[12] or 0),
-                        'otros_impuestos': float(row[13] or 0),
-                        'total': float(row[14] or 0),
-                        'otros_conceptos': row[15],
-                        'nombre_pdf': row[16],
-                        'nombre_xml': row[17],
-                        'fecha_creacion': str(row[18])
+                        'reteiva': float(row[13] or 0),
+                        'otros_impuestos': float(row[14] or 0),
+                        'total': float(row[15] or 0),
+                        'otros_conceptos': row[16],
+                        'nombre_pdf': row[17],
+                        'nombre_xml': row[18],
+                        'fecha_creacion': str(row[19])
                     })
                 return result
         finally:
@@ -133,7 +135,7 @@ class PostgresFacturaRepository(FacturaRepository):
                     COALESCE(SUM(subtotal), 0) as total_subtotal,
                     COALESCE(SUM(descuentos), 0) as total_descuentos,
                     COALESCE(SUM(iva_19 + iva_5 + iva_0 + inc + inc_bolsas + otros_impuestos), 0) as total_impuestos,
-                    COALESCE(SUM(retefuente + reteica), 0) as total_retenciones,
+                    COALESCE(SUM(retefuente + reteica + reteiva), 0) as total_retenciones,
                     COALESCE(SUM(total), 0) as total_monto,
                     COUNT(DISTINCT proveedor) as total_proveedores,
                     COUNT(DISTINCT nit) as total_nits,

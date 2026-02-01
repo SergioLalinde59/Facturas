@@ -31,6 +31,7 @@ export interface Invoice {
     inc_bolsas: number;
     retefuente: number;
     reteica: number;
+    reteiva: number;
     otros_impuestos: number;
     total: number;
     nombre_pdf: string;
