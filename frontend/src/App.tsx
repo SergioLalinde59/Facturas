@@ -19,7 +19,8 @@ import {
   FileCheck,
   Eye,
   Search,
-  X
+  X,
+  Settings2
 } from 'lucide-react';
 import './App.css';
 
@@ -30,6 +31,7 @@ import { Sidebar, FilterBar } from './components/organisms';
 import { DashboardPage } from './pages/DashboardPage';
 import { ReportPage } from './pages/ReportPage';
 import { ImportPage } from './pages/ImportPage';
+// import { TaxMasterPage } from './pages/TaxMasterPage';
 
 
 interface ProcessingStats {
@@ -53,7 +55,7 @@ interface ImportStats {
 
 
 
-type AppView = 'dashboard' | 'extract' | 'import' | 'export' | 'report';
+type AppView = 'dashboard' | 'extract' | 'import' | 'export' | 'report' | 'tax-master';
 
 function App() {
   const renderStatusBadge = (status: string) => {
@@ -469,14 +471,7 @@ function App() {
 
 
 
-  const handleNavigate = (path: string) => {
-    loadBrowserItems(path);
-  };
 
-  const handleSelectDirectory = () => {
-    setDirectory(browserPath);
-    setIsBrowserOpen(false);
-  };
 
   const toggleSection = (section: string) => {
     setExpandedSections((prev: any) => ({ ...prev, [section]: !prev[section] }));
@@ -532,6 +527,14 @@ function App() {
           actionLabel: 'Consultar',
           actionIcon: FileText,
           color: 'violet'
+        };
+      case 'tax-master':
+        return {
+          title: 'Maestro de Impuestos',
+          subtitle: 'Gestión de códigos y reglas de impuestos',
+          actionLabel: '',
+          actionIcon: Settings2,
+          color: 'slate'
         };
     }
   };
@@ -706,6 +709,12 @@ function App() {
           {/* Import View */}
           {activeView === 'import' && (
             <ImportPage providers={providers} directory={directory} />
+          )}
+
+          {/* Tax Master View */}
+          {activeView === 'tax-master' && (
+            <div>Tax Master Page Disabled</div>
+            // <TaxMasterPage />
           )}
 
           {/* Status Message */}

@@ -1,6 +1,7 @@
+
 import {
     LayoutDashboard, Mail, Database, FileText,
-    Settings2, ChevronDown, ChevronRight, Zap
+    Settings2, ChevronDown, ChevronRight, Zap, Tags
 } from 'lucide-react';
 import './Sidebar.css';
 
@@ -79,6 +80,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     {expandedSections.reportes && (
                         <div className="sidebar__section-content">
                             <NavItem icon={FileText} label="Reporte Facturas" view="report" active={activeView === 'report'} />
+                        </div>
+                    )}
+                </div>
+
+                <div className="sidebar__section">
+                    <div
+                        className="sidebar__section-header"
+                        onClick={() => onToggleSection('maestros')}
+                    >
+                        <span className="sidebar__section-title">Maestros</span>
+                        {expandedSections.maestros ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                    </div>
+                    {expandedSections.maestros && (
+                        <div className="sidebar__section-content">
+                            <NavItem icon={Tags} label="Impuestos" view="tax-master" active={activeView === 'tax-master'} />
                         </div>
                     )}
                 </div>
