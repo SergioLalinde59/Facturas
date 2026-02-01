@@ -272,7 +272,7 @@ export function ExtractionPage({ provider, onProviderChange }: ExtractionPagePro
                 }}>
                     <div className="modal-content" style={{
                         backgroundColor: '#ffffff', borderRadius: '16px',
-                        width: '1500px', maxHeight: '90vh', display: 'flex', flexDirection: 'column',
+                        width: '1080px', maxHeight: '90vh', display: 'flex', flexDirection: 'column',
                         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden'
                     }}>
                         {/* Header */}
@@ -353,7 +353,7 @@ export function ExtractionPage({ provider, onProviderChange }: ExtractionPagePro
 
                             {/* Table Log */}
                             <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden' }}>
-                                <div style={{ maxHeight: '650px', overflowY: 'auto' }}>
+                                <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
                                     <table className="data-table" style={{ fontSize: '0.75rem' }}>
                                         <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
                                             <tr>

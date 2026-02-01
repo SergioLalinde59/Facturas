@@ -11,6 +11,7 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - ENVIRONMENT=development
       - FACTURAS_PENDIENTES=/app/data/Data/Pendientes
+      - FACTURAS_PROCESADAS=/app/data/Data/Procesadas
       - EXPORT_DIRECTORY=/app/data/Data/Exportadas
     ports:
       - "8002:8000"

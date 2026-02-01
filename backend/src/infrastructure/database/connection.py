@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 logger = logging.getLogger("database")
 
 # Cargar variables de entorno desde archivo .env
-load_dotenv()
+load_dotenv('/app/data/.env')
 
 # Configuración BD desde variables de entorno
 DB_CONFIG = {

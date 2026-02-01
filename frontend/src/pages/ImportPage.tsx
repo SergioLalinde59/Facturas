@@ -17,9 +17,10 @@ import type { ImportStats, ProcessSortColumn, SortDirection } from '../types';
 
 interface ImportPageProps {
     providers: string[];
+    directory: string;
 }
 
-export function ImportPage({ providers: initialProviders }: ImportPageProps) {
+export function ImportPage({ providers: initialProviders, directory }: ImportPageProps) {
     const [startDate, setStartDate] = useState(() => {
         const now = new Date();
         return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
@@ -106,7 +107,7 @@ export function ImportPage({ providers: initialProviders }: ImportPageProps) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    target_directory: "", // Trigger default behavior
+                    target_directory: directory,
                     dry_run: dryRun,
                     start_date: startDate || null,
                     end_date: endDate || null,
@@ -227,12 +228,6 @@ export function ImportPage({ providers: initialProviders }: ImportPageProps) {
     return (
         <>
             <div className="filter-section">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    <div>
-                        <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.025em', margin: 0 }}>Importación de Facturas</h1>
-                        <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Gestión y procesamiento de documentos electrónicos</div>
-                    </div>
-                </div>
 
                 <div style={{ position: 'relative' }}>
                     <FilterBar
@@ -326,7 +321,7 @@ export function ImportPage({ providers: initialProviders }: ImportPageProps) {
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '2rem' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 1 }}>
                                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Procesamiento</span>
+                                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '4px' }}>Procesamiento</span>
                                         <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
                                             <div style={{ textAlign: 'center' }}>
                                                 <div style={{ fontSize: '1rem', fontWeight: 800 }}>{importStats.total}</div>
@@ -334,7 +329,7 @@ export function ImportPage({ providers: initialProviders }: ImportPageProps) {
                                             </div>
                                             <div style={{ textAlign: 'center' }}>
                                                 <div style={{ fontSize: '1rem', fontWeight: 800, color: importStats.duplicates > 0 ? '#f59e0b' : 'inherit' }}>{importStats.duplicates}</div>
-                                                <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>Dupl.</div>
+                                                <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>Duplicados</div>
                                             </div>
                                             <div style={{ textAlign: 'center' }}>
                                                 <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--success-color)' }}>{importStats.successful}</div>
@@ -342,11 +337,11 @@ export function ImportPage({ providers: initialProviders }: ImportPageProps) {
                                             </div>
                                             <div style={{ textAlign: 'center' }}>
                                                 <div style={{ fontSize: '1rem', fontWeight: 800, color: importStats.inconsistent > 0 ? '#f59e0b' : 'inherit' }}>{importStats.inconsistent}</div>
-                                                <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>Incon.</div>
+                                                <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>Inconsistentes</div>
                                             </div>
                                             <div style={{ textAlign: 'center' }}>
                                                 <div style={{ fontSize: '1rem', fontWeight: 800, color: importStats.errors > 0 ? 'var(--danger-color)' : 'inherit' }}>{importStats.errors}</div>
-                                                <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>Err.</div>
+                                                <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>Errores</div>
                                             </div>
                                         </div>
                                     </div>
@@ -354,7 +349,7 @@ export function ImportPage({ providers: initialProviders }: ImportPageProps) {
                                 <div style={{ width: '1px', height: '32px', backgroundColor: 'var(--border-color)' }}></div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 2 }}>
                                     <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-                                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Resumen Financiero</span>
+                                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '4px' }}>Resumen Financiero</span>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <div>
                                                 <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>Subtotal</div>
@@ -440,18 +435,18 @@ export function ImportPage({ providers: initialProviders }: ImportPageProps) {
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.4rem' }}>Subtotal {getProcessSortIcon('subtotal')}</div>
                                         </th>
                                         <th onClick={() => handleProcessSort('descuentos')} style={{ width: '100px', padding: '0.4rem 0.75rem', textAlign: 'right', cursor: 'pointer', position: 'sticky', top: 0, zIndex: 30, backgroundColor: '#ffffff' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.4rem' }}>Desc. {getProcessSortIcon('descuentos')}</div>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.4rem' }}>Descuento {getProcessSortIcon('descuentos')}</div>
                                         </th>
                                         <th onClick={() => handleProcessSort('impuestos')} style={{ width: '110px', padding: '0.4rem 0.75rem', textAlign: 'right', cursor: 'pointer', position: 'sticky', top: 0, zIndex: 30, backgroundColor: '#ffffff' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.4rem' }}>Impuestos {getProcessSortIcon('impuestos')}</div>
                                         </th>
                                         <th onClick={() => handleProcessSort('retenciones')} style={{ width: '100px', padding: '0.4rem 0.75rem', textAlign: 'right', cursor: 'pointer', position: 'sticky', top: 0, zIndex: 30, backgroundColor: '#ffffff' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.4rem' }}>Reten. {getProcessSortIcon('retenciones')}</div>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.4rem' }}>Retenciones {getProcessSortIcon('retenciones')}</div>
                                         </th>
                                         <th onClick={() => handleProcessSort('total')} style={{ width: '110px', padding: '0.4rem 0.75rem', textAlign: 'right', cursor: 'pointer', position: 'sticky', top: 0, zIndex: 30, backgroundColor: '#ffffff' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.4rem' }}>Total {getProcessSortIcon('total')}</div>
                                         </th>
-                                        <th style={{ width: '525px', padding: '0.4rem 0.75rem', position: 'sticky', top: 0, zIndex: 30, backgroundColor: '#ffffff' }}>XML</th>
+
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -481,7 +476,7 @@ export function ImportPage({ providers: initialProviders }: ImportPageProps) {
                                             <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace' }}><CurrencyValue value={(res.iva_19 || 0) + (res.iva_5 || 0) + (res.iva_0 || 0) + (res.inc || 0)} /></td>
                                             <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace' }}><CurrencyValue value={-(res.retefuente || 0) - (res.reteica || 0) - (res.reteiva || 0)} /></td>
                                             <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace', fontWeight: 600 }}><CurrencyValue value={res.total} /></td>
-                                            <td style={{ padding: '0.3rem 0.75rem', fontSize: '0.65rem', fontFamily: 'monospace', color: 'var(--accent-color)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={res.nombre_xml}>{res.nombre_xml || (res.attachments && res.attachments[0]) || ''}</td>
+
                                         </tr>
                                     ))}
                                 </tbody>
