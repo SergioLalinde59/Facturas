@@ -24,19 +24,14 @@ export interface Invoice {
     factura: string;
     subtotal: number;
     descuentos: number;
-    iva_19: number;
-    iva_5: number;
-    iva_0: number;
-    inc: number;
-    inc_bolsas: number;
-    retefuente: number;
-    reteica: number;
-    reteiva: number;
+    impuestos: number;
+    retenciones: number;
     otros_impuestos: number;
     total: number;
     nombre_pdf: string;
     nombre_xml: string;
     fecha_creacion: string;
+    tax_details?: any[];
 }
 
 export interface DashboardStats {
@@ -54,7 +49,7 @@ export interface DashboardStats {
 
 export type AppView = 'dashboard' | 'extract' | 'import' | 'export' | 'report';
 
-export type SortColumn = 'fecha' | 'proveedor' | 'nit' | 'factura' | 'subtotal' | 'descuentos' | 'iva_19' | 'iva_5' | 'iva_0' | 'inc' | 'impuestos' | 'retenciones' | 'total';
+export type SortColumn = 'fecha' | 'proveedor' | 'nit' | 'factura' | 'subtotal' | 'descuentos' | 'impuestos' | 'retenciones' | 'total';
 export type SortDirection = 'asc' | 'desc';
 
-export type ProcessSortColumn = 'date' | 'sender' | 'nit' | 'subject' | 'subtotal' | 'descuentos' | 'impuestos' | 'retenciones' | 'iva' | 'iva_19' | 'iva_5' | 'iva_0' | 'inc' | 'total' | 'nombre_xml' | 'count' | 'status';
+export type ProcessSortColumn = 'date' | 'sender' | 'nit' | 'subject' | 'subtotal' | 'descuentos' | 'impuestos' | 'retenciones' | 'total' | 'nombre_xml' | 'count' | 'status';

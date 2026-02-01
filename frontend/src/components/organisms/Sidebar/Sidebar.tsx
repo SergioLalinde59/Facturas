@@ -94,7 +94,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </div>
                     {expandedSections.maestros && (
                         <div className="sidebar__section-content">
-                            <NavItem icon={Tags} label="Impuestos" view="tax-master" active={activeView === 'tax-master'} />
+                            <NavItem icon={Tags} label="1. Agrupaciones" view="groupings" active={activeView === 'groupings'} />
+                            <NavItem icon={Tags} label="2. Impuestos" view="tax-master" active={activeView === 'tax-master'} />
+                            <NavItem icon={Tags} label="3. Tarifas" view="tax-rates" active={activeView === 'tax-rates'} />
                         </div>
                     )}
                 </div>

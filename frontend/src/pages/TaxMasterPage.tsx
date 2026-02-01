@@ -8,13 +8,17 @@ import {
     AlertCircle,
     CheckCircle2
 } from 'lucide-react';
-import { TaxService, TaxRule } from '../services/TaxService';
+import { TaxService } from '../services/TaxService';
+import { GroupingService } from '../services/GroupingService';
+import type { TaxRule } from '../services/TaxService';
+import type { Grouping } from '../services/GroupingService';
 
 interface TaxMasterPageProps {
 }
 
 export const TaxMasterPage: React.FC<TaxMasterPageProps> = () => {
     const [rules, setRules] = useState<TaxRule[]>([]);
+    const [groupings, setGroupings] = useState<Grouping[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
@@ -25,26 +29,25 @@ export const TaxMasterPage: React.FC<TaxMasterPageProps> = () => {
     const [currentRule, setCurrentRule] = useState<TaxRule>({
         code: '',
         name: '',
-        type: 'tax',
-        operation: 'add',
+        agrupacion_id: undefined,
         description: ''
     });
 
     useEffect(() => {
-        loadRules();
+        loadData();
     }, []);
 
-    const loadRules = async () => {
+    const loadData = async () => {
         setLoading(true);
         setError('');
         try {
-            const data = await TaxService.getRules();
-            // Convert dictionary to array
-            const rulesArray = Object.entries(data).map(([code, rule]) => ({
-                ...rule,
-                code // Ensure code is part of the object
-            })).sort((a, b) => a.code.localeCompare(b.code));
+            const [rulesData, groupsData] = await Promise.all([
+                TaxService.getRules(),
+                GroupingService.getGroupings()
+            ]);
+            const rulesArray = rulesData.sort((a, b) => a.code.localeCompare(b.code));
             setRules(rulesArray);
+            setGroupings(groupsData);
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -52,12 +55,21 @@ export const TaxMasterPage: React.FC<TaxMasterPageProps> = () => {
         }
     };
 
+    const loadRules = async () => {
+        // Keeps loadRules for backward compatibility or individual reloads
+        try {
+            const data = await TaxService.getRules();
+            setRules(data.sort((a, b) => a.code.localeCompare(b.code)));
+        } catch (err: any) {
+            setError(err.message);
+        }
+    };
+
     const handleOpenCreate = () => {
         setCurrentRule({
             code: '',
             name: '',
-            type: 'tax',
-            operation: 'add',
+            agrupacion_id: groupings.find(g => g.name === 'Impuestos')?.id || groupings[0]?.id,
             description: ''
         });
         setIsEditing(false);
@@ -143,7 +155,7 @@ export const TaxMasterPage: React.FC<TaxMasterPageProps> = () => {
                         <tr>
                             <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: '#64748b', width: '80px' }}>Código</th>
                             <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: '#64748b' }}>Nombre</th>
-                            <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: '#64748b', width: '120px' }}>Tipo</th>
+                            <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: '#64748b', width: '150px' }}>Agrupación</th>
                             <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: '#64748b', width: '120px' }}>Operación</th>
                             <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: '#64748b' }}>Descripción</th>
                             <th style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: '#64748b', width: '100px' }}>Acciones</th>
@@ -166,13 +178,22 @@ export const TaxMasterPage: React.FC<TaxMasterPageProps> = () => {
                                         padding: '0.25rem 0.75rem',
                                         borderRadius: '999px',
                                         fontSize: '0.875rem',
-                                        backgroundColor: rule.type === 'tax' ? '#dbeafe' : rule.type === 'withholding' ? '#fce7f3' : '#f3f4f6',
-                                        color: rule.type === 'tax' ? '#1e40af' : rule.type === 'withholding' ? '#be185d' : '#374151'
+                                        backgroundColor: '#eff6ff',
+                                        color: '#3b82f6',
+                                        border: '1px solid #dbeafe'
                                     }}>
-                                        {rule.type}
+                                        {groupings.find(g => g.id === rule.agrupacion_id)?.name || 'Sin Agrupar'}
                                     </span>
                                 </td>
-                                <td style={{ padding: '1rem', color: '#64748b', fontSize: '0.875rem' }}>{rule.operation}</td>
+                                <td style={{ padding: '1rem' }}>
+                                    <span style={{
+                                        fontSize: '0.875rem',
+                                        color: rule.operation === 'add' ? '#16a34a' : rule.operation === 'subtract' ? '#dc2626' : '#64748b',
+                                        fontWeight: 600
+                                    }}>
+                                        {rule.operation === 'add' ? 'Sumar (+)' : rule.operation === 'subtract' ? 'Restar (-)' : 'Ignorar'}
+                                    </span>
+                                </td>
                                 <td style={{ padding: '1rem', color: '#64748b' }}>{rule.description}</td>
                                 <td style={{ padding: '1rem', textAlign: 'right' }}>
                                     <button
@@ -233,31 +254,18 @@ export const TaxMasterPage: React.FC<TaxMasterPageProps> = () => {
                                 />
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem', color: '#475569' }}>Tipo</label>
-                                    <select
-                                        value={currentRule.type}
-                                        onChange={(e) => setCurrentRule({ ...currentRule, type: e.target.value as any })}
-                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: 'white' }}
-                                    >
-                                        <option value="tax">Impuesto (Sumar)</option>
-                                        <option value="withholding">Retención (Restar)</option>
-                                        <option value="info">Informativo</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem', color: '#475569' }}>Operación</label>
-                                    <select
-                                        value={currentRule.operation}
-                                        onChange={(e) => setCurrentRule({ ...currentRule, operation: e.target.value as any })}
-                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: 'white' }}
-                                    >
-                                        <option value="add">Sumar</option>
-                                        <option value="subtract">Restar</option>
-                                        <option value="ignore">Ignorar</option>
-                                    </select>
-                                </div>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem', color: '#475569' }}>Agrupación</label>
+                                <select
+                                    value={currentRule.agrupacion_id || ''}
+                                    onChange={(e) => setCurrentRule({ ...currentRule, agrupacion_id: parseInt(e.target.value) })}
+                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: 'white' }}
+                                >
+                                    <option value="" disabled>Seleccione una agrupación</option>
+                                    {groupings.map(g => (
+                                        <option key={g.id} value={g.id}>{g.name} ({g.operation === 'add' ? '+' : g.operation === 'subtract' ? '-' : '0'})</option>
+                                    ))}
+                                </select>
                             </div>
 
                             <div>

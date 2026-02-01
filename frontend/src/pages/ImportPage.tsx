@@ -203,16 +203,9 @@ export function ImportPage({ providers: initialProviders, directory }: ImportPag
         return processResults.reduce((acc, r) => ({
             subtotal: acc.subtotal + (Number(r.subtotal) || 0),
             descuentos: acc.descuentos + (Number(r.descuentos) || 0),
-            iva: acc.iva + (
-                (Number(r.iva_19) || 0) +
-                (Number(r.iva_5) || 0) +
-                (Number(r.iva_0) || 0) +
-                (Number(r.inc) || 0) +
-                (Number(r.inc_bolsas) || 0) +
-                (Number(r.otros_impuestos) || 0)
-            ),
+            iva: acc.iva + (Number(r.impuestos) || 0) + (Number(r.otros_impuestos) || 0),
             total: acc.total + (Number(r.total) || 0),
-            retefuente: acc.retefuente + (Number(r.retefuente) || 0) + (Number(r.reteica) || 0) + (Number(r.reteiva) || 0)
+            retefuente: acc.retefuente + (Number(r.retenciones) || 0)
         }), { subtotal: 0, descuentos: 0, iva: 0, total: 0, retefuente: 0 });
     }, [processResults]);
 
@@ -227,23 +220,10 @@ export function ImportPage({ providers: initialProviders, directory }: ImportPag
                 case 'subject': comparison = (a.subject || '').localeCompare(b.subject || ''); break;
                 case 'subtotal': comparison = (a.subtotal || 0) - (b.subtotal || 0); break;
                 case 'descuentos': comparison = (a.descuentos || 0) - (b.descuentos || 0); break;
-                case 'iva': comparison = (a.iva || 0) - (b.iva || 0); break;
-                case 'iva_19': comparison = (a.iva_19 || 0) - (b.iva_19 || 0); break;
-                case 'iva_5': comparison = (a.iva_5 || 0) - (b.iva_5 || 0); break;
-                case 'iva_0': comparison = (a.iva_0 || 0) - (b.iva_0 || 0); break;
-                case 'inc': comparison = (a.inc || 0) - (b.inc || 0); break;
                 case 'total': comparison = (a.total || 0) - (b.total || 0); break;
                 case 'nombre_xml': comparison = (a.nombre_xml || '').localeCompare(b.nombre_xml || ''); break;
-                case 'impuestos':
-                    const taxesA = (a.iva_19 || 0) + (a.iva_5 || 0) + (a.iva_0 || 0) + (a.inc || 0);
-                    const taxesB = (b.iva_19 || 0) + (b.iva_5 || 0) + (b.iva_0 || 0) + (b.inc || 0);
-                    comparison = taxesA - taxesB;
-                    break;
-                case 'retenciones':
-                    const retenA = (a.retefuente || 0) + (a.reteica || 0) + (a.reteiva || 0);
-                    const retenB = (b.retefuente || 0) + (b.reteica || 0) + (b.reteiva || 0);
-                    comparison = retenA - retenB;
-                    break;
+                case 'impuestos': comparison = (a.impuestos || 0) - (b.impuestos || 0); break;
+                case 'retenciones': comparison = (a.retenciones || 0) - (b.retenciones || 0); break;
                 case 'count': comparison = (a.attachments?.length || 0) - (b.attachments?.length || 0); break;
                 case 'status': comparison = (a.status || '').localeCompare(b.status || ''); break;
             }
@@ -557,8 +537,8 @@ export function ImportPage({ providers: initialProviders, directory }: ImportPag
                                             <td style={{ color: 'var(--text-secondary)', padding: '0.3rem 0.75rem', fontSize: '0.75rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{res.subject}</td>
                                             <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace' }}><CurrencyValue value={res.subtotal} /></td>
                                             <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace' }}><CurrencyValue value={-res.descuentos} /></td>
-                                            <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace' }}><CurrencyValue value={(res.iva_19 || 0) + (res.iva_5 || 0) + (res.iva_0 || 0) + (res.inc || 0) + (res.otros_impuestos || 0)} /></td>
-                                            <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace' }}><CurrencyValue value={-(res.retefuente || 0) - (res.reteica || 0) - (res.reteiva || 0)} /></td>
+                                            <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace' }}><CurrencyValue value={(res.impuestos || 0) + (res.otros_impuestos || 0)} /></td>
+                                            <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace' }}><CurrencyValue value={-(res.retenciones || 0)} /></td>
                                             <td style={{ padding: '0.3rem 0.75rem', textAlign: 'right', fontSize: '0.75rem', fontFamily: 'monospace', fontWeight: 600 }}><CurrencyValue value={res.total} /></td>
 
                                         </tr>

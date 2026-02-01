@@ -21,8 +21,11 @@ class ExporterService:
     def parse_xml_invoice(self, file_path: str) -> tuple[Optional[Dict[str, Any]], Optional[str]]:
         """Extrae metadatos de un archivo XML de factura. Retorna (data, error_msg)"""
         try:
-            from src.application.services.tax_configuration_service import TaxConfigurationService
-            tax_service = TaxConfigurationService()
+            from src.application.services.tax_service import TaxService
+            from src.infrastructure.database.postgres_tax_repository import PostgresTaxRepository
+            
+            repo = PostgresTaxRepository()
+            tax_service = TaxService(repo)
             
             tree = etree.parse(file_path)
             root = tree.getroot()
@@ -73,27 +76,22 @@ class ExporterService:
             # unknown_codes: list of codes found but not in config
             raw_taxes, unknown_codes_map = self._extract_detailed_taxes_internal(inner_root)
             
-            iva_19 = 0.0
-            iva_5 = 0.0
-            iva_0 = 0.0
-            iva_otros = 0.0
-            
-            inc = 0.0
-            inc_bolsas = 0.0
-            retefuente = 0.0
-            reteica = 0.0
-            reteiva = 0.0
-            otros_imp_sum = 0.0
-            
             missing_definitions = []
             
+            tax_details = []
+            impuestos_sum = 0.0
+            retenciones_sum = 0.0
+            otros_imp_sum = 0.0
+            
             for (code, percent), amount in raw_taxes.items():
-                rule = tax_service.get_rule(code)
+                tax_obj = tax_service.get_tax(code)
+                rule = {
+                    "name": tax_obj.name,
+                    "operation": tax_obj.operation
+                } if tax_obj else None
                 
-                # Si no hay regla, revisamos si el mapa de desconocidos nos dice algo sobre el contexto
                 if not rule:
                     context = unknown_codes_map.get(code, 'unknown')
-                    # Heurística: Si estaba en WithholdingTaxTotal, sugerimos restar
                     inferred_op = 'subtract' if context == 'withholding' else 'add'
                     
                     missing_definitions.append({
@@ -104,76 +102,61 @@ class ExporterService:
                         "amount": amount
                     })
                     
-                    # Provisionalmente aplicamos la heurística para el cálculo bruto
                     if inferred_op == 'subtract':
-                         # Asumimos que es una retención genérica para el cálculo interno
-                         otros_imp_sum += 0 # No sumamos retenciones al bruto de otros impuestos
-                         # Pero deberíamos sumarlo a alguna bolsa de retenciones desconocidas
-                         # Para simplificar, lo tratamos como 'otros_impuestos' negativos si fuera necesario, 
-                         # pero aquí separaremos las variables.
-                         pass
+                         retenciones_sum += amount
                     else:
+                         impuestos_sum += amount
                          otros_imp_sum += amount
+                    
+                    tax_details.append({
+                        'tax_code': code,
+                        'tax_name': f"Desconocido ({code})",
+                        'percentage': percent,
+                        'amount': -abs(amount) if inferred_op == 'subtract' and not is_credit_note else abs(amount) # Will handle credit note later
+                    })
                     continue
 
                 op = rule.get('operation', 'add')
-                name = rule.get('name', '').lower()
+                name = rule.get('name', 'Impuesto')
                 
                 if op == 'subtract':
-                    # Es Retención
-                    if 'iva' in name: reteiva += amount
-                    elif 'ica' in name: reteica += amount
-                    elif 'renta' in name or 'fuente' in name: retefuente += amount
-                    else: 
-                        # Retención genérica o nueva (ej. Timbre si fuera retención)
-                        # Por ahora lo sumamos a retefuente o creamos un bucket 'otras_retenciones'
-                        # Para mantener compatibilidad con esquema actual que solo tiene 3 buckets:
-                        retefuente += amount 
+                    retenciones_sum += amount
                 elif op == 'ignore':
                     pass
                 else:
-                    # Es Impuesto (add)
-                    if code == '01': # IVA
-                        if percent == 19.0: iva_19 += amount
-                        elif percent == 5.0: iva_5 += amount
-                        elif percent == 0.0: iva_0 += amount
-                        else: iva_otros += amount
-                    elif code == '04': # INC
-                        inc += amount
-                    elif code in ['22', '11']: # Bolsas
-                        inc_bolsas += amount
-                    else:
+                    impuestos_sum += amount
+                    # Buckets for "otros_impuestos" in header
+                    if code not in ['01', '04', '22', '11']:
                         otros_imp_sum += amount
 
+                tax_details.append({
+                    'tax_code': code,
+                    'tax_name': name,
+                    'percentage': percent,
+                    'amount': amount
+                })
+
+            # Ajuste de Nota Crédito
             # Ajuste de Nota Crédito
             if is_credit_note:
                 subtotal = -abs(subtotal)
                 descuentos = abs(descuentos)
-                iva_19 = -abs(iva_19)
-                iva_5 = -abs(iva_5)
-                iva_0 = -abs(iva_0) 
-                iva_otros = -abs(iva_otros) # Added this missing one
-                inc = -abs(inc)
-                inc_bolsas = -abs(inc_bolsas)
-                retefuente = -abs(retefuente)
-                reteica = -abs(reteica)
-                reteiva = -abs(reteiva)
+                impuestos_sum = -abs(impuestos_sum)
+                retenciones_sum = -abs(retenciones_sum)
                 otros_imp_sum = -abs(otros_imp_sum)
                 total = -abs(total)
-                # Invertir montos de missing también si fuera necesario, pero son informativos
+                for d in tax_details:
+                    d['amount'] = -abs(d['amount'])
 
             # Cálculo de Totales (Bruto vs Neto)
             # Bruto: Subtotal + Impuestos - Descuentos
-            gross_total = subtotal - abs(descuentos) + iva_19 + iva_5 + iva_0 + iva_otros + inc + inc_bolsas + otros_imp_sum
+            gross_total = subtotal - abs(descuentos) + impuestos_sum
             
             # Neto: Bruto - Retenciones
-            net_total = gross_total - abs(retefuente) - abs(reteica) - abs(reteiva)
+            net_total = gross_total - abs(retenciones_sum)
             
-            # Si hay retenciones desconocidas, las restamos del neto provisionalmente para ver si cuadra
-            hidden_retentions = sum(d['amount'] for d in missing_definitions if d['context'] == 'withholding')
-            if is_credit_note: hidden_retentions = -abs(hidden_retentions)
-            
-            net_total_adjusted = net_total - abs(hidden_retentions)
+            # Ajuste de Totales
+            net_total_adjusted = net_total
 
             # Lógica de Validación de Totales
             validation_error = None
@@ -192,7 +175,7 @@ class ExporterService:
                          validation_error = f"Inconsistencia: Calc({net_total:,.0f}) != Real({total:,.0f})"
 
             # Si el total del XML coincide con el bruto, y tenemos retenciones, ajustamos el total guardado al neto
-            if abs(total - gross_total) < 5.0 and (abs(retefuente) + abs(reteica) + abs(reteiva) + abs(hidden_retentions)) > 0:
+            if abs(total - gross_total) < 5.0 and abs(retenciones_sum) > 0:
                 total = net_total_adjusted # Preferimos el valor neto real
 
             return {
@@ -202,23 +185,28 @@ class ExporterService:
                 'factura': invoice_id,
                 'subtotal': subtotal,
                 'descuentos': descuentos,
-                'iva_19': iva_19,
-                'iva_5': iva_5,
-                'iva_0': iva_0,
-                'inc': inc,
-                'inc_bolsas': inc_bolsas,
-                'retefuente': retefuente,
-                'reteica': reteica,
-                'reteiva': reteiva,
+                'impuestos': impuestos_sum,
+                'retenciones': retenciones_sum,
                 'otros_impuestos': otros_imp_sum,
                 'total': total,
+                'tax_details': tax_details,
                 'nombre_xml': os.path.basename(file_path),
                 'nombre_pdf': os.path.basename(file_path).replace('.xml', '.pdf'),
                 'validation_error': validation_error,
                 'otros_conceptos': {
-                    'detalles_impuestos': {f"{c}_{p}": v for (c, p), v in raw_taxes.items()},
-                    'missing_tax_definitions': missing_definitions, # Pasamos esto al frontend
-                    'iva_otros': iva_otros # Guardamos el IVA de otras tarifas
+                    'missing_tax_definitions': [
+                        {
+                            "code": d['code'],
+                            "description": d['description'],
+                            "context": d['context'],
+                            "percent": d['percent'],
+                            "amount": d['amount']
+                        } for d in tax_details if d.get('tax_name', '').startswith('Desconocido')
+                    ],
+                    'detalles_estructurados': [
+                        {'name': d['tax_name'], 'amount': d['amount'], 'operation': 'add'} # Just for display if needed
+                        for d in tax_details
+                    ]
                 }
             }, None
         except Exception as e:
@@ -369,14 +357,8 @@ class ExporterService:
                 "subject": data.get('factura') if data else filename,
                 "subtotal": data.get('subtotal', 0) if data else 0,
                 "descuentos": data.get('descuentos', 0) if data else 0,
-                "iva_19": data.get('iva_19', 0) if data else 0,
-                "iva_5": data.get('iva_5', 0) if data else 0,
-                "iva_0": data.get('iva_0', 0) if data else 0,
-                "inc": data.get('inc', 0) if data else 0,
-                "inc_bolsas": data.get('inc_bolsas', 0) if data else 0,
-                "retefuente": data.get('retefuente', 0) if data else 0,
-                "reteica": data.get('reteica', 0) if data else 0,
-                "reteiva": data.get('reteiva', 0) if data else 0,
+                "impuestos": data.get('impuestos', 0) if data else 0,
+                "retenciones": data.get('retenciones', 0) if data else 0,
                 "otros_impuestos": data.get('otros_impuestos', 0) if data else 0,
                 "total": data.get('total', 0) if data else 0,
                 "nombre_xml": filename,
@@ -384,7 +366,8 @@ class ExporterService:
                 "attachments": [filename],
                 "status": "pending",
                 "message": None,
-                "otros_conceptos": data.get('otros_conceptos') if data else None
+                "otros_conceptos": data.get('otros_conceptos') if data else None,
+                "tax_details": data.get('tax_details') if data else None
             }
 
             if data:

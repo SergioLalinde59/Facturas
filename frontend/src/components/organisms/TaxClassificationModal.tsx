@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AlertCircle, HelpCircle, Save, X } from 'lucide-react';
+import { GroupingService } from '../../services/GroupingService';
+import type { Grouping } from '../../services/GroupingService';
 
 interface TaxDefinition {
     code: string;
@@ -20,21 +22,24 @@ interface TaxClassificationModalProps {
 
 export function TaxClassificationModal({ definitions, isOpen, onClose, onSave, invoiceContext }: TaxClassificationModalProps) {
     const [classifications, setClassifications] = useState<Record<string, any>>({});
+    const [groupings, setGroupings] = useState<Grouping[]>([]);
+
+    useEffect(() => {
+        if (isOpen) {
+            GroupingService.getGroupings().then(setGroupings);
+        }
+    }, [isOpen]);
 
     if (!isOpen || definitions.length === 0) return null;
 
-    const handleTypeChange = (code: string, type: string) => {
+    const handleGroupingChange = (code: string, groupingId: number) => {
         const def = definitions.find(d => d.code === code);
-        let operation = 'add';
-        if (type === 'withholding') operation = 'subtract';
-        if (type === 'info') operation = 'ignore';
 
         setClassifications({
             ...classifications,
             [code]: {
                 name: classifications[code]?.name || (def?.context === 'withholding' ? 'Retención' : 'Impuesto') + ' ' + code,
-                type,
-                operation,
+                agrupacion_id: groupingId,
                 description: classifications[code]?.description || def?.description || 'Clasificado manualmente'
             }
         });
@@ -76,7 +81,9 @@ export function TaxClassificationModal({ definitions, isOpen, onClose, onSave, i
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         {definitions.map((def) => {
                             const current = classifications[def.code] || {
-                                type: def.context === 'withholding' ? 'withholding' : 'tax',
+                                agrupacion_id: def.context === 'withholding' ?
+                                    groupings.find(g => g.name === 'Retenciones')?.id :
+                                    groupings.find(g => g.name === 'Impuestos')?.id,
                                 name: (def.context === 'withholding' ? 'Retención' : 'Impuesto') + ' ' + def.code
                             };
 
@@ -99,18 +106,19 @@ export function TaxClassificationModal({ definitions, isOpen, onClose, onSave, i
 
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                            <label style={{ fontSize: '0.8rem', fontWeight: 600 }}>Tipo de Concepto</label>
+                                            <label style={{ fontSize: '0.8rem', fontWeight: 600 }}>Agrupación</label>
                                             <select
-                                                value={current.type}
-                                                onChange={(e) => handleTypeChange(def.code, e.target.value)}
+                                                value={current.agrupacion_id || ''}
+                                                onChange={(e) => handleGroupingChange(def.code, parseInt(e.target.value))}
                                                 style={{
                                                     padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)',
                                                     fontSize: '0.9rem'
                                                 }}
                                             >
-                                                <option value="tax">Impuesto (Suma)</option>
-                                                <option value="withholding">Retención (Resta)</option>
-                                                <option value="info">Informativo (Ignorar)</option>
+                                                <option value="" disabled>Seleccionar...</option>
+                                                {groupings.map(g => (
+                                                    <option key={g.id} value={g.id}>{g.name}</option>
+                                                ))}
                                             </select>
                                         </div>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>

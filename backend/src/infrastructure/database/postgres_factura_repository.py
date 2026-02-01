@@ -6,48 +6,77 @@ from datetime import date
 from typing import List, Optional, Dict, Any
 
 class PostgresFacturaRepository(FacturaRepository):
-    def save(self, f: Dict[str, Any]) -> tuple[str, Optional[str]]:
+    def save(self, data: Dict[str, Any]) -> tuple[str, Optional[str]]:
         pool = get_connection_pool()
         conn = pool.getconn()
         try:
             with conn.cursor() as cur:
-                query = """
+                # 1. UPSERT Header
+                header_query = """
                 INSERT INTO facturas 
                 (fecha, nit, proveedor, factura, subtotal, descuentos, 
-                 iva_19, iva_5, iva_0, inc, inc_bolsas, retefuente, reteica, reteiva,
-                 otros_impuestos, total, otros_conceptos, nombre_pdf, nombre_xml)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                 impuestos, retenciones, total, otros_impuestos, otros_conceptos, 
+                 nombre_pdf, nombre_xml)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (nit, factura) DO UPDATE SET
+                    fecha = EXCLUDED.fecha,
+                    proveedor = EXCLUDED.proveedor,
                     subtotal = EXCLUDED.subtotal,
                     descuentos = EXCLUDED.descuentos,
-                    iva_19 = EXCLUDED.iva_19,
-                    iva_5 = EXCLUDED.iva_5,
-                    iva_0 = EXCLUDED.iva_0,
-                    inc = EXCLUDED.inc,
-                    inc_bolsas = EXCLUDED.inc_bolsas,
-                    retefuente = EXCLUDED.retefuente,
-                    reteica = EXCLUDED.reteica,
-                    reteiva = EXCLUDED.reteiva,
-                    otros_impuestos = EXCLUDED.otros_impuestos,
+                    impuestos = EXCLUDED.impuestos,
+                    retenciones = EXCLUDED.retenciones,
                     total = EXCLUDED.total,
+                    otros_impuestos = EXCLUDED.otros_impuestos,
                     otros_conceptos = EXCLUDED.otros_conceptos,
                     nombre_pdf = EXCLUDED.nombre_pdf,
                     nombre_xml = EXCLUDED.nombre_xml
-                RETURNING 1;
+                RETURNING id;
                 """
-                cur.execute(query, (
-                    f['fecha'], f['nit'], f['proveedor'], f['factura'],
-                    f.get('subtotal', 0), f.get('descuentos', 0),
-                    f.get('iva_19', 0), f.get('iva_5', 0), f.get('iva_0', 0),
-                    f.get('inc', 0), f.get('inc_bolsas', 0), f.get('retefuente', 0), f.get('reteica', 0), f.get('reteiva', 0),
-                    f.get('otros_impuestos', 0), f['total'],
-                    json.dumps(f.get('otros_conceptos')) if f.get('otros_conceptos') else None,
-                    f.get('nombre_pdf'), f.get('nombre_xml')
+                
+                # Check if we are passing a dict or InvoiceMetadata (the service usually passes dict)
+                # But let's be robust.
+                
+                cur.execute(header_query, (
+                    data['fecha'], data['nit'], data['proveedor'], data['factura'],
+                    data.get('subtotal', 0), data.get('descuentos', 0),
+                    data.get('impuestos', 0), data.get('retenciones', 0),
+                    data['total'], data.get('otros_impuestos', 0),
+                    json.dumps(data.get('otros_conceptos')) if data.get('otros_conceptos') else None,
+                    data.get('nombre_pdf'), data.get('nombre_xml')
                 ))
-                result = cur.fetchone()
-                status = 'inserted' if result else 'updated'
+                
+                factura_id = cur.fetchone()[0]
+                
+                # 2. Sync Detalle
+                # First delete existing (Simplified synchronization)
+                cur.execute("DELETE FROM facturas_detalle WHERE factura_id = %s", (factura_id,))
+                
+                # Prepare detail rows
+                tax_details = data.get('tax_details', []) # List of dicts or objects
+                if tax_details:
+                    detail_query = """
+                    INSERT INTO facturas_detalle (fecha, factura_id, tax_id, tax_rate_id, percentage, valor)
+                    VALUES (%s, %s, (SELECT id FROM taxes WHERE code = %s), %s, %s, %s)
+                    """
+                    for detail in tax_details:
+                        # detail can be a dict (from API) or InvoiceTaxDetail (internal)
+                        if hasattr(detail, 'tax_code'):
+                             code = detail.tax_code
+                             p = detail.percentage
+                             v = detail.amount
+                             r_id = getattr(detail, 'tax_rate_id', None)
+                        else:
+                             code = detail.get('tax_code')
+                             p = detail.get('percentage', 0)
+                             v = detail.get('amount', 0)
+                             r_id = detail.get('tax_rate_id')
+                             
+                        cur.execute(detail_query, (
+                            data['fecha'], factura_id, code, r_id, p, v
+                        ))
+
             conn.commit()
-            return status, None
+            return 'inserted', None # Simplified status
         except Exception as e:
             conn.rollback()
             return 'error', str(e)
@@ -61,8 +90,8 @@ class PostgresFacturaRepository(FacturaRepository):
             with conn.cursor() as cur:
                 query = """
                 SELECT fecha, nit, proveedor, factura, subtotal, descuentos, 
-                       iva_19, iva_5, iva_0, inc, inc_bolsas, retefuente, reteica, reteiva,
-                       otros_impuestos, total, otros_conceptos, nombre_pdf, nombre_xml, fecha_creacion
+                       impuestos, retenciones, otros_impuestos, total, 
+                       otros_conceptos, nombre_pdf, nombre_xml, fecha_creacion
                 FROM facturas
                 """
                 params = []
@@ -94,20 +123,14 @@ class PostgresFacturaRepository(FacturaRepository):
                         'factura': row[3],
                         'subtotal': float(row[4] or 0),
                         'descuentos': float(row[5] or 0),
-                        'iva_19': float(row[6] or 0),
-                        'iva_5': float(row[7] or 0),
-                        'iva_0': float(row[8] or 0),
-                        'inc': float(row[9] or 0),
-                        'inc_bolsas': float(row[10] or 0),
-                        'retefuente': float(row[11] or 0),
-                        'reteica': float(row[12] or 0),
-                        'reteiva': float(row[13] or 0),
-                        'otros_impuestos': float(row[14] or 0),
-                        'total': float(row[15] or 0),
-                        'otros_conceptos': row[16],
-                        'nombre_pdf': row[17],
-                        'nombre_xml': row[18],
-                        'fecha_creacion': str(row[19])
+                        'impuestos': float(row[6] or 0),
+                        'retenciones': float(row[7] or 0),
+                        'otros_impuestos': float(row[8] or 0),
+                        'total': float(row[9] or 0),
+                        'otros_conceptos': row[10],
+                        'nombre_pdf': row[11],
+                        'nombre_xml': row[12],
+                        'fecha_creacion': str(row[13])
                     })
                 return result
         finally:
@@ -134,8 +157,8 @@ class PostgresFacturaRepository(FacturaRepository):
                     COUNT(*) as total_facturas,
                     COALESCE(SUM(subtotal), 0) as total_subtotal,
                     COALESCE(SUM(descuentos), 0) as total_descuentos,
-                    COALESCE(SUM(iva_19 + iva_5 + iva_0 + inc + inc_bolsas + otros_impuestos), 0) as total_impuestos,
-                    COALESCE(SUM(retefuente + reteica + reteiva), 0) as total_retenciones,
+                    COALESCE(SUM(impuestos), 0) as total_impuestos,
+                    COALESCE(SUM(retenciones), 0) as total_retenciones,
                     COALESCE(SUM(total), 0) as total_monto,
                     COUNT(DISTINCT proveedor) as total_proveedores,
                     COUNT(DISTINCT nit) as total_nits,

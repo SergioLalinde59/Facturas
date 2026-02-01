@@ -113,18 +113,8 @@ export function ReportPage({ providers: initialProviders }: ReportPageProps) {
                 case 'nit': comparison = a.nit.localeCompare(b.nit); break;
                 case 'factura': comparison = a.factura.localeCompare(b.factura); break;
                 case 'subtotal': comparison = a.subtotal - b.subtotal; break;
-                case 'impuestos':
-                    comparison = (
-                        (a.iva_19 + a.iva_5 + a.iva_0 + (a.inc || 0)) -
-                        (b.iva_19 + b.iva_5 + b.iva_0 + (b.inc || 0))
-                    );
-                    break;
-                case 'retenciones':
-                    comparison = (
-                        ((a.retefuente || 0) + (a.reteica || 0) + (a.reteiva || 0)) -
-                        ((b.retefuente || 0) + (b.reteica || 0) + (b.reteiva || 0))
-                    );
-                    break;
+                case 'impuestos': comparison = a.impuestos - b.impuestos; break;
+                case 'retenciones': comparison = a.retenciones - b.retenciones; break;
                 case 'total': comparison = a.total - b.total; break;
             }
             return sortDirection === 'asc' ? comparison : -comparison;
@@ -253,26 +243,14 @@ export function ReportPage({ providers: initialProviders }: ReportPageProps) {
                             {
                                 id: 'impuestos',
                                 label: 'Impuestos',
-                                value: (
-                                    <CurrencyValue
-                                        value={reportData.reduce(
-                                            (sum, inv) =>
-                                                sum +
-                                                inv.iva_19 +
-                                                inv.iva_5 +
-                                                inv.iva_0 +
-                                                (inv.inc || 0),
-                                            0
-                                        )}
-                                    />
-                                ),
+                                value: <CurrencyValue value={reportData.reduce((sum, inv) => sum + inv.impuestos, 0)} />,
                                 icon: <Tag size={18} />,
                                 variant: 'warning'
                             },
                             {
                                 id: 'retenciones',
                                 label: 'Retenciones',
-                                value: <CurrencyValue value={-reportData.reduce((sum, inv) => sum + (inv.retefuente || 0) + (inv.reteica || 0) + (inv.reteiva || 0), 0)} />,
+                                value: <CurrencyValue value={-reportData.reduce((sum, inv) => sum + inv.retenciones, 0)} />,
                                 icon: <DollarSign size={18} />,
                                 variant: 'error'
                             },
@@ -349,15 +327,10 @@ export function ReportPage({ providers: initialProviders }: ReportPageProps) {
                                         <td style={{ textAlign: 'right', fontWeight: 500 }} className="font-mono"><CurrencyValue value={inv.subtotal} /></td>
                                         <td style={{ textAlign: 'right', fontWeight: 500 }} className="font-mono"><CurrencyValue value={-inv.descuentos} /></td>
                                         <td style={{ textAlign: 'right', fontWeight: 500 }} className="font-mono">
-                                            <CurrencyValue value={
-                                                inv.iva_19 +
-                                                inv.iva_5 +
-                                                inv.iva_0 +
-                                                (inv.inc || 0)
-                                            } />
+                                            <CurrencyValue value={inv.impuestos} />
                                         </td>
                                         <td style={{ textAlign: 'right', fontWeight: 500 }} className="font-mono">
-                                            <CurrencyValue value={-(inv.retefuente || 0) - (inv.reteica || 0) - (inv.reteiva || 0)} />
+                                            <CurrencyValue value={-inv.retenciones} />
                                         </td>
                                         <td style={{ textAlign: 'right', fontWeight: 600 }} className="font-mono"><CurrencyValue value={inv.total} /></td>
                                         <td style={{ textAlign: 'center' }}>

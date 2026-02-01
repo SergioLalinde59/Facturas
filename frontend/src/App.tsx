@@ -9,30 +9,23 @@ import {
   History,
   Database,
   LayoutDashboard,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
   Play,
   Download,
-  FolderOpen,
   Trash2,
   FileCheck,
-  Eye,
-  Search,
   X,
   Settings2
 } from 'lucide-react';
 import './App.css';
 
 // System Components
-import { CurrencyValue } from './components/atoms';
-
 import { Sidebar, FilterBar } from './components/organisms';
 import { DashboardPage } from './pages/DashboardPage';
 import { ReportPage } from './pages/ReportPage';
 import { ImportPage } from './pages/ImportPage';
-// import { TaxMasterPage } from './pages/TaxMasterPage';
-
+import { TaxMasterPage } from './pages/TaxMasterPage';
+import { GroupingsPage } from './pages/GroupingsPage';
+import { TaxRatesPage } from './pages/TaxRatesPage';
 
 interface ProcessingStats {
   total_scanned: number;
@@ -45,19 +38,39 @@ interface ProcessingStats {
   total_sum: number;
 }
 
-interface ImportStats {
-  total: number;
-  successful: number;
-  duplicates: number;
-  inconsistent: number;
-  errors: number;
-}
+type AppView = 'dashboard' | 'extract' | 'import' | 'export' | 'report' | 'tax-master' | 'groupings' | 'tax-rates';
 
-
-
-type AppView = 'dashboard' | 'extract' | 'import' | 'export' | 'report' | 'tax-master';
+const DEFAULT_DIRECTORY = '/app/data/Data/Pendientes';
 
 function App() {
+  const [activeView, setActiveView] = useState<AppView>('dashboard');
+  const directory = DEFAULT_DIRECTORY;
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [stats, setStats] = useState<ProcessingStats | null>(null);
+  const [message, setMessage] = useState('');
+  const [maxEmails, setMaxEmails] = useState(50);
+  const [processResults, setProcessResults] = useState<any[]>([]);
+  const [startDate, setStartDate] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  });
+  const [endDate, setEndDate] = useState(() => {
+    const now = new Date();
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+  });
+  const [provider, setProvider] = useState('');
+  const [activeQuickFilter, setActiveQuickFilter] = useState('');
+  const [providers, setProviders] = useState<string[]>([]);
+  const [exportFormats, setExportFormats] = useState({ csv: true, excel: false, pdf: false });
+  const [isExtractModalOpen, setIsExtractModalOpen] = useState(false);
+
+  // Sorting state for extraction process log
+  type SortDirection = 'asc' | 'desc';
+  type ProcessSortColumn = 'date' | 'sender' | 'nit' | 'subject' | 'subtotal' | 'descuentos' | 'impuestos' | 'retenciones' | 'total' | 'nombre_xml' | 'count' | 'status';
+  const [processSortColumn] = useState<ProcessSortColumn>('date');
+  const [processSortDirection] = useState<SortDirection>('desc');
+
   const renderStatusBadge = (status: string) => {
     switch (status) {
       case 'success':
@@ -88,55 +101,17 @@ function App() {
     }
   };
 
-  const [activeView, setActiveView] = useState<AppView>('dashboard');
-  const [directory, setDirectory] = useState('/app/data/Data/Pendientes');
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [stats, setStats] = useState<ProcessingStats | null>(null);
-  const [importStats, setImportStats] = useState<ImportStats | null>(null);
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
-  const [message, setMessage] = useState('');
-  const [maxEmails, setMaxEmails] = useState(50);
-  const [processResults, setProcessResults] = useState<any[]>([]);
-  const [startDate, setStartDate] = useState(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-  });
-  const [endDate, setEndDate] = useState(() => {
-    const now = new Date();
-    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-  });
-  const [provider, setProvider] = useState('');
-  const [activeQuickFilter, setActiveQuickFilter] = useState('');
-  const [providers, setProviders] = useState<string[]>([]);
-  const [exportFormats, setExportFormats] = useState({ csv: true, excel: false, pdf: false });
-
-  const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [tableStatusFilter, setTableStatusFilter] = useState<'all' | 'success' | 'inconsistent' | 'error'>('all');
-  const [selectedImportRows, setSelectedImportRows] = useState<Set<string>>(new Set());
-  const [isExtractModalOpen, setIsExtractModalOpen] = useState(false);
-
-
-  // Sorting state for extraction process log
-  type SortDirection = 'asc' | 'desc';
-  type ProcessSortColumn = 'date' | 'sender' | 'nit' | 'subject' | 'subtotal' | 'descuentos' | 'impuestos' | 'retenciones' | 'iva' | 'iva_19' | 'iva_5' | 'iva_0' | 'inc' | 'total' | 'nombre_xml' | 'count' | 'status';
-  const [processSortColumn, setProcessSortColumn] = useState<ProcessSortColumn>('date');
-  const [processSortDirection, setProcessSortDirection] = useState<SortDirection>('desc');
-
   const formatProcessDate = (dateStr: string) => {
     try {
-      // Tomar solo la parte de la fecha si viene con hora
-      const isoDate = dateStr.includes('T') ? dateStr.split('T')[0] :
-        dateStr.includes(' ') ? dateStr.split(' ')[0] : dateStr;
+      const isoDate = dateStr && dateStr.includes('T') ? dateStr.split('T')[0] :
+        dateStr && dateStr.includes(' ') ? dateStr.split(' ')[0] : dateStr || '';
 
       const parts = isoDate.split(/[-/]/);
       if (parts.length === 3) {
-        // Asegurar formato YYYY-MM-DD
         const y = parts[0].length === 4 ? parts[0] : parts[2];
         const m = parts[1].padStart(2, '0');
         const d = (parts[0].length === 4 ? parts[2] : parts[0]).padStart(2, '0');
-        return `${y} -${m} -${d} `;
+        return `${y}-${m}-${d}`;
       }
       return isoDate;
     } catch (e) {
@@ -162,74 +137,24 @@ function App() {
         case 'subject':
           comparison = (a.subject || '').localeCompare(b.subject || '');
           break;
-        case 'subtotal':
-          comparison = (a.subtotal || 0) - (b.subtotal || 0);
-          break;
-        case 'descuentos':
-          comparison = (a.descuentos || 0) - (b.descuentos || 0);
-          break;
-        case 'iva':
-          comparison = (a.iva || 0) - (b.iva || 0);
-          break;
-        case 'iva_19':
-          comparison = (a.iva_19 || 0) - (b.iva_19 || 0);
-          break;
-        case 'iva_5':
-          comparison = (a.iva_5 || 0) - (b.iva_5 || 0);
-          break;
-        case 'iva_0':
-          comparison = (a.iva_0 || 0) - (b.iva_0 || 0);
-          break;
-        case 'inc':
-          comparison = (a.inc || 0) - (b.inc || 0);
-          break;
-        case 'total':
-          comparison = (a.total || 0) - (b.total || 0);
-          break;
+        case 'subtotal': comparison = (a.subtotal || 0) - (b.subtotal || 0); break;
+        case 'descuentos': comparison = (a.descuentos || 0) - (b.descuentos || 0); break;
+        case 'total': comparison = (a.total || 0) - (b.total || 0); break;
         case 'nombre_xml':
           comparison = (a.nombre_xml || '').localeCompare(b.nombre_xml || '');
           break;
-        case 'impuestos':
-          const taxesA = (a.iva_19 || 0) + (a.iva_5 || 0) + (a.iva_0 || 0) + (a.inc || 0);
-          const taxesB = (b.iva_19 || 0) + (b.iva_5 || 0) + (b.iva_0 || 0) + (b.inc || 0);
-          comparison = taxesA - taxesB;
-          break;
+        case 'impuestos': comparison = (a.impuestos || 0) - (b.impuestos || 0); break;
         case 'count':
           comparison = (a.attachments?.length || 0) - (b.attachments?.length || 0);
           break;
         case 'status':
           comparison = (a.status || '').localeCompare(b.status || '');
           break;
-        case 'retenciones':
-          const retenA = (a.retefuente || 0) + (a.reteica || 0) + (a.reteiva || 0);
-          const retenB = (b.retefuente || 0) + (b.reteica || 0) + (b.reteiva || 0);
-          comparison = retenA - retenB;
-          break;
+        case 'retenciones': comparison = (a.retenciones || 0) - (b.retenciones || 0); break;
       }
       return processSortDirection === 'asc' ? comparison : -comparison;
     });
   }, [processResults, processSortColumn, processSortDirection]);
-
-  const handleProcessSort = (column: ProcessSortColumn) => {
-    if (processSortColumn === column) {
-      setProcessSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-    } else {
-      setProcessSortColumn(column);
-      setProcessSortDirection('asc');
-    }
-  };
-
-
-  // Memoized sums for the import view
-  const importFinancialSums = useMemo(() => {
-    return processResults.reduce((acc, r) => ({
-      subtotal: acc.subtotal + (Number(r.subtotal) || 0),
-      descuentos: acc.descuentos + (Number(r.descuentos) || 0),
-      iva: acc.iva + (Number(r.iva) || Number(r.iva_19) || Number(r.iva_5) || 0),
-      total: acc.total + (Number(r.total) || 0),
-      retefuente: acc.retefuente + (Number(r.retefuente) || 0) + (Number(r.reteica) || 0) + (Number(r.reteiva) || 0)
-    }), { subtotal: 0, descuentos: 0, iva: 0, total: 0, retefuente: 0 });
-  }, [processResults]);
 
   const applyQuickFilter = (type: string) => {
     const today = new Date();
@@ -271,7 +196,7 @@ function App() {
       const y = date.getFullYear();
       const m = String(date.getMonth() + 1).padStart(2, '0');
       const d = String(date.getDate()).padStart(2, '0');
-      return `${y} -${m} -${d} `;
+      return `${y}-${m}-${d}`;
     };
 
     setStartDate(formatDate(start));
@@ -279,15 +204,6 @@ function App() {
     setActiveQuickFilter(type);
   };
 
-
-  const getProcessSortIcon = (column: ProcessSortColumn) => {
-    if (processSortColumn !== column) {
-      return <ArrowUpDown size={14} style={{ opacity: 0.4 }} />;
-    }
-    return processSortDirection === 'asc'
-      ? <ArrowUp size={14} style={{ color: 'var(--accent-color)' }} />
-      : <ArrowDown size={14} style={{ color: 'var(--accent-color)' }} />;
-  };
 
   // Collapsible sections state
   const [expandedSections, setExpandedSections] = useState({
@@ -317,13 +233,6 @@ function App() {
   }, [activeView, startDate, endDate]);
 
 
-  // Automatic updates for Import view when filters change
-  useEffect(() => {
-    if (activeView === 'import' && directory) {
-      // Auto-trigger preview when filters change in import view
-      handleImportToDB(true);
-    }
-  }, [activeView, startDate, endDate, provider, directory]);
 
 
 
@@ -402,37 +311,9 @@ function App() {
     }
   };
 
-  const handleImportToDB = async (dryRun: boolean = false) => {
-    if (!directory) return;
-    setStatus('loading');
-    setIsPreviewMode(dryRun);
-    try {
-      const response = await fetch('/api/v1/invoices/import-db', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          target_directory: directory,
-          dry_run: dryRun,
-          start_date: startDate || null,
-          end_date: endDate || null,
-          provider: provider || null
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.detail || 'Error al importar a base de datos');
-      setImportStats(data.stats);
-      setProcessResults(data.results || []);
-      setMessage(data.message);
-      setStatus('success');
-      if (!dryRun) setIsPreviewMode(false); // Reset preview mode after successful live import
-    } catch (err: any) {
-      setMessage(err.message);
-      setStatus('error');
-    }
-  };
 
   const handleExportFromDB = async (overrideDirectory?: string | null, overrideFormats?: any) => {
-    const targetDir = overrideDirectory !== undefined ? overrideDirectory : directory;
+    const targetDir = overrideDirectory !== undefined ? overrideDirectory : '/app/data/Data/Pendientes';
     const activeFormats = overrideFormats || exportFormats;
 
     const selectedFormats = Object.entries(activeFormats)
@@ -482,8 +363,6 @@ function App() {
     setMessage('');
     setStats(null);
     setProcessResults([]);
-    setImportStats(null);
-    setIsPreviewMode(false);
   };
 
   const getViewConfig = () => {
@@ -536,6 +415,22 @@ function App() {
           actionIcon: Settings2,
           color: 'slate'
         };
+      case 'groupings':
+        return {
+          title: 'Maestro de Agrupaciones',
+          subtitle: 'Gestión de categorías generales de impuestos',
+          actionLabel: '',
+          actionIcon: Settings2,
+          color: 'slate'
+        };
+      case 'tax-rates':
+        return {
+          title: 'Maestro de Tarifas',
+          subtitle: 'Gestión de porcentajes de impuestos',
+          actionLabel: '',
+          actionIcon: Settings2,
+          color: 'slate'
+        };
     }
   };
 
@@ -573,12 +468,20 @@ function App() {
             <DashboardPage onNavigate={setActiveView} />
           )}
 
-          {activeView !== 'dashboard' && activeView !== 'report' && (
+          {/* Configuration/Master Views - No Filter Section */}
+          {activeView === 'tax-master' && <TaxMasterPage />}
+          {activeView === 'groupings' && <GroupingsPage />}
+          {activeView === 'tax-rates' && <TaxRatesPage />}
+
+          {/* Report View - Own Filter Section */}
+          {activeView === 'report' && <ReportPage providers={providers} />}
+
+          {/* Import View - Own Filter Section */}
+          {activeView === 'import' && <ImportPage providers={providers} directory={directory} />}
+
+          {/* Extraction/Export Views - Shared/Specific Filter Section */}
+          {(activeView === 'extract' || activeView === 'export') && (
             <div className="filter-section">
-
-
-              {/* ... rest of your filter logic ... */}
-
               {activeView === 'extract' && (
                 <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center' }}>
                   <div className="form-group" style={{ width: '320px', textAlign: 'center' }}>
@@ -606,7 +509,7 @@ function App() {
                 </div>
               )}
 
-              {(activeView === 'export') && (
+              {activeView === 'export' && (
                 <div style={{ position: 'relative' }}>
                   <FilterBar
                     quickFilters={[
@@ -629,14 +532,7 @@ function App() {
                       options: providers,
                       onChange: setProvider
                     }}
-                  >
-
-                  </FilterBar>
-                  {activeView !== 'import' && (
-                    <div style={{ position: 'absolute', top: '1.25rem', right: '1.25rem' }}>
-                      {/* Button placeholder if needed for other views, or remove if unused elsewhere */}
-                    </div>
-                  )}
+                  />
                 </div>
               )}
 
@@ -675,49 +571,31 @@ function App() {
                 </div>
               )}
 
-              {/* Action Button - Hidden for report and import (import now in quick-filters row) */}
-              {activeView !== 'report' && activeView !== 'import' && (
-                <div className="filter-row" style={{ marginTop: '0.75rem', justifyContent: activeView === 'extract' ? 'center' : 'flex-end' }}>
-                  <button
-                    onClick={activeView === 'extract' ? handleProcess : () => handleExportFromDB()}
-                    disabled={status === 'loading' || !directory}
-                    className="btn-primary"
-                    style={{
-                      padding: '0.65rem 1.75rem',
-                      fontSize: '0.875rem',
-                      opacity: status === 'loading' || !directory ? 0.5 : 1,
-                      cursor: status === 'loading' || !directory ? 'not-allowed' : 'pointer'
-                    }}
-                  >
-                    {status === 'loading' ? (
-                      <Loader2 className="animate-spin" size={18} />
-                    ) : (
-                      <viewConfig.actionIcon size={18} />
-                    )}
-                    <span>{status === 'loading' ? 'Procesando...' : viewConfig.actionLabel}</span>
-                  </button>
-                </div>
-              )}
+              {/* Action Button */}
+              <div className="filter-row" style={{ marginTop: '0.75rem', justifyContent: activeView === 'extract' ? 'center' : 'flex-end' }}>
+                <button
+                  onClick={activeView === 'extract' ? handleProcess : () => handleExportFromDB()}
+                  disabled={status === 'loading' || !directory}
+                  className="btn-primary"
+                  style={{
+                    padding: '0.65rem 1.75rem',
+                    fontSize: '0.875rem',
+                    opacity: status === 'loading' || !directory ? 0.5 : 1,
+                    cursor: status === 'loading' || !directory ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {status === 'loading' ? (
+                    <Loader2 className="animate-spin" size={18} />
+                  ) : (
+                    <viewConfig.actionIcon size={18} />
+                  )}
+                  <span>{status === 'loading' ? 'Procesando...' : viewConfig.actionLabel}</span>
+                </button>
+              </div>
             </div>
           )}
 
-          {/* Report View */}
-          {activeView === 'report' && (
-            <ReportPage providers={providers} />
-          )}
-
-          {/* Import View */}
-          {activeView === 'import' && (
-            <ImportPage providers={providers} directory={directory} />
-          )}
-
-          {/* Tax Master View */}
-          {activeView === 'tax-master' && (
-            <div>Tax Master Page Disabled</div>
-            // <TaxMasterPage />
-          )}
-
-          {/* Status Message */}
+          {/* Status Message (Only for views that don't have their own status handling) */}
           {status !== 'idle' && message && activeView !== 'extract' && activeView !== 'report' && activeView !== 'import' && (
             <div
               className="data-card"
@@ -787,136 +665,138 @@ function App() {
         </div>
 
         {/* Extract Progress Modal */}
-        {isExtractModalOpen && (
-          <div className="modal-overlay" style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)',
-            zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center'
-          }}>
-            <div className="modal-content" style={{
-              backgroundColor: '#ffffff', borderRadius: '16px',
-              width: '1080px', maxHeight: '90vh', display: 'flex', flexDirection: 'column',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden'
+        {
+          isExtractModalOpen && (
+            <div className="modal-overlay" style={{
+              position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)',
+              zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}>
-              {/* Header */}
-              <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <div style={{ backgroundColor: 'var(--accent-light)', color: 'var(--accent-color)', width: 40, height: 40, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {status === 'loading' ? <Loader2 size={24} className="animate-spin" /> : <CheckCircle2 size={24} />}
+              <div className="modal-content" style={{
+                backgroundColor: '#ffffff', borderRadius: '16px',
+                width: '1080px', maxHeight: '90vh', display: 'flex', flexDirection: 'column',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden'
+              }}>
+                {/* Header */}
+                <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ backgroundColor: 'var(--accent-light)', color: 'var(--accent-color)', width: 40, height: 40, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {status === 'loading' ? <Loader2 size={24} className="animate-spin" /> : <CheckCircle2 size={24} />}
+                    </div>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700, color: '#0f172a' }}>
+                        {status === 'loading' ? 'Procesando Facturas' : 'Extracción Finalizada'}
+                      </h3>
+                      <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>
+                        {message}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700, color: '#0f172a' }}>
-                      {status === 'loading' ? 'Procesando Facturas' : 'Extracción Finalizada'}
-                    </h3>
-                    <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>
-                      {message}
-                    </p>
+                  {status !== 'loading' && (
+                    <button
+                      onClick={() => setIsExtractModalOpen(false)}
+                      style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#64748b' }}
+                    >
+                      <X size={24} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Body */}
+                <div className="custom-scrollbar" style={{ padding: '1.5rem', overflowY: 'auto', flex: 1 }}>
+                  {/* Progress Bar Area */}
+                  {stats && stats.total_scanned > 0 && (
+                    <div style={{
+                      padding: '1.5rem',
+                      borderRadius: '12px',
+                      background: 'rgba(37, 99, 235, 0.03)',
+                      border: '1px solid rgba(37, 99, 235, 0.1)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      marginBottom: '1.5rem'
+                    }}>
+                      <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--accent-color)', fontFamily: 'monospace', lineHeight: 1 }}>
+                        {(stats.successful + stats.trashed + stats.errors)} <span style={{ color: 'var(--text-muted)', fontSize: '1.25rem', fontWeight: 400 }}>/</span> {stats.total_scanned}
+                      </div>
+                      <div style={{ width: '100%', maxWidth: '100%', height: '8px', backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: '4px', marginTop: '0.5rem', overflow: 'hidden' }}>
+                        <div style={{
+                          height: '100%',
+                          width: `${Math.min(100, ((stats.successful + stats.trashed + stats.errors) / stats.total_scanned) * 100)}% `,
+                          backgroundColor: 'var(--accent-color)',
+                          transition: 'width 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+                        }}></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Summary Small cards */}
+                  {stats && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+                      <div style={{ padding: '1rem', borderRadius: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>Exitosos</div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--success-color)' }}>{stats.successful}</div>
+                      </div>
+                      <div style={{ padding: '1rem', borderRadius: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>Omitidos</div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#94a3b8' }}>{stats.trashed}</div>
+                      </div>
+                      <div style={{ padding: '1rem', borderRadius: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>Errores</div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--danger-color)' }}>{stats.errors}</div>
+                      </div>
+                      <div style={{ padding: '1rem', borderRadius: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>Archivos</div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--accent-color)' }}>{stats.files_saved}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Table Log */}
+                  <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden' }}>
+                    <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
+                      <table className="data-table" style={{ fontSize: '0.75rem' }}>
+                        <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+                          <tr>
+                            <th>Fecha</th>
+                            <th>Remitente</th>
+                            <th>Asunto</th>
+                            <th style={{ textAlign: 'center' }}>Estado</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sortedProcessResults.map((res: any, idx: number) => (
+                            <tr key={idx}>
+                              <td style={{ whiteSpace: 'nowrap' }}>{formatProcessDate(res.date)}</td>
+                              <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '150px' }}>{res.sender?.split('<')[0]}</td>
+                              <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '300px' }}>{res.subject}</td>
+                              <td style={{ textAlign: 'center' }}>{renderStatusBadge(res.status)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
-                {status !== 'loading' && (
+
+                {/* Footer */}
+                <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #e2e8f0', backgroundColor: '#f8fafc', display: 'flex', justifyContent: 'flex-end' }}>
                   <button
                     onClick={() => setIsExtractModalOpen(false)}
-                    style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#64748b' }}
+                    className="btn-primary"
+                    disabled={status === 'loading'}
+                    style={{ padding: '0.5rem 2rem' }}
                   >
-                    <X size={24} />
+                    Cerrar
                   </button>
-                )}
-              </div>
-
-              {/* Body */}
-              <div className="custom-scrollbar" style={{ padding: '1.5rem', overflowY: 'auto', flex: 1 }}>
-                {/* Progress Bar Area */}
-                {stats && stats.total_scanned > 0 && (
-                  <div style={{
-                    padding: '1.5rem',
-                    borderRadius: '12px',
-                    background: 'rgba(37, 99, 235, 0.03)',
-                    border: '1px solid rgba(37, 99, 235, 0.1)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    marginBottom: '1.5rem'
-                  }}>
-                    <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--accent-color)', fontFamily: 'monospace', lineHeight: 1 }}>
-                      {(stats.successful + stats.trashed + stats.errors)} <span style={{ color: 'var(--text-muted)', fontSize: '1.25rem', fontWeight: 400 }}>/</span> {stats.total_scanned}
-                    </div>
-                    <div style={{ width: '100%', maxWidth: '100%', height: '8px', backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: '4px', marginTop: '0.5rem', overflow: 'hidden' }}>
-                      <div style={{
-                        height: '100%',
-                        width: `${Math.min(100, ((stats.successful + stats.trashed + stats.errors) / stats.total_scanned) * 100)}% `,
-                        backgroundColor: 'var(--accent-color)',
-                        transition: 'width 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
-                      }}></div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Summary Small cards */}
-                {stats && (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
-                    <div style={{ padding: '1rem', borderRadius: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', textAlign: 'center' }}>
-                      <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>Exitosos</div>
-                      <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--success-color)' }}>{stats.successful}</div>
-                    </div>
-                    <div style={{ padding: '1rem', borderRadius: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', textAlign: 'center' }}>
-                      <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>Omitidos</div>
-                      <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#94a3b8' }}>{stats.trashed}</div>
-                    </div>
-                    <div style={{ padding: '1rem', borderRadius: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', textAlign: 'center' }}>
-                      <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>Errores</div>
-                      <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--danger-color)' }}>{stats.errors}</div>
-                    </div>
-                    <div style={{ padding: '1rem', borderRadius: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', textAlign: 'center' }}>
-                      <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>Archivos</div>
-                      <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--accent-color)' }}>{stats.files_saved}</div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Table Log */}
-                <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden' }}>
-                  <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
-                    <table className="data-table" style={{ fontSize: '0.75rem' }}>
-                      <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
-                        <tr>
-                          <th>Fecha</th>
-                          <th>Remitente</th>
-                          <th>Asunto</th>
-                          <th style={{ textAlign: 'center' }}>Estado</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {processResults.map((res: any, idx: number) => (
-                          <tr key={idx}>
-                            <td style={{ whiteSpace: 'nowrap' }}>{formatProcessDate(res.date)}</td>
-                            <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '150px' }}>{res.sender?.split('<')[0]}</td>
-                            <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '300px' }}>{res.subject}</td>
-                            <td style={{ textAlign: 'center' }}>{renderStatusBadge(res.status)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
                 </div>
               </div>
-
-              {/* Footer */}
-              <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #e2e8f0', backgroundColor: '#f8fafc', display: 'flex', justifyContent: 'flex-end' }}>
-                <button
-                  onClick={() => setIsExtractModalOpen(false)}
-                  className="btn-primary"
-                  disabled={status === 'loading'}
-                  style={{ padding: '0.5rem 2rem' }}
-                >
-                  Cerrar
-                </button>
-              </div>
             </div>
-          </div>
-        )}
-      </main>
-    </div>
+          )
+        }
+      </main >
+    </div >
   );
 }
 

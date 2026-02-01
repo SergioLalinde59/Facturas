@@ -46,7 +46,7 @@ logging.basicConfig(
 logger = logging.getLogger("api")
 logger.info(f"Iniciando API. Log en: {LOG_PATH}")
 
-from src.api import config_api
+from src.api.routes import tax_routes, grouping_routes, tax_rate_routes
 
 app = FastAPI(title="Gmail Invoice Processor API")
 
@@ -59,7 +59,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(config_api.router, prefix="/api/v1/config", tags=["configuration"])
+app.include_router(tax_routes.router)
+app.include_router(grouping_routes.router)
+app.include_router(tax_rate_routes.router)
 
 class ProcessRequest(BaseModel):
     target_directory: Optional[str] = None
