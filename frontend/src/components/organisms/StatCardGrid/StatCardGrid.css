@@ -32,6 +32,9 @@
 }
 
 @media (max-width: 1280px) {
+    .stat-card-grid--cols-6 {
+        grid-template-columns: repeat(3, 1fr);
+    }
 
     .stat-card-grid--cols-4,
     .stat-card-grid--cols-5 {
@@ -41,6 +44,7 @@
 
 @media (max-width: 1024px) {
 
+    .stat-card-grid--cols-6,
     .stat-card-grid--cols-3,
     .stat-card-grid--cols-4,
     .stat-card-grid--cols-5 {

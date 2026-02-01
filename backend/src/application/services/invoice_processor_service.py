@@ -194,20 +194,27 @@ class InvoiceProcessorService:
                     logger.warning("No se encontró un XML de factura válido dentro del ZIP.")
                     return None, None
 
-                # 1. Determinar Directorio por Año
-                invoice_year = invoice_data.issue_date.split('-')[0] if invoice_data.issue_date else datetime.now().strftime('%Y')
-                year_dir = os.path.join(target_dir, invoice_year)
-                if not os.path.exists(year_dir):
-                    os.makedirs(year_dir, exist_ok=True)
+                # 1. Usar el directorio destino directamente (sin subcarpetas de años)
+                # invoice_year = invoice_data.issue_date.split('-')[0] if invoice_data.issue_date else datetime.now().strftime('%Y')
+                # year_dir = os.path.join(target_dir, invoice_year)
+                
+                # if not os.path.exists(target_dir):
+                #     os.makedirs(target_dir, exist_ok=True)
 
                 # 2. Renombrado Seguro
                 safe_supplier = "".join(c for c in invoice_data.supplier_name if c.isalnum() or c in (' ', '-', '_')).strip()
-                base_name = f"{invoice_data.issue_date} {safe_supplier}"
-                logger.info(f"Factura identificada: {base_name}")
+                safe_invoice_number = "".join(c for c in invoice_data.invoice_number if c.isalnum() or c in ('-', '_')).strip()
+                
+                # Fallback si no hay número
+                if not safe_invoice_number:
+                    safe_invoice_number = "SN"
+                    
+                base_name = f"{invoice_data.issue_date} {safe_supplier} [{safe_invoice_number}]"
+                logger.info(f"Factura identificada para guardar: {base_name}")
                 
                 # Guardar XML
                 xml_filename = f"{base_name}.xml"
-                xml_path = os.path.join(year_dir, xml_filename)
+                xml_path = os.path.join(target_dir, xml_filename)
                 
                 if os.path.exists(xml_path):
                     logger.info(f"La factura {base_name} ya existe. Saltando.")
@@ -219,7 +226,7 @@ class InvoiceProcessorService:
                 # Guardar PDF correspondiente
                 if pdf_files:
                     pdf_filename = f"{base_name}.pdf"
-                    pdf_path = os.path.join(year_dir, pdf_filename)
+                    pdf_path = os.path.join(target_dir, pdf_filename)
                     with open(pdf_path, 'wb') as f:
                         f.write(zf.read(pdf_files[0]))
                     logger.debug(f"PDF guardado: {pdf_path}")
@@ -321,8 +328,14 @@ class InvoiceProcessorService:
             subtotals = tt.xpath('./*[local-name()="TaxSubtotal"]')
             if subtotals:
                 for sub in subtotals:
+                    # XPath ajustado para buscar dentro de TaxCategory
                     scheme_id = self._xpath_text(sub, './/*[local-name()="TaxScheme"]/*[local-name()="ID"]')
-                    percent = self._get_float(sub, './*[local-name()="Percent"]')
+                    # Percent suele estar dentro de TaxCategory
+                    percent = self._get_float(sub, './/*[local-name()="TaxCategory"]/*[local-name()="Percent"]')
+                    if percent == 0.0:
+                        # Intento fallback directo por si acaso (aunque el estándar es anidado)
+                        percent = self._get_float(sub, './*[local-name()="Percent"]')
+                        
                     amount = self._get_float(sub, './*[local-name()="TaxAmount"]')
                     if scheme_id:
                         key = (scheme_id, percent)
@@ -335,6 +348,28 @@ class InvoiceProcessorService:
                     key = (scheme_id, 0.0)
                     taxes[key] = taxes.get(key, 0.0) + amount
         
+        # Procesar Retenciones (WithholdingTaxTotal)
+        wht_totals = element.xpath('/*[local-name()="Invoice" or local-name()="CreditNote"]/*[local-name()="WithholdingTaxTotal"]')
+        if not wht_totals:
+             wht_totals = element.xpath('//*[local-name()="WithholdingTaxTotal"]')
+             
+        for wht in wht_totals:
+            subtotals = wht.xpath('./*[local-name()="TaxSubtotal"]')
+            if subtotals:
+                for sub in subtotals:
+                    scheme_id = self._xpath_text(sub, './/*[local-name()="TaxScheme"]/*[local-name()="ID"]')
+                    percent = self._get_float(sub, './/*[local-name()="TaxCategory"]/*[local-name()="Percent"]')
+                    amount = self._get_float(sub, './*[local-name()="TaxAmount"]')
+                    if scheme_id:
+                        key = (scheme_id, percent)
+                        taxes[key] = taxes.get(key, 0.0) + amount
+            else:
+                scheme_id = self._xpath_text(wht, './/*[local-name()="TaxScheme"]/*[local-name()="ID"]')
+                amount = self._get_float(wht, './*[local-name()="TaxAmount"]')
+                if scheme_id:
+                    key = (scheme_id, 0.0)
+                    taxes[key] = taxes.get(key, 0.0) + amount
+
         return taxes
 
     def _xpath_text(self, element, xpath_query: str) -> Optional[str]:

@@ -9,10 +9,13 @@ services:
       - DB_NAME=${DB_NAME:-Facturas}
       - DB_USER=${DB_USER:-postgres}
       - DB_PASSWORD=${DB_PASSWORD}
-      - ENVIRONMENT=production
+      - ENVIRONMENT=development
+      - FACTURAS_PENDIENTES=/app/data/Data/Pendientes
+      - EXPORT_DIRECTORY=/app/data/Data/Exportadas
     ports:
       - "8002:8000"
     volumes:
+      - ./backend:/app
       - F:/1. Cloud/4. AI/1. Antigravity/Facturas:/app/data
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -20,8 +23,14 @@ services:
   frontend:
     build:
       context: ./frontend
+      dockerfile: Dockerfile.dev
     container_name: facturas_frontend
     ports:
-      - "5174:80"
+      - "5174:5174"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://backend:8000
     depends_on:
       - backend

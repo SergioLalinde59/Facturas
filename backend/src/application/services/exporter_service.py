@@ -83,8 +83,9 @@ class ExporterService:
             inc = sum(val for (code, pct), val in taxes.items() if code == '04')
             inc_bolsas = sum(val for (code, pct), val in taxes.items() if code == '22')
             retefuente = sum(val for (code, pct), val in taxes.items() if code == '06')
+            reteica = sum(val for (code, pct), val in taxes.items() if code == '07')
             
-            known_codes = {'01', '04', '22', '06'}
+            known_codes = {'01', '04', '22', '06', '07'}
             otros_imp_sum = sum(val for (code, pct), val in taxes.items() if code not in known_codes)
 
             # Ajuste de Nota Crédito
@@ -97,15 +98,31 @@ class ExporterService:
                 inc = -abs(inc)
                 inc_bolsas = -abs(inc_bolsas)
                 retefuente = -abs(retefuente)
+                reteica = -abs(reteica)
                 otros_imp_sum = -abs(otros_imp_sum)
                 total = -abs(total)
 
+            # Cálculo de Totales (Bruto vs Neto)
+            # Bruto: Subtotal + Impuestos - Descuentos
+            gross_total = subtotal - abs(descuentos) + iva_19 + iva_5 + iva_0 + inc + inc_bolsas + otros_imp_sum
+            
+            # Neto: Bruto - Retenciones
+            net_total = gross_total - abs(retefuente) - abs(reteica)
+            
+            # Si el total del XML (PayableAmount) coincide con el bruto, significa que no restaron retenciones en ese campo
+            # En ese caso, forzamos el uso del net_total para que coincida con el "Real de la Factura" esperado por el usuario.
+            if abs(total - gross_total) < 5.0 and abs(retefuente) + abs(reteica) > 0:
+                total = net_total
+
             # Validación de Integridad
             validation_error = None
-            calc_total = subtotal - abs(descuentos) + iva_19 + iva_5 + iva_0 + inc + inc_bolsas + otros_imp_sum
-            diff = abs(calc_total - total)
+            diff = abs(net_total - total)
             if diff > 5.0:
-                validation_error = f"Inconsistencia: Calc({calc_total:,.0f}) != Real({total:,.0f})"
+                # Si no coincide con el neto, probamos con el bruto para dar un error más específico
+                if abs(gross_total - total) < 5.0:
+                    validation_error = f"Aviso: El total del XML es Bruto. Se ajustó a Neto ({net_total:,.0f})"
+                else:
+                    validation_error = f"Inconsistencia: Calc({net_total:,.0f}) != Real({total:,.0f})"
 
             return {
                 'fecha': issue_date,
@@ -120,6 +137,7 @@ class ExporterService:
                 'inc': inc,
                 'inc_bolsas': inc_bolsas,
                 'retefuente': retefuente,
+                'reteica': reteica,
                 'otros_impuestos': otros_imp_sum,
                 'total': total,
                 'nombre_xml': os.path.basename(file_path),
@@ -141,6 +159,8 @@ class ExporterService:
 
     def _extract_detailed_taxes_internal(self, element) -> Dict[tuple[str, float], float]:
         taxes = {}
+        
+        # 1. Extraer de TaxTotal (IVA, INC, Bolsas)
         tax_totals = element.xpath('/*[local-name()="Invoice" or local-name()="CreditNote"]/*[local-name()="TaxTotal"]')
         if not tax_totals:
             tax_totals = element.xpath('//*[local-name()="TaxTotal"]')
@@ -150,7 +170,11 @@ class ExporterService:
             if subtotals:
                 for sub in subtotals:
                     scheme_id = self._get_text(sub, './/*[local-name()="TaxScheme"]/*[local-name()="ID"]')
-                    percent = self._get_float(sub, './*[local-name()="Percent"]')
+                    # Fix: Search for percent inside TaxCategory
+                    percent = self._get_float(sub, './/*[local-name()="TaxCategory"]/*[local-name()="Percent"]')
+                    if percent == 0.0:
+                         percent = self._get_float(sub, './*[local-name()="Percent"]')
+
                     amount = self._get_float(sub, './*[local-name()="TaxAmount"]')
                     if scheme_id:
                         key = (scheme_id, percent)
@@ -161,6 +185,33 @@ class ExporterService:
                 if scheme_id:
                     key = (scheme_id, 0.0)
                     taxes[key] = taxes.get(key, 0.0) + amount
+
+        # 2. Extraer de WithholdingTaxTotal (ReteFuente, ReteICA, ReteIVA)
+        wht_totals = element.xpath('/*[local-name()="Invoice" or local-name()="CreditNote"]/*[local-name()="WithholdingTaxTotal"]')
+        if not wht_totals:
+            wht_totals = element.xpath('//*[local-name()="WithholdingTaxTotal"]')
+
+        for wht in wht_totals:
+            subtotals = wht.xpath('./*[local-name()="TaxSubtotal"]')
+            if subtotals:
+                for sub in subtotals:
+                    scheme_id = self._get_text(sub, './/*[local-name()="TaxScheme"]/*[local-name()="ID"]')
+                    # Fix: Search for percent inside TaxCategory
+                    percent = self._get_float(sub, './/*[local-name()="TaxCategory"]/*[local-name()="Percent"]')
+                    if percent == 0.0:
+                         percent = self._get_float(sub, './*[local-name()="Percent"]')
+                         
+                    amount = self._get_float(sub, './*[local-name()="TaxAmount"]')
+                    if scheme_id:
+                        key = (scheme_id, percent)
+                        taxes[key] = taxes.get(key, 0.0) + amount
+            else:
+                scheme_id = self._get_text(wht, './/*[local-name()="TaxScheme"]/*[local-name()="ID"]')
+                amount = self._get_float(wht, './*[local-name()="TaxAmount"]')
+                if scheme_id:
+                    key = (scheme_id, 0.0)
+                    taxes[key] = taxes.get(key, 0.0) + amount
+        
         return taxes
 
     def import_to_db(self, directory: str, repository: Any, dry_run: bool = False, filters: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -254,6 +305,42 @@ class ExporterService:
                     if save_status == 'inserted':
                         count_imported += 1
                         res["status"] = "success"
+                        
+                        # Move to Procesadas/yyyy
+                        try:
+                            invoice_year = str(data.get('fecha', '')).split('-')[0]
+                            if not invoice_year or len(invoice_year) != 4:
+                                invoice_year = datetime.now().strftime('%Y')
+                                
+                            # Determine processed directory from env or fallback
+                            processed_root = os.getenv('FACTURAS_PROCESADAS')
+                            if not processed_root:
+                                # Fallback to sibling "Procesadas" folder
+                                parent_dir = os.path.dirname(directory)
+                                processed_root = os.path.join(parent_dir, "Procesadas")
+                            
+                            processed_dir = os.path.join(processed_root, invoice_year)
+                            
+                            if not os.path.exists(processed_dir):
+                                os.makedirs(processed_dir, exist_ok=True)
+                                
+                            # Move XML
+                            src_xml = file_path
+                            dst_xml = os.path.join(processed_dir, filename)
+                            shutil.move(src_xml, dst_xml)
+                            
+                            # Move PDF if exists
+                            pdf_name = filename.rsplit('.', 1)[0] + '.pdf'
+                            src_pdf = os.path.join(directory, pdf_name)
+                            if os.path.exists(src_pdf):
+                                dst_pdf = os.path.join(processed_dir, pdf_name)
+                                shutil.move(src_pdf, dst_pdf)
+                                
+                        except Exception as move_err:
+                            # Log error but don't fail the import status since it is saved
+                            print(f"Error moving file {filename}: {move_err}")
+                            res["message"] = "Guardado, pero error al mover archivo."
+                            
                     elif save_status == 'updated':
                         count_duplicates += 1
                         res["status"] = "duplicate"

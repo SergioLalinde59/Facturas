@@ -16,12 +16,19 @@ from datetime import date
 from typing import Optional, List
 from dotenv import load_dotenv
 
-# Cargar variables de entorno
-load_dotenv()
+# Cargar variables de entorno desde el volumen montado
+load_dotenv('/app/data/.env')
 
 # Configuración
-EXPORT_DIRECTORY = os.getenv('EXPORT_DIRECTORY', '/app/data/Facturas/Exportadas')
-FACTURAS_PENDIENTES = os.getenv('FACTURAS_PENDIENTES', '/app/data/Facturas')
+# Configuración
+EXPORT_DIRECTORY = os.getenv('EXPORT_DIRECTORY', '/app/data/Data/Exportadas')
+FACTURAS_PENDIENTES = os.getenv('FACTURAS_PENDIENTES', '/app/data/Data/Pendientes')
+FACTURAS_PROCESADAS = os.getenv('FACTURAS_PROCESADAS', '/app/data/Data/Procesadas')
+
+# Log important paths for debugging
+logging.info(f"CONFIG: FACTURAS_PENDIENTES resolved to: {FACTURAS_PENDIENTES}")
+logging.info(f"CONFIG: FACTURAS_PROCESADAS resolved to: {FACTURAS_PROCESADAS}")
+logging.info(f"CONFIG: EXPORT_DIRECTORY resolved to: {EXPORT_DIRECTORY}")
 
 
 # Configurar Logging - Usar ruta absoluta
@@ -51,7 +58,7 @@ app.add_middleware(
 )
 
 class ProcessRequest(BaseModel):
-    target_directory: str
+    target_directory: Optional[str] = None
     max_emails: int = 5
     dry_run: bool = False
     start_date: Optional[date] = None
@@ -103,7 +110,7 @@ async def view_file(path: str):
     try:
         if not os.path.exists(path):
              logger.warning(f"Archivo no encontrado: {path}")
-             raise HTTPException(status_code=404, detail="Archivo no encontrado")
+             raise HTTPException(status_code=404, detail=f"Archivo no encontrado: {path}")
         
         if not os.path.isfile(path):
              raise HTTPException(status_code=400, detail="La ruta no es un archivo")
@@ -196,7 +203,9 @@ async def import_invoices_to_db(request: ProcessRequest):
             'end_date': request.end_date,
             'provider': request.provider
         }
-        result = exporter.import_to_db(request.target_directory, factura_repo, dry_run=request.dry_run, filters=filters)
+        actual_directory = request.target_directory or FACTURAS_PENDIENTES
+        logger.info(f"Importando desde directorio: {actual_directory}")
+        result = exporter.import_to_db(actual_directory, factura_repo, dry_run=request.dry_run, filters=filters)
         return result
     except Exception as e:
         logger.error(f"Error en import_invoices_to_db: {str(e)}")
