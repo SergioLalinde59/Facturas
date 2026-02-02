@@ -5,16 +5,33 @@ $ErrorActionPreference = "Stop"
 
 Clear-Host
 Write-Host "==========================================" -ForegroundColor Cyan
-Write-Host "   Sincronización con GitHub" -ForegroundColor Cyan
+Write-Host "   Sincronizacion con GitHub" -ForegroundColor Cyan
 Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host ""
 
-# 1. Pedir descripción para la actualización
-$descripcion = Read-Host "Ingrese una descripción para la actualización"
+# Mostrar informacion del ultimo push/commit
+Write-Host "Ultimo commit registrado:" -ForegroundColor Magenta
+try {
+    $formatString = "%h - %s (%cr)"
+    $ultimoCommit = git log -1 --pretty=format:$formatString 2>$null
+    if ($ultimoCommit) {
+        Write-Host "   $ultimoCommit" -ForegroundColor White
+    } else {
+        Write-Host "   No hay commits previos" -ForegroundColor Gray
+    }
+} catch {
+    Write-Host "   No se pudo obtener informacion del ultimo commit" -ForegroundColor Gray
+}
+Write-Host ""
+Write-Host "------------------------------------------" -ForegroundColor DarkGray
+Write-Host ""
 
-# Validar descripción
+# 1. Pedir descripcion para la actualizacion
+$descripcion = Read-Host "Ingrese una descripcion para la actualizacion"
+
+# Validar descripcion
 if ([string]::IsNullOrWhiteSpace($descripcion)) {
-    Write-Host "❌ Error: La descripción no puede estar vacía." -ForegroundColor Red
+    Write-Host "Error: La descripcion no puede estar vacia." -ForegroundColor Red
     Start-Sleep -Seconds 2
     exit 1
 }
@@ -26,14 +43,11 @@ try {
 
     # 3. Realizar commit
     Write-Host "2. Confirmando cambios (Commit)..." -ForegroundColor Yellow
-    # Verificamos si hay cambios para commitear primero para evitar error de git commit vacío si es el caso, 
-    # aunque 'git add .' usualmente prepara algo si hay cambios. Si no hay cambios, git commit fallará o no hará nada.
-    # Simplemente ejecutamos y capturamos error si es necesario, pero git commit devuelve 1 si no hay nada.
     
     $commitOutput = git commit -m "$descripcion" 2>&1
     if ($LASTEXITCODE -ne 0) {
         if ($commitOutput -match "nothing to commit") {
-            Write-Host "⚠ No hay cambios nuevos para confirmar." -ForegroundColor Yellow
+            Write-Host "No hay cambios nuevos para confirmar." -ForegroundColor Yellow
         }
         else {
             throw "Error en git commit: $commitOutput"
@@ -49,7 +63,7 @@ try {
 
     if ($LASTEXITCODE -eq 0) {
         Write-Host ""
-        Write-Host "✅ Actualización completada exitosamente." -ForegroundColor Green
+        Write-Host "Actualizacion completada exitosamente." -ForegroundColor Green
     }
     else {
         throw "Error al ejecutar git push."
@@ -58,7 +72,7 @@ try {
 }
 catch {
     Write-Host ""
-    Write-Host "❌ Ocurrió un error: $_" -ForegroundColor Red
+    Write-Host "Ocurrio un error: $_" -ForegroundColor Red
 }
 
 Write-Host ""

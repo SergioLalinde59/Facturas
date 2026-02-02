@@ -17,11 +17,29 @@ const getStatusBadge = (status: string) => {
             border: 'rgba(34, 197, 94, 0.3)',
             color: '#16a34a'
         },
+        'success': {
+            label: 'OK',
+            bg: 'rgba(34, 197, 94, 0.1)',
+            border: 'rgba(34, 197, 94, 0.3)',
+            color: '#16a34a'
+        },
+        'duplicate': {
+            label: 'Duplicada',
+            bg: 'rgba(245, 158, 11, 0.1)',
+            border: 'rgba(245, 158, 11, 0.3)',
+            color: '#d97706'
+        },
         'inconsistent': {
             label: 'Inconsistente',
             bg: 'rgba(245, 158, 11, 0.1)',
             border: 'rgba(245, 158, 11, 0.3)',
             color: '#d97706'
+        },
+        'error': {
+            label: 'Error',
+            bg: 'rgba(239, 68, 68, 0.1)',
+            border: 'rgba(239, 68, 68, 0.3)',
+            color: '#ef4444'
         },
         'pending': {
             label: 'Pendiente',
@@ -52,12 +70,18 @@ const getStatusBadge = (status: string) => {
 
 // Función para explicar el estado
 const getStatusExplanation = (status: string, invoice: any) => {
+    if (status === 'duplicate') {
+        return 'Esta factura ya existe en la base de datos. Se identificó como duplicada por la combinación de NIT del proveedor + número de factura. No será importada nuevamente.';
+    }
     if (status === 'inconsistent') {
         const diff = Math.abs(invoice.xml_total - invoice.total);
         return `Esta factura presenta inconsistencias porque el total leído del archivo XML/PDF (${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(invoice.xml_total)}) difiere del total calculado por el sistema (${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(invoice.total)}) en ${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(diff)}. Esto puede deberse a diferencias en el cálculo de impuestos, retenciones, o errores en el archivo original.`;
     }
-    if (status === 'consistent') {
+    if (status === 'consistent' || status === 'success') {
         return 'Esta factura es consistente. El total leído del archivo XML/PDF coincide con el total calculado por el sistema.';
+    }
+    if (status === 'error') {
+        return invoice.message || 'Error al procesar esta factura. Verifique el formato del archivo XML.';
     }
     return 'Estado pendiente de validación.';
 };

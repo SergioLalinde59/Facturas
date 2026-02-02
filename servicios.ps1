@@ -55,13 +55,6 @@ function Stop-Backend {
     }
 }
 
-# Función para reiniciar Backend
-function Restart-Backend {
-    Stop-Backend
-    Start-Sleep -Seconds 1
-    Start-Backend
-}
-
 # Función para terminar procesos Node (Frontend)
 function Stop-Frontend {
     Write-Host "Terminando procesos del Frontend (Node)..." -ForegroundColor Red
@@ -75,11 +68,19 @@ function Stop-Frontend {
     }
 }
 
-# Función para reiniciar Frontend
-function Restart-Frontend {
+# Función para detener todos los servicios
+function Stop-AllServices {
+    Write-Host "Deteniendo todos los servicios..." -ForegroundColor Red
+    Stop-Backend
     Stop-Frontend
+    Write-Host "Todos los servicios han sido detenidos." -ForegroundColor Green
+}
+
+# Función para reiniciar Backend
+function Restart-Backend {
+    Stop-Backend
     Start-Sleep -Seconds 1
-    Start-Frontend
+    Start-Backend
 }
 
 # Función para listar procesos Python activos
@@ -137,30 +138,53 @@ function Show-Menu {
     Write-Host "=============================================" -ForegroundColor Cyan
     Write-Host "   GMAIL INVOICE PROCESSOR - SERVICIOS" -ForegroundColor Cyan
     Write-Host "=============================================" -ForegroundColor Cyan
-    Write-Host "1. Iniciar Todos los Servicios"
-    Write-Host "2. Iniciar Backend"
-    Write-Host "3. Iniciar Frontend"
-    Write-Host "4. Ver Estado de Servicios"
-    Write-Host "5. Detener Backend"
-    Write-Host "6. Reiniciar Backend"
-    Write-Host "7. Detener Frontend"
-    Write-Host "8. Reiniciar Frontend"
+    Write-Host ""
+    Write-Host " ESTADO" -ForegroundColor Yellow
+    Write-Host "  1. Ver Estado de Servicios"
+    Write-Host ""
+    Write-Host " TODOS LOS SERVICIOS" -ForegroundColor Yellow
+    Write-Host "  2. Iniciar Todos"
+    Write-Host "  3. Detener Todos"
+    Write-Host "  4. Reiniciar Todos"
+    Write-Host ""
+    Write-Host " BACKEND" -ForegroundColor Yellow
+    Write-Host "  5. Iniciar Backend"
+    Write-Host "  6. Detener Backend"
+    Write-Host "  7. Reiniciar Backend"
+    Write-Host ""
+    Write-Host " FRONTEND" -ForegroundColor Yellow
+    Write-Host "  8. Iniciar Frontend"
+    Write-Host "  9. Detener Frontend"
+    Write-Host " 10. Reiniciar Frontend"
+    Write-Host ""
+    Write-Host "  0. Salir"
     Write-Host "=============================================" -ForegroundColor Cyan
+}
+
+# Función para reiniciar todos los servicios
+function Restart-AllServices {
+    Write-Host "Reiniciando todos los servicios..." -ForegroundColor Cyan
+    Stop-AllServices
+    Start-Sleep -Seconds 2
+    Start-AllServices
 }
 
 # Ejecución del menú una sola vez
 Show-Menu
-$selection = Read-Host " Seleccione una opción (1-8)"
+$selection = Read-Host " Seleccione una opción (0-10)"
 Write-Host ""
 
 switch ($selection) {
-    '1' { Start-AllServices }
-    '2' { Start-Backend }
-    '3' { Start-Frontend }
-    '4' { Get-ServiceStatus }
-    '5' { Stop-Backend }
-    '6' { Restart-Backend }
-    '7' { Stop-Frontend }
-    '8' { Restart-Frontend }
+    '1' { Get-ServiceStatus }
+    '2' { Start-AllServices }
+    '3' { Stop-AllServices }
+    '4' { Restart-AllServices }
+    '5' { Start-Backend }
+    '6' { Stop-Backend }
+    '7' { Restart-Backend }
+    '8' { Start-Frontend }
+    '9' { Stop-Frontend }
+    '10' { Restart-Frontend }
+    '0' { Write-Host "Saliendo..." -ForegroundColor Gray; exit }
     default { Write-Host "Opción no válida." -ForegroundColor Red }
 }

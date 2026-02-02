@@ -38,7 +38,7 @@ export function ImportPage({ providers: initialProviders, directory }: ImportPag
     const [processResults, setProcessResults] = useState<any[]>([]);
     const [isPreviewMode, setIsPreviewMode] = useState(false);
     const [selectedImportRows, setSelectedImportRows] = useState<Set<string>>(new Set());
-    const [tableStatusFilter, setTableStatusFilter] = useState<'all' | 'success' | 'inconsistent' | 'error'>('all');
+    const [tableStatusFilter, setTableStatusFilter] = useState<'all' | 'success' | 'duplicate' | 'inconsistent' | 'error'>('all');
 
     // Reprocess State
     const [availableCurrentProviders, setAvailableCurrentProviders] = useState<string[]>([]);
@@ -209,14 +209,24 @@ export function ImportPage({ providers: initialProviders, directory }: ImportPag
     };
 
     const importFinancialSums = useMemo(() => {
-        return processResults.reduce((acc, r) => ({
+        // Resumen financiero consistente con el filtro de la tabla
+        const filteredResults = processResults.filter(r => {
+            if (tableStatusFilter === 'all') return true;
+            if (tableStatusFilter === 'success') return r.status === 'success';
+            if (tableStatusFilter === 'duplicate') return r.status === 'duplicate';
+            if (tableStatusFilter === 'inconsistent') return r.status === 'inconsistent';
+            if (tableStatusFilter === 'error') return r.status === 'error' || r.status === 'failed';
+            return true;
+        });
+        
+        return filteredResults.reduce((acc, r) => ({
             subtotal: acc.subtotal + (Number(r.subtotal) || 0),
             descuentos: acc.descuentos + (Number(r.descuentos) || 0),
             iva: acc.iva + (Number(r.impuestos) || 0) + (Number(r.otros_impuestos) || 0),
             total: acc.total + (Number(r.total) || 0),
             retefuente: acc.retefuente + (Number(r.retenciones) || 0)
         }), { subtotal: 0, descuentos: 0, iva: 0, total: 0, retefuente: 0 });
-    }, [processResults]);
+    }, [processResults, tableStatusFilter]);
 
     const sortedProcessResults = useMemo(() => {
         if (!processResults.length) return [];
@@ -357,7 +367,16 @@ export function ImportPage({ providers: initialProviders, directory }: ImportPag
                                                 handleImportToDB(false, null, false);
                                             }}
                                             className="btn-primary"
-                                            style={{ padding: '0.4rem 1rem', backgroundColor: 'var(--success-color)', fontSize: '0.75rem', height: '32px' }}
+                                            disabled={!importStats || importStats.successful === 0}
+                                            style={{ 
+                                                padding: '0.4rem 1rem', 
+                                                backgroundColor: (!importStats || importStats.successful === 0) ? 'var(--text-muted)' : 'var(--success-color)', 
+                                                fontSize: '0.75rem', 
+                                                height: '32px',
+                                                cursor: (!importStats || importStats.successful === 0) ? 'not-allowed' : 'pointer',
+                                                opacity: (!importStats || importStats.successful === 0) ? 0.6 : 1
+                                            }}
+                                            title={(!importStats || importStats.successful === 0) ? 'No hay facturas listas para cargar' : `Cargar ${importStats?.successful || 0} facturas`}
                                         >
                                             <Database size={14} />
                                             Confirmar Carga
@@ -406,7 +425,7 @@ export function ImportPage({ providers: initialProviders, directory }: ImportPag
                                             </div>
                                             <div style={{ textAlign: 'center' }}>
                                                 <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--success-color)' }}>{importStats.successful}</div>
-                                                <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>{isPreviewMode ? 'Listas' : 'Cargadas'}</div>
+                                                <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>{isPreviewMode ? 'OK' : 'Cargadas'}</div>
                                             </div>
                                             <div style={{ textAlign: 'center' }}>
                                                 <div style={{ fontSize: '1rem', fontWeight: 800, color: importStats.inconsistent > 0 ? '#f59e0b' : 'inherit' }}>{importStats.inconsistent}</div>
@@ -459,7 +478,8 @@ export function ImportPage({ providers: initialProviders, directory }: ImportPag
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                             {[
                                 { id: 'all', label: 'Todos', color: 'var(--text-secondary)' },
-                                { id: 'success', label: 'Éxito', color: 'var(--success-color)' },
+                                { id: 'success', label: 'OK', color: 'var(--success-color)' },
+                                { id: 'duplicate', label: 'Duplicados', color: '#f59e0b' },
                                 { id: 'inconsistent', label: 'Inconsistentes', color: '#f59e0b' },
                                 { id: 'error', label: 'Errores', color: 'var(--danger-color)' }
                             ].map(f => (
@@ -480,7 +500,7 @@ export function ImportPage({ providers: initialProviders, directory }: ImportPag
                         </div>
                     </div>
                     <div className="data-card-content" style={{ padding: 0 }}>
-                        <div className="process-log custom-scrollbar" style={{ overflowX: 'auto', height: '575px', overflowY: 'auto', position: 'relative' }}>
+                        <div className="process-log custom-scrollbar" style={{ overflowX: 'auto', height: '661px', overflowY: 'auto', position: 'relative' }}>
                             <table className="data-table" style={{ fontSize: '0.75rem', tableLayout: 'fixed' }}>
                                 <thead>
                                     <tr>
@@ -523,8 +543,8 @@ export function ImportPage({ providers: initialProviders, directory }: ImportPag
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {sortedProcessResults.filter(res => tableStatusFilter === 'all' || (tableStatusFilter === 'success' && res.status === 'success') || (tableStatusFilter === 'inconsistent' && res.status === 'inconsistent') || (tableStatusFilter === 'error' && (res.status === 'error' || res.status === 'failed'))).map((res: any, idx) => (
-                                        <tr key={idx} style={{ backgroundColor: res.status === 'inconsistent' ? 'rgba(245, 158, 11, 0.04)' : (res.status === 'error' || res.status === 'failed') ? 'rgba(239, 68, 68, 0.04)' : 'transparent' }}>
+                                    {sortedProcessResults.filter(res => tableStatusFilter === 'all' || (tableStatusFilter === 'success' && res.status === 'success') || (tableStatusFilter === 'duplicate' && res.status === 'duplicate') || (tableStatusFilter === 'inconsistent' && res.status === 'inconsistent') || (tableStatusFilter === 'error' && (res.status === 'error' || res.status === 'failed'))).map((res: any, idx) => (
+                                        <tr key={idx} style={{ backgroundColor: res.status === 'duplicate' ? 'rgba(245, 158, 11, 0.02)' : res.status === 'inconsistent' ? 'rgba(245, 158, 11, 0.04)' : (res.status === 'error' || res.status === 'failed') ? 'rgba(239, 68, 68, 0.04)' : 'transparent' }}>
                                             <td style={{ padding: '0.3rem 0.75rem', textAlign: 'center' }}>
                                                 <input type="checkbox" checked={selectedImportRows.has(res.nombre_xml || res.factura)} onChange={(e) => {
                                                     const newSelected = new Set(selectedImportRows);
@@ -535,7 +555,8 @@ export function ImportPage({ providers: initialProviders, directory }: ImportPag
                                             </td>
                                             <td style={{ padding: '0.3rem 0.75rem', textAlign: 'center' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                                                    {res.status === 'success' ? <span className="badge badge-green" style={{ padding: '0.1rem 0.4rem', fontSize: '0.65rem' }}>Éxito</span> :
+                                                    {res.status === 'success' ? <span className="badge badge-green" style={{ padding: '0.1rem 0.4rem', fontSize: '0.65rem' }}>OK</span> :
+                                                        res.status === 'duplicate' ? <span className="badge" style={{ padding: '0.1rem 0.4rem', fontSize: '0.65rem', backgroundColor: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }}>Duplic.</span> :
                                                         res.status === 'inconsistent' ? <span className="badge" style={{ padding: '0.1rem 0.4rem', fontSize: '0.65rem', backgroundColor: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }}>Incon.</span> :
                                                             <span className="badge badge-danger" style={{ padding: '0.1rem 0.4rem', fontSize: '0.65rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>Error</span>}
                                                     <button onClick={() => { setSelectedInvoice(res); setIsDetailModalOpen(true); }} style={{ border: 'none', background: 'var(--accent-light)', color: 'var(--accent-color)', padding: '4px', borderRadius: '4px', cursor: 'pointer' }} title="Ver detalle y análisis de consistencia"><Eye size={14} /></button>
