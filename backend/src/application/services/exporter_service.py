@@ -7,12 +7,16 @@ from lxml import etree
 from datetime import datetime
 from typing import List, Dict, Any, Set, Optional
 
+# Tolerancia configurable para validación de totales (en COP)
+INVOICE_VALIDATION_TOLERANCE = float(os.getenv('INVOICE_VALIDATION_TOLERANCE', '1.0'))
+
 class ExporterService:
     def __init__(self):
         self.ns = {
             'cac': 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2',
             'cbc': 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2',
         }
+        self.tolerance = INVOICE_VALIDATION_TOLERANCE
 
     def _get_text(self, element, xpath):
         result = element.xpath(xpath, namespaces=self.ns)
@@ -66,10 +70,18 @@ class ExporterService:
             if not invoice_id or not supplier_name:
                 return None, "No se pudo identificar Proveedor o Número de Factura"
 
-            # Valores Financieros
-            subtotal = self._get_float(inner_root, '//*[local-name()="LegalMonetaryTotal"]//*[local-name()="LineExtensionAmount"]')
-            total = self._get_float(inner_root, '//*[local-name()="LegalMonetaryTotal"]//*[local-name()="PayableAmount"]')
-            descuentos = self._get_float(inner_root, '//*[local-name()="LegalMonetaryTotal"]//*[local-name()="AllowanceTotalAmount"]')
+            # Valores Financieros - Buscar LegalMonetaryTotal hijo directo del Invoice/CreditNote
+            # para evitar leer secciones de extensión con ceros (ej: ForeignCurrencyExtension)
+            lmt_xpath = '/*[local-name()="Invoice" or local-name()="CreditNote"]/*[local-name()="LegalMonetaryTotal"]'
+            subtotal = self._get_float(inner_root, f'{lmt_xpath}/*[local-name()="LineExtensionAmount"]')
+            total = self._get_float(inner_root, f'{lmt_xpath}/*[local-name()="PayableAmount"]')
+            descuentos = self._get_float(inner_root, f'{lmt_xpath}/*[local-name()="AllowanceTotalAmount"]')
+            
+            # Fallback si no encuentra con xpath específico (compatibilidad con otros formatos)
+            if subtotal == 0.0 and total == 0.0:
+                subtotal = self._get_float(inner_root, '//*[local-name()="LegalMonetaryTotal"][not(ancestor::*[local-name()="ExtensionContent"])]/*[local-name()="LineExtensionAmount"]')
+                total = self._get_float(inner_root, '//*[local-name()="LegalMonetaryTotal"][not(ancestor::*[local-name()="ExtensionContent"])]/*[local-name()="PayableAmount"]')
+                descuentos = self._get_float(inner_root, '//*[local-name()="LegalMonetaryTotal"][not(ancestor::*[local-name()="ExtensionContent"])]/*[local-name()="AllowanceTotalAmount"]')
 
             # Extracción robusta de impuestos usando Tax Engine
             # raw_taxes: {(code, percent): amount}
@@ -84,6 +96,9 @@ class ExporterService:
             otros_imp_sum = 0.0
             
             for (code, percent), amount in raw_taxes.items():
+                key = (code, percent)
+                xml_context = unknown_codes_map.get(key, 'unknown')
+                
                 tax_obj = tax_service.get_tax(code)
                 rule = {
                     "name": tax_obj.name,
@@ -91,13 +106,13 @@ class ExporterService:
                 } if tax_obj else None
                 
                 if not rule:
-                    context = unknown_codes_map.get(code, 'unknown')
-                    inferred_op = 'subtract' if context == 'withholding' else 'add'
+                    # Código no definido en BD - usar contexto XML
+                    inferred_op = 'subtract' if xml_context == 'withholding' else 'add'
                     
                     missing_definitions.append({
                         "code": code,
-                        "description": f"Código {code} detectado en contexto {context}",
-                        "context": context,
+                        "description": f"Código {code} detectado en contexto {xml_context}",
+                        "context": xml_context,
                         "percent": percent,
                         "amount": amount
                     })
@@ -117,8 +132,19 @@ class ExporterService:
                     })
                     continue
 
-                op = rule.get('operation', 'add')
-                name = rule.get('name', 'Impuesto')
+                # Código ZZ es especial: la operación se determina por ubicación XML (UBL 2.1)
+                # TaxTotal -> 'tax' -> add (contribución)
+                # WithholdingTaxTotal -> 'withholding' -> subtract (retención)
+                if code == 'ZZ':
+                    op = 'subtract' if xml_context == 'withholding' else 'add'
+                    name = rule.get('name', 'Otro Impuesto')
+                    # Log para debugging
+                    import logging
+                    logger = logging.getLogger("exporter")
+                    logger.info(f"ZZ detectado en {xml_context.upper()} -> operación: {op}")
+                else:
+                    op = rule.get('operation', 'add')
+                    name = rule.get('name', 'Impuesto')
                 
                 if op == 'subtract':
                     retenciones_sum += amount
@@ -172,18 +198,19 @@ class ExporterService:
             if missing_definitions:
                 validation_error = "MISSING_TAX_DEFINITION"
             else:
-                # 2. Validación estándar
+                # 2. Validación estándar con tolerancia configurable
                 diff = abs(net_total - total)
-                if diff > 5.0:
-                     if abs(gross_total - total) < 5.0:
-                         # Coincide con bruto -> Retenciones no restadas (aviso)
-                         validation_error = f"Aviso: El total del XML es Bruto. Se ajustó a Neto ({net_total:,.0f})"
+                if diff > self.tolerance:
+                     if abs(gross_total - total) <= self.tolerance:
+                         # Coincide con bruto -> Retenciones no restadas, ajustamos silenciosamente
+                         # No marcamos como error, solo ajustamos el valor
+                         pass  # El total se ajustará abajo
                      else:
                          validation_error = f"Inconsistencia: Calc({net_total:,.0f}) != Real({total:,.0f})"
 
             # Si el total del XML coincide con el bruto, y tenemos retenciones, ajustamos el total guardado al neto
-            if abs(total - gross_total) < 5.0 and abs(retenciones_sum) > 0:
-                total = net_total_adjusted # Preferimos el valor neto real
+            if abs(total - gross_total) <= self.tolerance and abs(retenciones_sum) > 0:
+                total = net_total_adjusted  # Preferimos el valor neto real
 
             return {
                 'fecha': issue_date,
@@ -231,11 +258,22 @@ class ExporterService:
         except:
             return 0.0
 
-    def _extract_detailed_taxes_internal(self, element) -> tuple[Dict[tuple[str, float], float], Dict[str, str]]:
-        taxes = {}
-        unknown_codes = {} # map code -> context (tax vs withholding)
+    def _extract_detailed_taxes_internal(self, element) -> tuple[Dict[tuple[str, float], float], Dict[tuple[str, float], str]]:
+        """
+        Extrae impuestos del XML y determina el contexto de cada uno.
         
-        # 1. Extraer de TaxTotal (Impuestos sumados)
+        Según UBL 2.1 (estándar DIAN Colombia):
+        - TaxTotal: Impuestos/contribuciones que SE SUMAN al total
+        - WithholdingTaxTotal: Retenciones que SE RESTAN del total
+        
+        Returns:
+            taxes: Dict[(code, percent), amount] - Montos agrupados
+            tax_context: Dict[(code, percent), 'tax'|'withholding'] - Contexto XML para cada impuesto
+        """
+        taxes = {}
+        tax_context = {}  # map (code, percent) -> context ('tax' or 'withholding')
+        
+        # 1. Extraer de TaxTotal (Impuestos/contribuciones que SE SUMAN)
         tax_totals = element.xpath('/*[local-name()="Invoice" or local-name()="CreditNote"]/*[local-name()="TaxTotal"]')
         if not tax_totals:
             tax_totals = element.xpath('//*[local-name()="TaxTotal"]')
@@ -252,11 +290,18 @@ class ExporterService:
                     if scheme_id:
                         key = (scheme_id, percent)
                         taxes[key] = taxes.get(key, 0.0) + amount
-                        if scheme_id not in ['01', '04', '22', '03', '02', '08', '11']: # Basic assumption for context check
-                             if scheme_id not in unknown_codes: unknown_codes[scheme_id] = 'tax'
-            # (Fallback logic simplified for brevity, assuming standard structures mostly)
+                        # Marcar contexto como 'tax' (TaxTotal = sumar)
+                        tax_context[key] = 'tax'
+            # Fallback para TaxTotal sin subtotals
+            else:
+                scheme_id = self._get_text(tt, './/*[local-name()="TaxScheme"]/*[local-name()="ID"]')
+                amount = self._get_float(tt, './*[local-name()="TaxAmount"]')
+                if scheme_id:
+                    key = (scheme_id, 0.0)
+                    taxes[key] = taxes.get(key, 0.0) + amount
+                    tax_context[key] = 'tax'
 
-        # 2. Extraer de WithholdingTaxTotal (Retenciones)
+        # 2. Extraer de WithholdingTaxTotal (Retenciones que SE RESTAN)
         wht_totals = element.xpath('/*[local-name()="Invoice" or local-name()="CreditNote"]/*[local-name()="WithholdingTaxTotal"]')
         if not wht_totals:
              wht_totals = element.xpath('//*[local-name()="WithholdingTaxTotal"]')
@@ -273,10 +318,18 @@ class ExporterService:
                     if scheme_id:
                         key = (scheme_id, percent)
                         taxes[key] = taxes.get(key, 0.0) + amount
-                        # Force context to withholding if found here
-                        unknown_codes[scheme_id] = 'withholding'
+                        # Marcar contexto como 'withholding' (WithholdingTaxTotal = restar)
+                        tax_context[key] = 'withholding'
+            # Fallback para WithholdingTaxTotal sin subtotals
+            else:
+                scheme_id = self._get_text(wht, './/*[local-name()="TaxScheme"]/*[local-name()="ID"]')
+                amount = self._get_float(wht, './*[local-name()="TaxAmount"]')
+                if scheme_id:
+                    key = (scheme_id, 0.0)
+                    taxes[key] = taxes.get(key, 0.0) + amount
+                    tax_context[key] = 'withholding'
         
-        return taxes, unknown_codes
+        return taxes, tax_context
 
     def import_to_db(self, directory: str, repository: Any, dry_run: bool = False, filters: Optional[Dict[str, Any]] = None, target_filenames: Optional[List[str]] = None) -> Dict[str, Any]:
         """Procesa XMLs de un directorio y los guarda en la BD (o solo previsualiza)."""

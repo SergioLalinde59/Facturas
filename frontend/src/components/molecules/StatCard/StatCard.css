@@ -6,11 +6,11 @@
     border-radius: var(--radius-lg);
     padding: var(--spacing-lg);
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
     box-shadow: var(--shadow-sm);
     transition: all var(--transition-base);
     min-height: 100px;
+    position: relative;
 }
 
 .stat-card:hover {
@@ -24,6 +24,8 @@
     flex-direction: column;
     gap: var(--spacing-xs);
     flex: 1;
+    width: 100%;
+    margin-top: var(--spacing-sm);
 }
 
 .stat-card__label {
@@ -48,13 +50,16 @@
 }
 
 .stat-card__icon-wrapper {
-    width: 48px;
-    height: 48px;
+    width: 36px;
+    height: 36px;
     border-radius: var(--radius-md);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    position: absolute;
+    top: var(--spacing-md);
+    right: var(--spacing-md);
 }
 
 /* ========== VARIANTES DE COLOR ========== */

@@ -1,80 +1,71 @@
 @import '../../../styles/tokens.css';
 
 .stat-card-grid {
-    display: grid;
+    display: flex;
+    flex-wrap: wrap;
     gap: var(--spacing-lg);
     width: 100%;
+    justify-content: center;
 }
 
-.stat-card-grid--cols-1 {
-    grid-template-columns: repeat(1, 1fr);
+.stat-card-grid > * {
+    flex: 0 1 auto;
+    min-width: 180px;
+    max-width: 220px;
 }
 
-.stat-card-grid--cols-2 {
-    grid-template-columns: repeat(2, 1fr);
+.stat-card-grid--cols-1 > * {
+    flex: 0 1 100%;
+    max-width: 300px;
 }
 
-.stat-card-grid--cols-3 {
-    grid-template-columns: repeat(3, 1fr);
+.stat-card-grid--cols-2 > * {
+    flex: 0 1 calc(50% - var(--spacing-lg));
+    max-width: 280px;
 }
 
-.stat-card-grid--cols-4 {
-    grid-template-columns: repeat(4, 1fr);
+.stat-card-grid--cols-3 > * {
+    flex: 0 1 calc(33.333% - var(--spacing-lg));
+    max-width: 260px;
 }
 
-.stat-card-grid--cols-5 {
-    grid-template-columns: repeat(5, 1fr);
+.stat-card-grid--cols-4 > * {
+    flex: 0 1 calc(25% - var(--spacing-lg));
+    max-width: 240px;
 }
 
-.stat-card-grid--cols-6 {
-    grid-template-columns: repeat(6, 1fr);
-    gap: 1rem;
+.stat-card-grid--cols-5 > * {
+    flex: 0 1 calc(20% - var(--spacing-lg));
+    max-width: 220px;
 }
 
-.stat-card-grid--cols-7 {
-    grid-template-columns: repeat(7, 1fr);
-    gap: 0.75rem;
+.stat-card-grid--cols-6 > * {
+    flex: 0 1 calc(16.666% - 1rem);
+    max-width: 200px;
 }
 
-@media (max-width: 1400px) {
-    .stat-card-grid--cols-7 {
-        grid-template-columns: repeat(7, 1fr);
-        gap: 0.5rem;
-    }
+.stat-card-grid--cols-7 > * {
+    flex: 0 1 calc(14.285% - 0.75rem);
+    max-width: 180px;
 }
 
 @media (max-width: 1280px) {
-    .stat-card-grid--cols-7 {
-        grid-template-columns: repeat(7, 1fr);
-        gap: 0.25rem;
-    }
-
-    .stat-card-grid--cols-6 {
-        grid-template-columns: repeat(3, 1fr);
-    }
-
-    .stat-card-grid--cols-4,
-    .stat-card-grid--cols-5 {
-        grid-template-columns: repeat(3, 1fr);
+    .stat-card-grid > * {
+        flex: 0 1 calc(33.333% - var(--spacing-lg));
+        max-width: 260px;
     }
 }
 
 @media (max-width: 1024px) {
-    .stat-card-grid--cols-7 {
-        grid-template-columns: repeat(4, 1fr);
-        gap: 1rem;
-    }
-
-    .stat-card-grid--cols-6,
-    .stat-card-grid--cols-3,
-    .stat-card-grid--cols-4,
-    .stat-card-grid--cols-5 {
-        grid-template-columns: repeat(2, 1fr);
+    .stat-card-grid > * {
+        flex: 0 1 calc(50% - var(--spacing-lg));
+        max-width: 280px;
     }
 }
 
 @media (max-width: 640px) {
-    .stat-card-grid {
-        grid-template-columns: 1fr !important;
+    .stat-card-grid > * {
+        flex: 0 1 100%;
+        max-width: 100%;
     }
 }

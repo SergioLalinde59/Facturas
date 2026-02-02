@@ -15,9 +15,10 @@ import {
     CheckCircle2,
     AlertCircle,
     Database,
-    Tag
+    Tag,
+    Eye
 } from 'lucide-react';
-import { FilterBar, StatCardGrid } from '../components/organisms';
+import { FilterBar, StatCardGrid, DetailModal } from '../components/organisms';
 import { CurrencyValue } from '../components/atoms';
 import type { Invoice, SortColumn, SortDirection } from '../types';
 
@@ -44,6 +45,47 @@ export function ReportPage({ providers: initialProviders }: ReportPageProps) {
     // Sorting
     const [sortColumn, setSortColumn] = useState<SortColumn>('fecha');
     const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+    // Detail Modal State
+    const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+    const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+
+    // Function to fetch invoice detail from database
+    const fetchInvoiceDetail = async (nit: string, factura: string) => {
+        setIsLoadingDetail(true);
+        try {
+            const response = await fetch(`/api/v1/invoices/detail?nit=${encodeURIComponent(nit)}&factura=${encodeURIComponent(factura)}`);
+            const data = await response.json();
+            
+            if (!response.ok) throw new Error(data.detail || 'Error al obtener detalle');
+            
+            const inv = data.invoice;
+            setSelectedInvoice({
+                date: inv.fecha,
+                sender: inv.proveedor,
+                nit: inv.nit,
+                subject: inv.factura,
+                subtotal: inv.subtotal,
+                descuentos: inv.descuentos,
+                impuestos: inv.impuestos,
+                otros_impuestos: inv.otros_impuestos,
+                retenciones: inv.retenciones,
+                total: inv.total,
+                nombre_xml: inv.nombre_xml,
+                nombre_pdf: inv.nombre_pdf,
+                otros_conceptos: inv.otros_conceptos,
+                tax_details: inv.tax_details,
+                status: 'consistent'
+            });
+            setIsDetailModalOpen(true);
+        } catch (err: any) {
+            console.error('Error fetching invoice detail:', err);
+            alert('Error al cargar el detalle de la factura');
+        } finally {
+            setIsLoadingDetail(false);
+        }
+    };
 
     const applyQuickFilter = (type: string) => {
         const today = new Date();
@@ -195,16 +237,16 @@ export function ReportPage({ providers: initialProviders }: ReportPageProps) {
                 </div>
             </div>
 
-            {/* Status Message */}
-            {status !== 'idle' && message && (
+            {/* Status Message - Only show for errors */}
+            {status === 'error' && message && (
                 <div className="data-card" style={{
                     marginBottom: '1rem', padding: '0.75rem 1rem',
-                    borderColor: status === 'success' ? 'rgba(16, 185, 129, 0.3)' : status === 'error' ? 'rgba(239, 68, 68, 0.3)' : 'var(--border-color)',
-                    backgroundColor: status === 'success' ? 'rgba(16, 185, 129, 0.05)' : status === 'error' ? 'rgba(239, 68, 68, 0.05)' : 'var(--bg-secondary)'
+                    borderColor: 'rgba(239, 68, 68, 0.3)',
+                    backgroundColor: 'rgba(239, 68, 68, 0.05)'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        {status === 'success' ? <CheckCircle2 size={18} color="var(--success-color)" /> : status === 'error' ? <AlertCircle size={18} color="var(--danger-color)" /> : <Loader2 size={18} className="animate-spin" color="var(--accent-color)" />}
-                        <p style={{ fontSize: '0.875rem', color: status === 'success' ? 'var(--success-color)' : status === 'error' ? 'var(--danger-color)' : 'var(--text-secondary)' }}>{message}</p>
+                        <AlertCircle size={18} color="var(--danger-color)" />
+                        <p style={{ fontSize: '0.875rem', color: 'var(--danger-color)' }}>{message}</p>
                     </div>
                 </div>
             )}
@@ -306,6 +348,8 @@ export function ReportPage({ providers: initialProviders }: ReportPageProps) {
                         <table className="data-table">
                             <thead>
                                 <tr>
+                                    <th style={{ width: '40px', textAlign: 'center' }}></th>
+                                    <th style={{ width: '40px', textAlign: 'center' }}></th>
                                     <th className="sortable-header" onClick={() => handleSort('fecha')}><span>Fecha</span>{getSortIcon('fecha')}</th>
                                     <th className="sortable-header" onClick={() => handleSort('proveedor')}><span>Proveedor</span>{getSortIcon('proveedor')}</th>
                                     <th className="sortable-header" onClick={() => handleSort('nit')}><span>Nit</span>{getSortIcon('nit')}</th>
@@ -315,12 +359,33 @@ export function ReportPage({ providers: initialProviders }: ReportPageProps) {
                                     <th className="sortable-header" style={{ textAlign: 'right' }} onClick={() => handleSort('impuestos')}><span>Impuestos</span>{getSortIcon('impuestos')}</th>
                                     <th className="sortable-header" style={{ width: '100px', textAlign: 'right' }} onClick={() => handleSort('retenciones')}><span>Retenciones</span>{getSortIcon('retenciones')}</th>
                                     <th className="sortable-header" style={{ textAlign: 'right' }} onClick={() => handleSort('total')}><span>Total</span>{getSortIcon('total')}</th>
-                                    <th style={{ width: '50px', textAlign: 'center' }}>PDF</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {sortedReportData.map((inv, idx) => (
                                     <tr key={`${inv.nit}-${inv.factura}-${idx}`}>
+                                        <td style={{ textAlign: 'center' }}>
+                                            <button
+                                                onClick={() => fetchInvoiceDetail(inv.nit, inv.factura)}
+                                                disabled={isLoadingDetail}
+                                                style={{ border: 'none', background: 'var(--accent-light)', color: 'var(--accent-color)', padding: '4px', borderRadius: '4px', cursor: isLoadingDetail ? 'wait' : 'pointer', opacity: isLoadingDetail ? 0.5 : 1 }}
+                                                title="Ver detalle"
+                                            >
+                                                <Eye size={16} />
+                                            </button>
+                                        </td>
+                                        <td style={{ textAlign: 'center' }}>
+                                            <a
+                                                href={`/api/v1/utils/view-file?path=${encodeURIComponent(`/app/data/Data/Procesadas/${inv.fecha.substring(0, 4)}/${inv.nombre_xml.replace('.xml', '.pdf')}`)}`}
+                                                target="_blank" rel="noopener noreferrer"
+                                                className="btn-icon" title="Ver PDF"
+                                                style={{ color: 'var(--danger-color)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '4px', borderRadius: '4px', transition: 'background-color 0.2s' }}
+                                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'}
+                                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                            >
+                                                <FileText size={16} />
+                                            </a>
+                                        </td>
                                         <td>{inv.fecha}</td>
                                         <td style={{ fontWeight: 500 }}>{inv.proveedor}</td>
                                         <td className="font-mono" style={{ fontSize: '0.85rem' }}>{inv.nit}</td>
@@ -334,18 +399,6 @@ export function ReportPage({ providers: initialProviders }: ReportPageProps) {
                                             <CurrencyValue value={-inv.retenciones} />
                                         </td>
                                         <td style={{ textAlign: 'right', fontWeight: 600 }} className="font-mono"><CurrencyValue value={inv.total} /></td>
-                                        <td style={{ textAlign: 'center' }}>
-                                            <a
-                                                href={`/api/v1/utils/view-file?path=${encodeURIComponent(`/app/data/Data/Procesadas/${inv.fecha.substring(0, 4)}/${inv.nombre_xml.replace('.xml', '.pdf')}`)}`}
-                                                target="_blank" rel="noopener noreferrer"
-                                                className="btn-icon" title="Ver PDF"
-                                                style={{ color: 'var(--danger-color)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '4px', borderRadius: '4px', transition: 'background-color 0.2s' }}
-                                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'}
-                                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                                            >
-                                                <FileText size={18} />
-                                            </a>
-                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -353,6 +406,13 @@ export function ReportPage({ providers: initialProviders }: ReportPageProps) {
                     </div>
                 </div>
             )}
+
+            {/* Detail Modal */}
+            <DetailModal
+                invoice={selectedInvoice}
+                isOpen={isDetailModalOpen}
+                onClose={() => setIsDetailModalOpen(false)}
+            />
         </>
     );
 }

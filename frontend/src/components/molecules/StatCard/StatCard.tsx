@@ -34,6 +34,9 @@ export const StatCard: React.FC<StatCardProps> = ({
 }) => {
     return (
         <div className={`stat-card stat-card--${variant}`}>
+            <div className={`stat-card__icon-wrapper stat-card__icon-wrapper--${variant}`}>
+                {icon}
+            </div>
             <div className="stat-card__content">
                 <span className="stat-card__label">{label}</span>
                 {loading ? (
@@ -48,9 +51,6 @@ export const StatCard: React.FC<StatCardProps> = ({
                         )}
                     </div>
                 )}
-            </div>
-            <div className={`stat-card__icon-wrapper stat-card__icon-wrapper--${variant}`}>
-                {icon}
             </div>
         </div>
     );

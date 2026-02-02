@@ -199,8 +199,11 @@ export function DetailModal({ invoice, isOpen, onClose }: DetailModalProps) {
                                     </thead>
                                     <tbody>
                                         {invoice.tax_details.map((tax: any, idx: number) => {
-                                            const isRetention = tax.operation === 'subtract';
-                                            const isIgnored = tax.operation === 'ignore';
+                                            // Support both formats: from import (operation) and from database (tax_category)
+                                            const category = tax.tax_category || tax.operation || 'tax';
+                                            const isRetention = category === 'subtract' || category === 'retention' || category === 'retencion';
+                                            const isIgnored = category === 'ignore';
+                                            const amount = tax.amount ?? tax.valor ?? 0;
                                             return (
                                                 <tr key={idx} style={{
                                                     borderBottom: idx < invoice.tax_details.length - 1 ? '1px solid var(--border-color)' : 'none',
@@ -231,7 +234,7 @@ export function DetailModal({ invoice, isOpen, onClose }: DetailModalProps) {
                                                         fontFamily: 'monospace',
                                                         fontWeight: 700
                                                     }}>
-                                                        <CurrencyValue value={tax.amount} />
+                                                        <CurrencyValue value={amount} />
                                                     </td>
                                                 </tr>
                                             );
@@ -265,8 +268,11 @@ export function DetailModal({ invoice, isOpen, onClose }: DetailModalProps) {
                                         <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>
                                             <div style={{ fontWeight: 600 }}>Impuestos</div>
                                             <div style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
-                                                {invoice.tax_details?.filter((t: any) => t.operation === 'add' || t.operation === 'sum' || !t.operation).map((t: any, idx: number) => (
-                                                    <div key={idx}>{t.tax_name} ({t.percentage}%): <CurrencyValue value={t.amount} /></div>
+                                                {invoice.tax_details?.filter((t: any) => {
+                                                    const cat = t.tax_category || t.operation || 'tax';
+                                                    return cat !== 'subtract' && cat !== 'retention' && cat !== 'retencion' && cat !== 'ignore';
+                                                }).map((t: any, idx: number) => (
+                                                    <div key={idx}>{t.tax_name} ({t.percentage}%): <CurrencyValue value={t.amount ?? t.valor ?? 0} /></div>
                                                 ))}
                                                 {(!invoice.tax_details || invoice.tax_details.length === 0) && invoice.impuestos > 0 && <div>Total: <CurrencyValue value={invoice.impuestos} /></div>}
                                             </div>
@@ -279,8 +285,11 @@ export function DetailModal({ invoice, isOpen, onClose }: DetailModalProps) {
                                         <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>
                                             <div style={{ fontWeight: 600 }}>Retenciones</div>
                                             <div style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
-                                                {invoice.tax_details?.filter((t: any) => t.operation === 'subtract').map((t: any, idx: number) => (
-                                                    <div key={idx}>{t.tax_name} ({t.percentage}%): <CurrencyValue value={t.amount} /></div>
+                                                {invoice.tax_details?.filter((t: any) => {
+                                                    const cat = t.tax_category || t.operation || '';
+                                                    return cat === 'subtract' || cat === 'retention' || cat === 'retencion';
+                                                }).map((t: any, idx: number) => (
+                                                    <div key={idx}>{t.tax_name} ({t.percentage}%): <CurrencyValue value={t.amount ?? t.valor ?? 0} /></div>
                                                 ))}
                                                 {(!invoice.tax_details || invoice.tax_details.length === 0) && invoice.retenciones > 0 && <div>Total: <CurrencyValue value={-invoice.retenciones} /></div>}
                                             </div>

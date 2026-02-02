@@ -211,3 +211,74 @@ class PostgresFacturaRepository(FacturaRepository):
                 return [row[0] for row in cur.fetchall()]
         finally:
             pool.putconn(conn)
+
+    def get_invoice_detail(self, nit: str, factura: str) -> Optional[Dict[str, Any]]:
+        """Get invoice header and tax details by nit and factura number"""
+        pool = get_connection_pool()
+        conn = pool.getconn()
+        try:
+            with conn.cursor() as cur:
+                # Get header
+                header_query = """
+                SELECT id, fecha, nit, proveedor, factura, subtotal, descuentos, 
+                       impuestos, retenciones, otros_impuestos, total, 
+                       otros_conceptos, nombre_pdf, nombre_xml, fecha_creacion
+                FROM facturas
+                WHERE nit = %s AND factura = %s
+                """
+                cur.execute(header_query, (nit, factura))
+                row = cur.fetchone()
+                
+                if not row:
+                    return None
+                
+                factura_id = row[0]
+                invoice = {
+                    'id': factura_id,
+                    'fecha': str(row[1]),
+                    'nit': row[2],
+                    'proveedor': row[3],
+                    'factura': row[4],
+                    'subtotal': float(row[5] or 0),
+                    'descuentos': float(row[6] or 0),
+                    'impuestos': float(row[7] or 0),
+                    'retenciones': float(row[8] or 0),
+                    'otros_impuestos': float(row[9] or 0),
+                    'total': float(row[10] or 0),
+                    'otros_conceptos': row[11],
+                    'nombre_pdf': row[12],
+                    'nombre_xml': row[13],
+                    'fecha_creacion': str(row[14]),
+                    'tax_details': []
+                }
+                
+                # Get tax details
+                detail_query = """
+                SELECT fd.id, fd.percentage, fd.valor, 
+                       t.code as tax_code, t.name as tax_name, a.operation as tax_category,
+                       tr.id as rate_id, tr.percentage as rate_percentage
+                FROM facturas_detalle fd
+                JOIN taxes t ON fd.tax_id = t.id
+                LEFT JOIN agrupaciones a ON t.agrupacion_id = a.id
+                LEFT JOIN tax_rates tr ON fd.tax_rate_id = tr.id
+                WHERE fd.factura_id = %s
+                ORDER BY a.operation, t.code
+                """
+                cur.execute(detail_query, (factura_id,))
+                details = cur.fetchall()
+                
+                for d in details:
+                    invoice['tax_details'].append({
+                        'id': d[0],
+                        'percentage': float(d[1] or 0),
+                        'valor': float(d[2] or 0),
+                        'tax_code': d[3],
+                        'tax_name': d[4],
+                        'tax_category': d[5],
+                        'rate_id': d[6],
+                        'rate_percentage': float(d[7]) if d[7] else None
+                    })
+                
+                return invoice
+        finally:
+            pool.putconn(conn)

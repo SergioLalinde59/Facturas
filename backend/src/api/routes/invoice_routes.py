@@ -154,6 +154,24 @@ async def get_invoices_list(
         logger.error(f"Error en get_invoices_list: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/detail")
+async def get_invoice_detail(
+    nit: str = Query(..., description="NIT del proveedor"),
+    factura: str = Query(..., description="Número de factura")
+):
+    """Get detailed invoice information including tax breakdown"""
+    logger.info(f"Petición GET /api/v1/invoices/detail - NIT: {nit}, Factura: {factura}")
+    try:
+        invoice = factura_repo.get_invoice_detail(nit, factura)
+        if not invoice:
+            raise HTTPException(status_code=404, detail="Factura no encontrada")
+        return {"invoice": invoice}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error en get_invoice_detail: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/export-db")
 async def export_invoices_db(request: ExportDBRequest):
     logger.info(f"Petición POST /api/v1/invoices/export-db - Formatos: {request.formats}")
