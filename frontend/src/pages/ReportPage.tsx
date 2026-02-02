@@ -37,10 +37,35 @@ export function ReportPage({ providers: initialProviders }: ReportPageProps) {
     });
     const [provider, setProvider] = useState('');
     const [activeQuickFilter, setActiveQuickFilter] = useState<string>('current-month');
+    const [filteredProviders, setFilteredProviders] = useState<string[]>(initialProviders);
 
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [message, setMessage] = useState('');
     const [reportData, setReportData] = useState<Invoice[]>([]);
+    
+    // Fetch providers filtered by date range
+    useEffect(() => {
+        const fetchFilteredProviders = async () => {
+            try {
+                const query = new URLSearchParams();
+                if (startDate) query.append('start_date', startDate);
+                if (endDate) query.append('end_date', endDate);
+                
+                const response = await fetch(`/api/v1/invoices/providers?${query.toString()}`);
+                const data = await response.json();
+                setFilteredProviders(data.providers || []);
+                
+                // Reset provider selection if selected provider is no longer in the filtered list
+                if (provider && data.providers && !data.providers.includes(provider)) {
+                    setProvider('');
+                }
+            } catch (err) {
+                console.error('Error fetching filtered providers:', err);
+                setFilteredProviders(initialProviders);
+            }
+        };
+        fetchFilteredProviders();
+    }, [startDate, endDate]);
 
     // Sorting
     const [sortColumn, setSortColumn] = useState<SortColumn>('fecha');
@@ -230,7 +255,7 @@ export function ReportPage({ providers: initialProviders }: ReportPageProps) {
                         }}
                         provider={{
                             value: provider,
-                            options: initialProviders,
+                            options: filteredProviders,
                             onChange: setProvider
                         }}
                     />

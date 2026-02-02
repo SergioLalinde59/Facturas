@@ -536,12 +536,16 @@ class ExporterService:
 
 
     def export_from_db(self, repository: Any, filters: Dict[str, Any], formats: List[str], output_dir: str) -> Dict[str, Any]:
-        """Genera archivos a partir de datos en la BD."""
-        data_list = repository.get_invoices(
+        """Genera archivos a partir de datos en la BD, incluyendo detalles de impuestos."""
+        # Obtener facturas con detalles
+        data = repository.get_invoices_with_details(
             start_date=filters.get('start_date'),
             end_date=filters.get('end_date'),
             provider=filters.get('provider')
         )
+        
+        data_list = data.get('invoices', [])
+        details_list = data.get('details', [])
 
         if not data_list:
             return {"status": "warning", "message": "No hay datos para exportar con estos filtros."}
@@ -550,36 +554,64 @@ class ExporterService:
         base_output_name = f"{today_str} facturas_export"
         generated_files = []
         
-        # Exportar a Excel
+        # Exportar a Excel con múltiples hojas
         if 'excel' in formats:
             output_xlsx = os.path.join(output_dir, f"{base_output_name}.xlsx")
-            df = pd.DataFrame(data_list)
-            # Renombrar columnas para el Excel humano
-            df_display = df.rename(columns={
+            
+            # Hoja 1: Resumen de Facturas
+            df_facturas = pd.DataFrame(data_list)
+            df_facturas = df_facturas.rename(columns={
                 'fecha': 'Fecha', 'proveedor': 'Proveedor', 'nit': 'NIT', 
                 'factura': 'Factura', 'subtotal': 'Subtotal', 'descuentos': 'Descuentos',
-                'iva_19': 'IVA 19%', 'iva_5': 'IVA 5%', 'iva_0': 'IVA 0%', 
-                'inc': 'INC', 'inc_bolsas': 'INC Bolsas', 
-                'retefuente': 'Retefuente', 'total': 'Total', 'nombre_xml': 'Archivo XML'
+                'impuestos': 'Impuestos', 'retenciones': 'Retenciones',
+                'otros_impuestos': 'Otros Impuestos', 'total': 'Total', 
+                'nombre_xml': 'Archivo XML', 'nombre_pdf': 'Archivo PDF'
             })
-            df_display.to_excel(output_xlsx, index=False)
+            # Seleccionar columnas relevantes para el resumen
+            cols_resumen = ['Fecha', 'Proveedor', 'NIT', 'Factura', 'Subtotal', 
+                           'Descuentos', 'Impuestos', 'Retenciones', 'Total', 'Archivo XML']
+            cols_disponibles = [c for c in cols_resumen if c in df_facturas.columns]
+            df_facturas_resumen = df_facturas[cols_disponibles]
+            
+            # Hoja 2: Detalles de Impuestos
+            df_detalles = pd.DataFrame(details_list) if details_list else pd.DataFrame()
+            if not df_detalles.empty:
+                df_detalles = df_detalles.rename(columns={
+                    'fecha': 'Fecha', 'proveedor': 'Proveedor', 'nit': 'NIT',
+                    'factura': 'Factura', 'tax_code': 'Código', 'tax_name': 'Impuesto',
+                    'agrupacion': 'Agrupación', 'percentage': 'Porcentaje', 
+                    'valor': 'Valor', 'operation': 'Operación'
+                })
+                cols_detalle = ['Fecha', 'Proveedor', 'NIT', 'Factura', 'Código', 
+                               'Impuesto', 'Agrupación', 'Porcentaje', 'Valor']
+                cols_disponibles_det = [c for c in cols_detalle if c in df_detalles.columns]
+                df_detalles = df_detalles[cols_disponibles_det]
+            
+            # Escribir Excel con múltiples hojas
+            with pd.ExcelWriter(output_xlsx, engine='openpyxl') as writer:
+                df_facturas_resumen.to_excel(writer, sheet_name='Facturas', index=False)
+                if not df_detalles.empty:
+                    df_detalles.to_excel(writer, sheet_name='Detalle Impuestos', index=False)
+            
             generated_files.append({"type": "excel", "path": output_xlsx})
 
-        # Exportar a CSV (Formato Contable)
+        # Exportar a CSV - Dos archivos: resumen y detalles
         if 'csv' in formats:
+            # CSV 1: Resumen de Facturas
             output_csv = os.path.join(output_dir, f"{base_output_name}.csv")
             csv_data = []
             for item in data_list:
                 csv_data.append({
                     'fecha': item['fecha'],
-                    'descripcion': f"Compra {item['proveedor']} Fact {item['factura']}",
-                    'referencia': item['factura'],
-                    'valor': -abs(item['total']),
-                    'moneda_id': 1,
-                    'cuenta_id': '', 
-                    'terceroid': '',
-                    'grupoid': '',
-                    'conceptoid': ''
+                    'nit': item['nit'],
+                    'proveedor': item['proveedor'],
+                    'factura': item['factura'],
+                    'subtotal': item['subtotal'],
+                    'descuentos': item['descuentos'],
+                    'impuestos': item['impuestos'],
+                    'retenciones': item['retenciones'],
+                    'total': item['total'],
+                    'nombre_xml': item.get('nombre_xml', '')
                 })
             
             if csv_data:
@@ -589,6 +621,18 @@ class ExporterService:
                     dict_writer.writeheader()
                     dict_writer.writerows(csv_data)
                 generated_files.append({"type": "csv", "path": output_csv})
+            
+            # CSV 2: Detalle de Impuestos
+            if details_list:
+                output_csv_detail = os.path.join(output_dir, f"{base_output_name}_detalle.csv")
+                detail_keys = ['fecha', 'nit', 'proveedor', 'factura', 'tax_code', 
+                              'tax_name', 'agrupacion', 'percentage', 'valor']
+                with open(output_csv_detail, 'w', newline='', encoding='utf-8') as f:
+                    dict_writer = csv.DictWriter(f, fieldnames=detail_keys)
+                    dict_writer.writeheader()
+                    for detail in details_list:
+                        dict_writer.writerow({k: detail.get(k, '') for k in detail_keys})
+                generated_files.append({"type": "csv", "path": output_csv_detail})
 
         # PDF
         if 'pdf' in formats:
@@ -599,15 +643,15 @@ class ExporterService:
                 pdf.set_font("Arial", 'B', 16)
                 pdf.cell(0, 10, "Reporte de Facturas Recibidas", ln=True, align='C')
                 pdf.set_font("Arial", '', 10)
-                pdf.cell(0, 10, f"Fecha de generación: {today_str}", ln=True, align='R')
+                pdf.cell(0, 10, f"Fecha de generacion: {today_str}", ln=True, align='R')
                 pdf.ln(5)
 
-                # Encabezados de tabla
+                # Encabezados de tabla - Resumen
                 pdf.set_font("Arial", 'B', 10)
                 pdf.set_fill_color(240, 240, 240)
                 cols = [
-                    ("Fecha", 20), ("Proveedor", 50), ("Factura", 25), 
-                    ("Subtotal", 22), ("IVA 19%", 20), ("IVA 5%", 20), ("INC", 18), ("Total", 22)
+                    ("Fecha", 20), ("Proveedor", 55), ("Factura", 25), 
+                    ("Subtotal", 25), ("Impuestos", 25), ("Retenc.", 25), ("Total", 25)
                 ]
                 
                 for col_name, width in cols:
@@ -618,15 +662,42 @@ class ExporterService:
                 pdf.set_font("Arial", '', 7.5)
                 for item in data_list:
                     pdf.cell(20, 8, str(item['fecha']), border=1)
-                    prov = str(item['proveedor'])[:25]
-                    pdf.cell(50, 8, prov, border=1)
-                    pdf.cell(25, 8, str(item['factura']), border=1)
-                    pdf.cell(22, 8, f"{item['subtotal']:,.0f}", border=1, align='R')
-                    pdf.cell(20, 8, f"{item['iva_19']:,.0f}", border=1, align='R')
-                    pdf.cell(20, 8, f"{item['iva_5']:,.0f}", border=1, align='R')
-                    pdf.cell(18, 8, f"{(item.get('inc') or 0):,.0f}", border=1, align='R')
-                    pdf.cell(22, 8, f"{item['total']:,.0f}", border=1, align='R')
+                    prov = str(item['proveedor'])[:30]
+                    pdf.cell(55, 8, prov, border=1)
+                    pdf.cell(25, 8, str(item['factura'])[:15], border=1)
+                    pdf.cell(25, 8, f"{item['subtotal']:,.0f}", border=1, align='R')
+                    pdf.cell(25, 8, f"{item['impuestos']:,.0f}", border=1, align='R')
+                    pdf.cell(25, 8, f"{item['retenciones']:,.0f}", border=1, align='R')
+                    pdf.cell(25, 8, f"{item['total']:,.0f}", border=1, align='R')
                     pdf.ln()
+                
+                # Página de Detalles de Impuestos
+                if details_list:
+                    pdf.add_page()
+                    pdf.set_font("Arial", 'B', 14)
+                    pdf.cell(0, 10, "Detalle de Impuestos y Retenciones", ln=True, align='C')
+                    pdf.ln(5)
+                    
+                    pdf.set_font("Arial", 'B', 9)
+                    pdf.set_fill_color(240, 240, 240)
+                    detail_cols = [
+                        ("Fecha", 20), ("Proveedor", 50), ("Factura", 25),
+                        ("Impuesto", 40), ("Agrupacion", 30), ("%", 15), ("Valor", 25)
+                    ]
+                    for col_name, width in detail_cols:
+                        pdf.cell(width, 8, col_name, border=1, align='C', fill=True)
+                    pdf.ln()
+                    
+                    pdf.set_font("Arial", '', 7)
+                    for detail in details_list:
+                        pdf.cell(20, 7, str(detail['fecha']), border=1)
+                        pdf.cell(50, 7, str(detail['proveedor'])[:28], border=1)
+                        pdf.cell(25, 7, str(detail['factura'])[:15], border=1)
+                        pdf.cell(40, 7, str(detail['tax_name'])[:22], border=1)
+                        pdf.cell(30, 7, str(detail['agrupacion'])[:18], border=1)
+                        pdf.cell(15, 7, f"{detail['percentage']:.2f}", border=1, align='R')
+                        pdf.cell(25, 7, f"{detail['valor']:,.0f}", border=1, align='R')
+                        pdf.ln()
 
                 pdf.output(output_pdf)
                 generated_files.append({"type": "pdf", "path": output_pdf})
