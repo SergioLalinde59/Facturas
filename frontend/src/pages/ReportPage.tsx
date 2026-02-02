@@ -84,7 +84,7 @@ export function ReportPage({ providers: initialProviders }: ReportPageProps) {
             if (endDate) query.append('end_date', endDate);
             if (provider) query.append('provider', provider);
 
-            const response = await fetch(`/api/v1/invoices?${query.toString()}`);
+            const response = await fetch(`/api/v1/invoices/?${query.toString()}`);
             const data = await response.json();
 
             if (!response.ok) throw new Error(data.detail || 'Error al consultar facturas');
@@ -113,6 +113,7 @@ export function ReportPage({ providers: initialProviders }: ReportPageProps) {
                 case 'nit': comparison = a.nit.localeCompare(b.nit); break;
                 case 'factura': comparison = a.factura.localeCompare(b.factura); break;
                 case 'subtotal': comparison = a.subtotal - b.subtotal; break;
+                case 'descuentos': comparison = (a.descuentos || 0) - (b.descuentos || 0); break;
                 case 'impuestos': comparison = a.impuestos - b.impuestos; break;
                 case 'retenciones': comparison = a.retenciones - b.retenciones; break;
                 case 'total': comparison = a.total - b.total; break;

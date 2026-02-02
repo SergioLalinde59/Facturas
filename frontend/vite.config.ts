@@ -1,11 +1,10 @@
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '');
-  const apiTarget = env.VITE_API_URL || 'http://127.0.0.1:8002';
+export default defineConfig(() => {
+  const apiTarget = process.env.API_PROXY_TARGET || 'http://127.0.0.1:8002';
 
   return {
     plugins: [
@@ -21,6 +20,17 @@ export default defineConfig(({ mode }) => {
         '/api': {
           target: apiTarget,
           changeOrigin: true,
+          // @ts-ignore - Vite proxy types are incomplete
+          configure: (proxy, _options) => {
+            // @ts-ignore
+            proxy.on('proxyRes', (proxyRes, req, _res) => {
+              // Rewrite Location header in redirects to prevent backend:8000 URLs
+              const location = proxyRes.headers['location'];
+              if (location && location.includes('backend:8000')) {
+                proxyRes.headers['location'] = location.replace(/http:\/\/backend:8000/g, '');
+              }
+            });
+          }
         }
       }
     }

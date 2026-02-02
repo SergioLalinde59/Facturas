@@ -6,12 +6,11 @@ import {
     AlertCircle,
     Loader2,
     Eye,
-    X,
     ArrowUpDown,
     ArrowUp,
     ArrowDown
 } from 'lucide-react';
-import { FilterBar, TaxClassificationModal } from '../components/organisms';
+import { FilterBar, TaxClassificationModal, DetailModal } from '../components/organisms';
 import { CurrencyValue } from '../components/atoms';
 import type { ImportStats, ProcessSortColumn, SortDirection } from '../types';
 
@@ -42,6 +41,7 @@ export function ImportPage({ providers: initialProviders, directory }: ImportPag
     const [tableStatusFilter, setTableStatusFilter] = useState<'all' | 'success' | 'inconsistent' | 'error'>('all');
 
     // Reprocess State
+    const [availableCurrentProviders, setAvailableCurrentProviders] = useState<string[]>([]);
     const [processingFilenames, setProcessingFilenames] = useState<string[] | null>(null);
     const [invoiceContext, setInvoiceContext] = useState<string | undefined>(undefined);
 
@@ -159,6 +159,15 @@ export function ImportPage({ providers: initialProviders, directory }: ImportPag
 
             setImportStats(data.stats);
             setProcessResults(data.results || []);
+
+            // Update available providers based on current results if we are viewing 'all'
+            if (!provider && data.results && data.results.length > 0) {
+                const uniqueSenders = Array.from(new Set(data.results.map((r: any) => r.sender)))
+                    .filter(Boolean)
+                    .sort() as string[];
+                setAvailableCurrentProviders(uniqueSenders);
+            }
+
             setMessage(data.message);
             setStatus('success');
             if (!dryRun) setIsPreviewMode(false);
@@ -293,7 +302,7 @@ export function ImportPage({ providers: initialProviders, directory }: ImportPag
                         }}
                         provider={{
                             value: provider,
-                            options: initialProviders,
+                            options: availableCurrentProviders.length > 0 ? availableCurrentProviders : initialProviders,
                             onChange: setProvider
                         }}
                     >
@@ -313,7 +322,7 @@ export function ImportPage({ providers: initialProviders, directory }: ImportPag
                             ) : (
                                 <>
                                     <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', lineHeight: 1, marginBottom: '2px' }}>Previsualización</div>
+                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'none', lineHeight: 1, marginBottom: '2px' }}>Previsualización</div>
                                         <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--success-color)', lineHeight: 1 }}>{importStats.successful} Facturas</div>
                                     </div>
                                     <div style={{ display: 'flex', gap: '0.4rem' }}>
@@ -471,7 +480,7 @@ export function ImportPage({ providers: initialProviders, directory }: ImportPag
                         </div>
                     </div>
                     <div className="data-card-content" style={{ padding: 0 }}>
-                        <div className="process-log custom-scrollbar" style={{ overflowX: 'auto', height: '500px', overflowY: 'auto', position: 'relative' }}>
+                        <div className="process-log custom-scrollbar" style={{ overflowX: 'auto', height: '575px', overflowY: 'auto', position: 'relative' }}>
                             <table className="data-table" style={{ fontSize: '0.75rem', tableLayout: 'fixed' }}>
                                 <thead>
                                     <tr>
@@ -483,31 +492,31 @@ export function ImportPage({ providers: initialProviders, directory }: ImportPag
                                                 } else setSelectedImportRows(new Set());
                                             }} />
                                         </th>
-                                        <th onClick={() => handleProcessSort('status')} style={{ width: '130px', padding: '0.4rem 0.75rem', textAlign: 'center', cursor: 'pointer', position: 'sticky', top: 0, zIndex: 30, backgroundColor: '#ffffff' }}>
+                                        <th className="sortable-header" onClick={() => handleProcessSort('status')} style={{ width: '130px', padding: '0.4rem 0.75rem', textAlign: 'center', position: 'sticky', top: 0, zIndex: 30, backgroundColor: '#ffffff' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>Estado {getProcessSortIcon('status')}</div>
                                         </th>
-                                        <th onClick={() => handleProcessSort('date')} style={{ width: '85px', padding: '0.4rem 0.75rem', cursor: 'pointer', position: 'sticky', top: 0, zIndex: 30, backgroundColor: '#ffffff' }}>
+                                        <th className="sortable-header" onClick={() => handleProcessSort('date')} style={{ width: '85px', padding: '0.4rem 0.75rem', position: 'sticky', top: 0, zIndex: 30, backgroundColor: '#ffffff' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>Fecha {getProcessSortIcon('date')}</div>
                                         </th>
-                                        <th onClick={() => handleProcessSort('sender')} style={{ width: '250px', padding: '0.4rem 0.75rem', cursor: 'pointer', position: 'sticky', top: 0, zIndex: 30, backgroundColor: '#ffffff' }}>
+                                        <th className="sortable-header" onClick={() => handleProcessSort('sender')} style={{ width: '250px', padding: '0.4rem 0.75rem', position: 'sticky', top: 0, zIndex: 30, backgroundColor: '#ffffff' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>Emisor {getProcessSortIcon('sender')}</div>
                                         </th>
-                                        <th onClick={() => handleProcessSort('subject')} style={{ width: '100px', padding: '0.4rem 0.75rem', cursor: 'pointer', position: 'sticky', top: 0, zIndex: 30, backgroundColor: '#ffffff' }}>
+                                        <th className="sortable-header" onClick={() => handleProcessSort('subject')} style={{ width: '100px', padding: '0.4rem 0.75rem', position: 'sticky', top: 0, zIndex: 30, backgroundColor: '#ffffff' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>Factura {getProcessSortIcon('subject')}</div>
                                         </th>
-                                        <th onClick={() => handleProcessSort('subtotal')} style={{ width: '110px', padding: '0.4rem 0.75rem', textAlign: 'right', cursor: 'pointer', position: 'sticky', top: 0, zIndex: 30, backgroundColor: '#ffffff' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.4rem' }}>Subtotal {getProcessSortIcon('subtotal')}</div>
+                                        <th className="sortable-header" onClick={() => handleProcessSort('subtotal')} style={{ width: '110px', padding: '0.4rem 0.75rem', textAlign: 'right', position: 'sticky', top: 0, zIndex: 30, backgroundColor: '#ffffff' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.4rem' }}>SubTotal {getProcessSortIcon('subtotal')}</div>
                                         </th>
-                                        <th onClick={() => handleProcessSort('descuentos')} style={{ width: '100px', padding: '0.4rem 0.75rem', textAlign: 'right', cursor: 'pointer', position: 'sticky', top: 0, zIndex: 30, backgroundColor: '#ffffff' }}>
+                                        <th className="sortable-header" onClick={() => handleProcessSort('descuentos')} style={{ width: '110px', padding: '0.4rem 0.75rem', textAlign: 'right', position: 'sticky', top: 0, zIndex: 30, backgroundColor: '#ffffff' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.4rem' }}>Descuento {getProcessSortIcon('descuentos')}</div>
                                         </th>
-                                        <th onClick={() => handleProcessSort('impuestos')} style={{ width: '110px', padding: '0.4rem 0.75rem', textAlign: 'right', cursor: 'pointer', position: 'sticky', top: 0, zIndex: 30, backgroundColor: '#ffffff' }}>
+                                        <th className="sortable-header" onClick={() => handleProcessSort('impuestos')} style={{ width: '110px', padding: '0.4rem 0.75rem', textAlign: 'right', position: 'sticky', top: 0, zIndex: 30, backgroundColor: '#ffffff' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.4rem' }}>Impuestos {getProcessSortIcon('impuestos')}</div>
                                         </th>
-                                        <th onClick={() => handleProcessSort('retenciones')} style={{ width: '100px', padding: '0.4rem 0.75rem', textAlign: 'right', cursor: 'pointer', position: 'sticky', top: 0, zIndex: 30, backgroundColor: '#ffffff' }}>
+                                        <th className="sortable-header" onClick={() => handleProcessSort('retenciones')} style={{ width: '120px', padding: '0.4rem 0.75rem', textAlign: 'right', position: 'sticky', top: 0, zIndex: 30, backgroundColor: '#ffffff' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.4rem' }}>Retenciones {getProcessSortIcon('retenciones')}</div>
                                         </th>
-                                        <th onClick={() => handleProcessSort('total')} style={{ width: '110px', padding: '0.4rem 0.75rem', textAlign: 'right', cursor: 'pointer', position: 'sticky', top: 0, zIndex: 30, backgroundColor: '#ffffff' }}>
+                                        <th className="sortable-header" onClick={() => handleProcessSort('total')} style={{ width: '110px', padding: '0.4rem 0.75rem', textAlign: 'right', position: 'sticky', top: 0, zIndex: 30, backgroundColor: '#ffffff' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.4rem' }}>Total {getProcessSortIcon('total')}</div>
                                         </th>
 
@@ -529,7 +538,7 @@ export function ImportPage({ providers: initialProviders, directory }: ImportPag
                                                     {res.status === 'success' ? <span className="badge badge-green" style={{ padding: '0.1rem 0.4rem', fontSize: '0.65rem' }}>Éxito</span> :
                                                         res.status === 'inconsistent' ? <span className="badge" style={{ padding: '0.1rem 0.4rem', fontSize: '0.65rem', backgroundColor: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }}>Incon.</span> :
                                                             <span className="badge badge-danger" style={{ padding: '0.1rem 0.4rem', fontSize: '0.65rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>Error</span>}
-                                                    <button onClick={() => { setSelectedInvoice(res); setIsDetailModalOpen(true); }} style={{ border: 'none', background: 'var(--accent-light)', color: 'var(--accent-color)', padding: '4px', borderRadius: '4px', cursor: 'pointer' }}><Eye size={14} /></button>
+                                                    <button onClick={() => { setSelectedInvoice(res); setIsDetailModalOpen(true); }} style={{ border: 'none', background: 'var(--accent-light)', color: 'var(--accent-color)', padding: '4px', borderRadius: '4px', cursor: 'pointer' }} title="Ver detalle y análisis de consistencia"><Eye size={14} /></button>
                                                 </div>
                                             </td>
                                             <td className="font-mono" style={{ whiteSpace: 'nowrap', padding: '0.3rem 0.75rem', fontSize: '0.7rem' }}>{formatProcessDate(res.date)}</td>
@@ -551,32 +560,12 @@ export function ImportPage({ providers: initialProviders, directory }: ImportPag
             )}
 
             {/* Detail Modal (Simplified version for brevity, but should include all details) */}
-            {
-                isDetailModalOpen && selectedInvoice && (
-                    <div className="modal-overlay" style={{
-                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                        backgroundColor: 'rgba(15, 23, 42, 0.75)', zIndex: 1100,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)'
-                    }}>
-                        <div className="modal-content" style={{
-                            backgroundColor: '#ffffff', borderRadius: '16px', width: '800px', maxHeight: '90vh',
-                            display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)'
-                        }}>
-                            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <h3 style={{ margin: 0 }}>Detalle de Factura</h3>
-                                <button onClick={() => setIsDetailModalOpen(false)} style={{ border: 'none', background: 'none', cursor: 'pointer' }}><X size={20} /></button>
-                            </div>
-                            <div className="custom-scrollbar" style={{ padding: '1.5rem', overflowY: 'auto' }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                                    <div><strong>Emisor:</strong> {selectedInvoice.sender}</div>
-                                    <div><strong>Total:</strong> <CurrencyValue value={selectedInvoice.total} /></div>
-                                    {/* More details can be added here mirroring App.tsx */}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
+            {/* Detail Modal */}
+            <DetailModal
+                invoice={selectedInvoice}
+                isOpen={isDetailModalOpen}
+                onClose={() => setIsDetailModalOpen(false)}
+            />
 
             {/* Tax Classification Modal */}
             <TaxClassificationModal

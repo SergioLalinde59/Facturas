@@ -112,7 +112,8 @@ class ExporterService:
                         'tax_code': code,
                         'tax_name': f"Desconocido ({code})",
                         'percentage': percent,
-                        'amount': -abs(amount) if inferred_op == 'subtract' and not is_credit_note else abs(amount) # Will handle credit note later
+                        'amount': -abs(amount) if inferred_op == 'subtract' and not is_credit_note else abs(amount),
+                        'operation': inferred_op
                     })
                     continue
 
@@ -133,7 +134,8 @@ class ExporterService:
                     'tax_code': code,
                     'tax_name': name,
                     'percentage': percent,
-                    'amount': amount
+                    'amount': -abs(amount) if op == 'subtract' and not is_credit_note else amount,
+                    'operation': op
                 })
 
             # Ajuste de Nota Crédito
@@ -158,7 +160,12 @@ class ExporterService:
             # Ajuste de Totales
             net_total_adjusted = net_total
 
+
+            # Capture original extracted total (after Credit Note adjustment) for reference
+            xml_total_reference = total
+
             # Lógica de Validación de Totales
+
             validation_error = None
             
             # 1. Si hay definiciones faltantes, NO validamos estricto, sino que pedimos clasificación
@@ -189,6 +196,7 @@ class ExporterService:
                 'retenciones': retenciones_sum,
                 'otros_impuestos': otros_imp_sum,
                 'total': total,
+                'xml_total': xml_total_reference,
                 'tax_details': tax_details,
                 'nombre_xml': os.path.basename(file_path),
                 'nombre_pdf': os.path.basename(file_path).replace('.xml', '.pdf'),

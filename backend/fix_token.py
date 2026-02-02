@@ -6,9 +6,10 @@ sys.path.append(os.getcwd())
 
 from src.infrastructure.external.google_gmail_service import GoogleGmailService
 
-# Definir rutas
-CREDENTIALS_PATH = os.path.abspath("credentials.json")
-TOKEN_PATH = os.path.abspath("token.json")
+# Definir rutas relativas al script
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+CREDENTIALS_PATH = os.path.join(SCRIPT_DIR, "credentials.json")
+TOKEN_PATH = os.path.join(SCRIPT_DIR, "token.json")
 
 print(f"--- Renovación de Token Gmail ---")
 print(f"Credenciales: {CREDENTIALS_PATH}")

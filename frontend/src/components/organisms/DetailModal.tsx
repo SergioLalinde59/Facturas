@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { X, FileText, Calendar, Building, DollarSign } from 'lucide-react';
+import { X, FileText, Calendar, Building, DollarSign, AlertCircle, CheckCircle2, FileCode } from 'lucide-react';
 import { CurrencyValue } from '../atoms';
 
 interface DetailModalProps {
@@ -7,6 +7,60 @@ interface DetailModalProps {
     isOpen: boolean;
     onClose: () => void;
 }
+
+// Función para obtener el badge de estado
+const getStatusBadge = (status: string) => {
+    const statusConfig = {
+        'consistent': {
+            label: 'Consistente',
+            bg: 'rgba(34, 197, 94, 0.1)',
+            border: 'rgba(34, 197, 94, 0.3)',
+            color: '#16a34a'
+        },
+        'inconsistent': {
+            label: 'Inconsistente',
+            bg: 'rgba(245, 158, 11, 0.1)',
+            border: 'rgba(245, 158, 11, 0.3)',
+            color: '#d97706'
+        },
+        'pending': {
+            label: 'Pendiente',
+            bg: 'rgba(148, 163, 184, 0.1)',
+            border: 'rgba(148, 163, 184, 0.3)',
+            color: '#64748b'
+        }
+    };
+
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
+
+    return (
+        <div style={{
+            padding: '0.4rem 0.75rem',
+            borderRadius: '6px',
+            backgroundColor: config.bg,
+            border: `1px solid ${config.border}`,
+            color: config.color,
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px'
+        }}>
+            {config.label}
+        </div>
+    );
+};
+
+// Función para explicar el estado
+const getStatusExplanation = (status: string, invoice: any) => {
+    if (status === 'inconsistent') {
+        const diff = Math.abs(invoice.xml_total - invoice.total);
+        return `Esta factura presenta inconsistencias porque el total leído del archivo XML/PDF (${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(invoice.xml_total)}) difiere del total calculado por el sistema (${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(invoice.total)}) en ${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(diff)}. Esto puede deberse a diferencias en el cálculo de impuestos, retenciones, o errores en el archivo original.`;
+    }
+    if (status === 'consistent') {
+        return 'Esta factura es consistente. El total leído del archivo XML/PDF coincide con el total calculado por el sistema.';
+    }
+    return 'Estado pendiente de validación.';
+};
 
 export function DetailModal({ invoice, isOpen, onClose }: DetailModalProps) {
     if (!isOpen || !invoice) return null;
@@ -31,12 +85,35 @@ export function DetailModal({ invoice, isOpen, onClose }: DetailModalProps) {
                             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{invoice.nombre_xml}</div>
                         </div>
                     </div>
-                    <button onClick={onClose} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}>
-                        <X size={24} />
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        {getStatusBadge(invoice.status || 'pending')}
+                        <button onClick={onClose} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+                            <X size={24} />
+                        </button>
+                    </div>
                 </div>
 
                 <div className="custom-scrollbar" style={{ padding: '1.5rem', overflowY: 'auto' }}>
+                    {/* Estado Explanation Section */}
+                    {invoice.status && (
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>
+                                <AlertCircle size={14} /> Estado de la Factura
+                            </div>
+                            <div style={{
+                                backgroundColor: invoice.status === 'inconsistent' ? 'rgba(245, 158, 11, 0.05)' : 'rgba(34, 197, 94, 0.05)',
+                                border: invoice.status === 'inconsistent' ? '1px solid rgba(245, 158, 11, 0.2)' : '1px solid rgba(34, 197, 94, 0.2)',
+                                borderRadius: '8px',
+                                padding: '1rem',
+                                fontSize: '0.85rem',
+                                color: 'var(--text-secondary)',
+                                lineHeight: '1.6'
+                            }}>
+                                {getStatusExplanation(invoice.status, invoice)}
+                            </div>
+                        </div>
+                    )}
+
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
                         <div className="detail-group">
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>
@@ -64,6 +141,107 @@ export function DetailModal({ invoice, isOpen, onClose }: DetailModalProps) {
                         </div>
                     </div>
 
+                    {/* Comparison / Consistency Section */}
+                    {invoice.xml_total !== undefined && (
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>
+                                <CheckCircle2 size={14} /> Validación de Importes
+                            </div>
+                            <div style={{
+                                backgroundColor: invoice.status === 'inconsistent' ? 'rgba(245, 158, 11, 0.05)' : 'var(--bg-secondary)',
+                                border: invoice.status === 'inconsistent' ? '1px solid rgba(245, 158, 11, 0.2)' : '1px solid var(--border-color)',
+                                borderRadius: '8px', padding: '1rem'
+                            }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', alignItems: 'center' }}>
+                                    <div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Total Leído (XML/PDF)</div>
+                                        <div style={{ fontSize: '1rem', fontWeight: 700, fontFamily: 'monospace' }}><CurrencyValue value={invoice.xml_total} /></div>
+                                    </div>
+                                    <div style={{ textAlign: 'center' }}>
+                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>Diferencia</div>
+                                        <div style={{
+                                            fontSize: '0.85rem', fontWeight: 700, fontFamily: 'monospace',
+                                            color: Math.abs(invoice.xml_total - invoice.total) > 1 ? 'var(--danger-color)' : 'var(--success-color)'
+                                        }}>
+                                            {Math.abs(invoice.xml_total - invoice.total) < 1 ? 'Correcto' : <CurrencyValue value={invoice.xml_total - invoice.total} />}
+                                        </div>
+                                    </div>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Total Calculado (Sistema)</div>
+                                        <div style={{ fontSize: '1rem', fontWeight: 700, fontFamily: 'monospace', color: 'var(--success-color)' }}><CurrencyValue value={invoice.total} /></div>
+                                    </div>
+                                </div>
+                                {invoice.message && (
+                                    <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(0,0,0,0.05)', fontSize: '0.85rem', color: invoice.status === 'inconsistent' ? '#b45309' : 'var(--text-secondary)', display: 'flex', gap: '0.5rem' }}>
+                                        <AlertCircle size={14} style={{ marginTop: '2px', flexShrink: 0 }} />
+                                        <span>{invoice.message}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Detalle del Registro XML */}
+                    {invoice.tax_details && invoice.tax_details.length > 0 && (
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>
+                                <FileCode size={14} /> Detalle del Registro XML
+                            </div>
+                            <div style={{ border: '1px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                                    <thead>
+                                        <tr style={{ backgroundColor: 'var(--bg-secondary)', borderBottom: '2px solid var(--border-color)' }}>
+                                            <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-muted)' }}>Concepto</th>
+                                            <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontWeight: 600, color: 'var(--text-muted)' }}>Tipo</th>
+                                            <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontWeight: 600, color: 'var(--text-muted)' }}>Tasa</th>
+                                            <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>Monto</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {invoice.tax_details.map((tax: any, idx: number) => {
+                                            const isRetention = tax.operation === 'subtract';
+                                            const isIgnored = tax.operation === 'ignore';
+                                            return (
+                                                <tr key={idx} style={{
+                                                    borderBottom: idx < invoice.tax_details.length - 1 ? '1px solid var(--border-color)' : 'none',
+                                                    backgroundColor: isIgnored ? 'rgba(148, 163, 184, 0.05)' : isRetention ? 'rgba(239, 68, 68, 0.05)' : 'rgba(34, 197, 94, 0.05)'
+                                                }}>
+                                                    <td style={{ padding: '0.75rem 1rem', color: 'var(--text-primary)' }}>
+                                                        <div style={{ fontWeight: 600 }}>{tax.tax_name}</div>
+                                                        {tax.tax_code && <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>Código: {tax.tax_code}</div>}
+                                                    </td>
+                                                    <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
+                                                        <span style={{
+                                                            padding: '0.25rem 0.5rem',
+                                                            borderRadius: '4px',
+                                                            fontSize: '0.7rem',
+                                                            fontWeight: 600,
+                                                            backgroundColor: isIgnored ? 'rgba(148, 163, 184, 0.1)' : isRetention ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)',
+                                                            color: isIgnored ? '#64748b' : isRetention ? '#dc2626' : '#16a34a'
+                                                        }}>
+                                                            {isIgnored ? 'Ignorado' : isRetention ? 'Retención' : 'Impuesto'}
+                                                        </span>
+                                                    </td>
+                                                    <td style={{ padding: '0.75rem 1rem', textAlign: 'center', fontFamily: 'monospace', fontWeight: 600 }}>
+                                                        {tax.percentage ? `${tax.percentage}%` : 'N/A'}
+                                                    </td>
+                                                    <td style={{
+                                                        padding: '0.75rem 1rem',
+                                                        textAlign: 'right',
+                                                        fontFamily: 'monospace',
+                                                        fontWeight: 700
+                                                    }}>
+                                                        <CurrencyValue value={tax.amount} />
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+
                     <div style={{ marginBottom: '1rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>
                             <DollarSign size={14} /> Desglose Financiero
@@ -79,38 +257,36 @@ export function DetailModal({ invoice, isOpen, onClose }: DetailModalProps) {
                                     </tr>
                                     <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
                                         <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>Descuentos</td>
-                                        <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontFamily: 'monospace', color: 'var(--success-color)' }}>
-                                            -<CurrencyValue value={invoice.descuentos} />
+                                        <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700 }}>
+                                            <CurrencyValue value={-invoice.descuentos} />
                                         </td>
                                     </tr>
                                     <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'rgba(245, 158, 11, 0.05)' }}>
                                         <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>
                                             <div style={{ fontWeight: 600 }}>Impuestos</div>
                                             <div style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
-                                                {invoice.iva_19 > 0 && <div>IVA 19%: <CurrencyValue value={invoice.iva_19} /></div>}
-                                                {invoice.iva_5 > 0 && <div>IVA 5%: <CurrencyValue value={invoice.iva_5} /></div>}
-                                                {invoice.inc > 0 && <div>INC: <CurrencyValue value={invoice.inc} /></div>}
-                                                {/* Mostrar otros impuestos */}
-                                                {(invoice.iva_0 > 0 || invoice.inc_bolsas > 0 || invoice.otros_impuestos > 0) &&
-                                                    <div>Otros: <CurrencyValue value={(invoice.iva_0 || 0) + (invoice.inc_bolsas || 0) + (invoice.otros_impuestos || 0)} /></div>
-                                                }
+                                                {invoice.tax_details?.filter((t: any) => t.operation === 'add' || t.operation === 'sum' || !t.operation).map((t: any, idx: number) => (
+                                                    <div key={idx}>{t.tax_name} ({t.percentage}%): <CurrencyValue value={t.amount} /></div>
+                                                ))}
+                                                {(!invoice.tax_details || invoice.tax_details.length === 0) && invoice.impuestos > 0 && <div>Total: <CurrencyValue value={invoice.impuestos} /></div>}
                                             </div>
                                         </td>
                                         <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontFamily: 'monospace', fontWeight: 600 }}>
-                                            <CurrencyValue value={(invoice.iva_19 || 0) + (invoice.iva_5 || 0) + (invoice.iva_0 || 0) + (invoice.inc || 0) + (invoice.inc_bolsas || 0) + (invoice.otros_impuestos || 0)} />
+                                            <CurrencyValue value={invoice.impuestos + (invoice.otros_impuestos || 0)} />
                                         </td>
                                     </tr>
-                                    <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'rgba(59, 130, 246, 0.05)' }}>
+                                    <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'rgba(239, 68, 68, 0.05)' }}>
                                         <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>
                                             <div style={{ fontWeight: 600 }}>Retenciones</div>
                                             <div style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
-                                                {invoice.retefuente > 0 && <div>ReteFuente: <CurrencyValue value={invoice.retefuente} /></div>}
-                                                {invoice.reteica > 0 && <div>ReteICA: <CurrencyValue value={invoice.reteica} /></div>}
-                                                {invoice.reteiva > 0 && <div>ReteIVA: <CurrencyValue value={invoice.reteiva} /></div>}
+                                                {invoice.tax_details?.filter((t: any) => t.operation === 'subtract').map((t: any, idx: number) => (
+                                                    <div key={idx}>{t.tax_name} ({t.percentage}%): <CurrencyValue value={t.amount} /></div>
+                                                ))}
+                                                {(!invoice.tax_details || invoice.tax_details.length === 0) && invoice.retenciones > 0 && <div>Total: <CurrencyValue value={-invoice.retenciones} /></div>}
                                             </div>
                                         </td>
-                                        <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontFamily: 'monospace', fontWeight: 600, color: 'var(--danger-color)' }}>
-                                            -<CurrencyValue value={(invoice.retefuente || 0) + (invoice.reteica || 0) + (invoice.reteiva || 0)} />
+                                        <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700 }}>
+                                            <CurrencyValue value={-invoice.retenciones} />
                                         </td>
                                     </tr>
                                     <tr style={{ backgroundColor: 'var(--bg-secondary)' }}>

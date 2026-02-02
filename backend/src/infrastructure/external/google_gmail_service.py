@@ -36,12 +36,17 @@ class GoogleGmailService(GmailPort):
                     logger.error(f"Falta archivo de credenciales: {self.credentials_path}")
                     raise FileNotFoundError(f"Archivo de credenciales no encontrado en {self.credentials_path}")
                 
-                # Para clientes de tipo 'web' en local server, es mejor fijar el puerto
+                # Forzamos puerto 8080 porque es el único autorizado en Google Cloud Console
                 flow = InstalledAppFlow.from_client_secrets_file(self.credentials_path, SCOPES)
-                # Forzamos un puerto fijo para que sea más fácil de configurar en el Google Cloud Console
                 port = 8080
-                logger.info(f"Usando puerto fijo {port} para el callback de OAuth2")
-                creds = flow.run_local_server(port=port)
+                try:
+                    logger.info(f"Usando puerto fijo {port} para el callback de OAuth2")
+                    creds = flow.run_local_server(port=port, access_type='offline', prompt='consent')
+                except OSError as e:
+                    if e.errno == 10048:
+                        logger.error(f"El puerto {port} ya está en uso. Mata el proceso anterior o reinicia tu PC.")
+                        raise Exception(f"Error: El puerto {port} está ocupado. Cierra otras terminales de Python y vuelve a intentar.")
+                    raise e
             
             with open(self.token_path, 'w') as token:
                 token.write(creds.to_json())
