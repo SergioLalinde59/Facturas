@@ -1,4 +1,4 @@
-import React from 'react';
+import type { FC } from 'react';
 import './CurrencyValue.css';
 
 export interface CurrencyValueProps {
@@ -9,7 +9,7 @@ export interface CurrencyValueProps {
     alwaysColor?: boolean; // Force color even if not in a specific context? Usually handled by value sign.
 }
 
-export const CurrencyValue: React.FC<CurrencyValueProps> = ({
+export const CurrencyValue: FC<CurrencyValueProps> = ({
     value,
     currency = 'COP',
     decimals = 0,

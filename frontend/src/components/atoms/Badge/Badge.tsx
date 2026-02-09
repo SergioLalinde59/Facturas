@@ -1,15 +1,15 @@
-import React from 'react';
+import type { FC, ReactNode } from 'react';
 import './Badge.css';
 
 export interface BadgeProps {
     /** Contenido del badge */
-    children: React.ReactNode;
+    children: ReactNode;
     /** Variante visual del badge */
     variant?: 'default' | 'success' | 'warning' | 'error' | 'info';
     /** Tamaño del badge */
     size?: 'sm' | 'md' | 'lg';
     /** Icono a mostrar antes del texto */
-    icon?: React.ReactNode;
+    icon?: ReactNode;
     /** ClassName adicional */
     className?: string;
 }
@@ -23,7 +23,7 @@ export interface BadgeProps {
  * <Badge variant="error" icon={<AlertIcon />}>Error</Badge>
  * ```
  */
-export const Badge: React.FC<BadgeProps> = ({
+export const Badge: FC<BadgeProps> = ({
     children,
     variant = 'default',
     size = 'md',

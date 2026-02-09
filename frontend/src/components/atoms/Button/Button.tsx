@@ -1,7 +1,7 @@
-import React from 'react';
+import type { FC, ReactNode, ButtonHTMLAttributes } from 'react';
 import './Button.css';
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     /** Variante visual del botón */
     variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
     /** Tamaño del botón */
@@ -9,7 +9,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
     /** Estado de carga */
     loading?: boolean;
     /** Icono a mostrar antes del texto */
-    icon?: React.ReactNode;
+    icon?: ReactNode;
     /** Ancho completo */
     fullWidth?: boolean;
 }
@@ -24,7 +24,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
  * </Button>
  * ```
  */
-export const Button: React.FC<ButtonProps> = ({
+export const Button: FC<ButtonProps> = ({
     variant = 'primary',
     size = 'md',
     loading = false,

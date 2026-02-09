@@ -1,4 +1,4 @@
-import React from 'react';
+import type { FC, SelectHTMLAttributes } from 'react';
 import './Select.css';
 
 export interface SelectOption {
@@ -6,14 +6,14 @@ export interface SelectOption {
     label: string;
 }
 
-export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
     label?: string;
     options: (string | SelectOption)[];
     error?: string;
     fullWidth?: boolean;
 }
 
-export const Select: React.FC<SelectProps> = ({
+export const Select: FC<SelectProps> = ({
     label,
     options,
     error,

@@ -1,7 +1,7 @@
-import React from 'react';
+import type { FC, InputHTMLAttributes, ReactNode } from 'react';
 import './Input.css';
 
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
     /** Label del input */
     label?: string;
     /** Mensaje de error */
@@ -11,7 +11,7 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
     /** Tamaño del input */
     size?: 'sm' | 'md' | 'lg';
     /** Icono a mostrar antes del input */
-    icon?: React.ReactNode;
+    icon?: ReactNode;
     /** Ancho completo */
     fullWidth?: boolean;
 }
@@ -29,7 +29,7 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
  * />
  * ```
  */
-export const Input: React.FC<InputProps> = ({
+export const Input: FC<InputProps> = ({
     label,
     error,
     helpText,

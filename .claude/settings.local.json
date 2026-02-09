@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cmd /c \"del /f /q \"\"\\\\?\\\\f:\\\\1. Cloud\\\\4. AI\\\\1. Antigravity\\\\Facturas\\\\nul\"\"\")"
+    ]
+  }
+}

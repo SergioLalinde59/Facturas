@@ -4,8 +4,9 @@ from dotenv import load_dotenv
 from rich.console import Console
 from rich.prompt import Prompt, Confirm
 
-# Cargar variables de entorno
-load_dotenv()
+# Cargar variables de entorno desde la raíz del proyecto
+env_path = os.path.join(os.path.dirname(__file__), '..', '..', '.env')
+load_dotenv(env_path)
 
 console = Console()
 
