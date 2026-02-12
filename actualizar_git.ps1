@@ -1,5 +1,5 @@
 # Script para sincronizar cambios con GitHub
-# Repositorio: https://github.com/SergioLalinde59/Facturas
+# Repositorio: https://github.com/SergioLalinde59/conciliacion
 
 $ErrorActionPreference = "Stop"
 
@@ -23,6 +23,17 @@ try {
     Write-Host "   No se pudo obtener informacion del ultimo commit" -ForegroundColor Gray
 }
 Write-Host ""
+
+# Mostrar resumen de cambios pendientes
+Write-Host "Cambios pendientes:" -ForegroundColor Magenta
+$statusOutput = git status --short 2>$null
+if ($statusOutput) {
+    $changeCount = ($statusOutput | Measure-Object -Line).Lines
+    Write-Host "   $changeCount archivos modificados/nuevos" -ForegroundColor White
+} else {
+    Write-Host "   No hay cambios pendientes" -ForegroundColor Gray
+}
+Write-Host ""
 Write-Host "------------------------------------------" -ForegroundColor DarkGray
 Write-Host ""
 
@@ -43,11 +54,11 @@ try {
 
     # 3. Realizar commit
     Write-Host "2. Confirmando cambios (Commit)..." -ForegroundColor Yellow
-    
+
     $commitOutput = git commit -m "$descripcion" 2>&1
     if ($LASTEXITCODE -ne 0) {
         if ($commitOutput -match "nothing to commit") {
-            Write-Host "No hay cambios nuevos para confirmar." -ForegroundColor Yellow
+            Write-Host "   No hay cambios nuevos para confirmar." -ForegroundColor Yellow
         }
         else {
             throw "Error en git commit: $commitOutput"
@@ -57,9 +68,17 @@ try {
         Write-Host "   Commit realizado: $descripcion" -ForegroundColor Green
     }
 
-    # 4. Enviar cambios (Push)
-    Write-Host "3. Enviando cambios a GitHub (Push)..." -ForegroundColor Yellow
-    git push origin main
+    # 4. Traer cambios remotos
+    Write-Host "3. Verificando cambios remotos (Pull)..." -ForegroundColor Yellow
+    git pull origin main --rebase 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Error al traer cambios remotos. Resuelva conflictos manualmente."
+    }
+    Write-Host "   Repositorio local actualizado" -ForegroundColor Green
+
+    # 5. Enviar cambios (Push)
+    Write-Host "4. Enviando cambios a GitHub (Push)..." -ForegroundColor Yellow
+    git push origin main 2>&1 | Out-Null
 
     if ($LASTEXITCODE -eq 0) {
         Write-Host ""
