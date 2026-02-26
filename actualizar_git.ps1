@@ -70,7 +70,7 @@ try {
 
     # 4. Traer cambios remotos
     Write-Host "3. Verificando cambios remotos (Pull)..." -ForegroundColor Yellow
-    git pull origin main --rebase 2>&1 | Out-Null
+    $pullOutput = git pull origin main --rebase 2>&1
     if ($LASTEXITCODE -ne 0) {
         throw "Error al traer cambios remotos. Resuelva conflictos manualmente."
     }
@@ -78,7 +78,7 @@ try {
 
     # 5. Enviar cambios (Push)
     Write-Host "4. Enviando cambios a GitHub (Push)..." -ForegroundColor Yellow
-    git push origin main 2>&1 | Out-Null
+    $pushOutput = git push origin main 2>&1
 
     if ($LASTEXITCODE -eq 0) {
         Write-Host ""
