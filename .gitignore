@@ -4,6 +4,7 @@
 backend/.env
 backend/credentials.json
 backend/token.json
+backend/Scripts/token.json
 
 # Logs
 *.log
