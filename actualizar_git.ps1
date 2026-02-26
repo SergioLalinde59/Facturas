@@ -71,9 +71,10 @@ try {
     # 4. Traer cambios remotos
     Write-Host "3. Verificando cambios remotos (Pull)..." -ForegroundColor Yellow
     $ErrorActionPreference = "Continue"
-    git pull origin main --rebase 2>&1 | Out-Null
+    $pullOutput = git pull origin main --rebase 2>&1
+    $pullExit = $LASTEXITCODE
     $ErrorActionPreference = "Stop"
-    if ($LASTEXITCODE -ne 0) {
+    if ($pullExit -ne 0) {
         throw "Error al traer cambios remotos. Resuelva conflictos manualmente."
     }
     Write-Host "   Repositorio local actualizado" -ForegroundColor Green
@@ -81,10 +82,11 @@ try {
     # 5. Enviar cambios (Push)
     Write-Host "4. Enviando cambios a GitHub (Push)..." -ForegroundColor Yellow
     $ErrorActionPreference = "Continue"
-    git push origin main 2>&1 | Out-Null
+    $pushOutput = git push origin main 2>&1
+    $pushExit = $LASTEXITCODE
     $ErrorActionPreference = "Stop"
 
-    if ($LASTEXITCODE -eq 0) {
+    if ($pushExit -eq 0) {
         Write-Host ""
         Write-Host "Actualizacion completada exitosamente." -ForegroundColor Green
     }
