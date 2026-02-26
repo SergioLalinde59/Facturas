@@ -1,0 +1,89 @@
+{
+  "taxes": {
+    "01": {
+      "name": "IVA",
+      "type": "tax",
+      "description": "Impuesto al Valor Agregado"
+    },
+    "02": {
+      "name": "IC",
+      "type": "tax",
+      "description": "Impuesto al Consumo"
+    },
+    "03": {
+      "name": "INC",
+      "type": "tax",
+      "description": "Impuesto Nacional al Consumo"
+    },
+    "04": {
+      "name": "ICA",
+      "type": "tax",
+      "description": "Impuesto de Industria y Comercio"
+    },
+    "05": {
+      "name": "ReteFuente",
+      "type": "withholding",
+      "description": "Retención en la Fuente"
+    },
+    "06": {
+      "name": "ReteICA",
+      "type": "withholding",
+      "description": "Retención de ICA"
+    },
+    "07": {
+      "name": "ReteIVA",
+      "type": "withholding",
+      "description": "Retención de IVA"
+    },
+    "08": {
+      "name": "IPC",
+      "type": "tax",
+      "description": "Impuesto Público de Consumo"
+    },
+    "09": {
+      "name": "IPO",
+      "type": "tax",
+      "description": "Impuesto Publicitario y Otros"
+    },
+    "10": {
+      "name": "Información",
+      "type": "info",
+      "description": "Solo informativo, no afecta cálculos"
+    },
+    "11": {
+      "name": "Otros Impuestos",
+      "type": "tax",
+      "description": "Otros impuestos departamentales/municipales"
+    },
+    "12": {
+      "name": "Otros Impuestos",
+      "type": "tax",
+      "description": "Otros impuestos"
+    },
+    "13": {
+      "name": "Otros Impuestos",
+      "type": "tax",
+      "description": "Otros impuestos"
+    },
+    "14": {
+      "name": "Otros Impuestos",
+      "type": "tax",
+      "description": "Otros impuestos"
+    },
+    "15": {
+      "name": "Otros Impuestos",
+      "type": "tax",
+      "description": "Otros impuestos"
+    },
+    "22": {
+      "name": "FtoHorticultura",
+      "type": "tax",
+      "description": "Fondo de Fomento Hortifrutícola"
+    },
+    "ZZ": {
+      "name": "Otro Impuesto",
+      "type": "tax",
+      "description": "Impuesto genérico - operación determinada por contexto XML"
+    }
+  }
+}

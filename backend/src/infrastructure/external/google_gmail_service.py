@@ -36,9 +36,9 @@ class GoogleGmailService(GmailPort):
                     logger.error(f"Falta archivo de credenciales: {self.credentials_path}")
                     raise FileNotFoundError(f"Archivo de credenciales no encontrado en {self.credentials_path}")
                 
-                # Forzamos puerto 8080 porque es el único autorizado en Google Cloud Console
+                # Puerto para el callback OAuth2 (debe estar autorizado en Google Cloud Console)
                 flow = InstalledAppFlow.from_client_secrets_file(self.credentials_path, SCOPES)
-                port = 8080
+                port = 8090
                 try:
                     logger.info(f"Usando puerto fijo {port} para el callback de OAuth2")
                     creds = flow.run_local_server(port=port, access_type='offline', prompt='consent')

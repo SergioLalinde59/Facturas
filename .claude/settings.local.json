@@ -1,7 +1,24 @@
 {
   "permissions": {
     "allow": [
-      "Bash(cmd /c \"del /f /q \"\"\\\\?\\\\f:\\\\1. Cloud\\\\4. AI\\\\1. Antigravity\\\\Facturas\\\\nul\"\"\")"
+      "Bash(cmd /c \"del /f /q \"\"\\\\?\\\\f:\\\\1. Cloud\\\\4. AI\\\\1. Antigravity\\\\Facturas\\\\nul\"\"\")",
+      "Bash(docker compose:*)",
+      "Bash(docker ps:*)",
+      "Bash(ss:*)",
+      "Bash(netstat:*)",
+      "Bash(PGPASSWORD=SLB psql:*)",
+      "Bash(python3:*)",
+      "Bash(apt-get update:*)",
+      "Bash(apt-get install:*)",
+      "Bash(docker exec:*)",
+      "Bash(cmd /c \"tasklist /FI \"\"PID eq 8428\"\" /FO TABLE & echo --- & tasklist /FI \"\"PID eq 5408\"\" /FO TABLE\")",
+      "Bash(timeout:*)"
+    ],
+    "additionalDirectories": [
+      "F:\\1. Cloud\\4. AI\\1. Antigravity\\PH360\\frontend-web\\src\\app\\features\\supplier-invoice\\components\\invoice-export",
+      "F:\\1. Cloud\\4. AI\\1. Antigravity\\PH360\\frontend-web\\src\\app\\features\\supplier-invoice\\components\\gmail-config",
+      "F:\\1. Cloud\\4. AI\\1. Antigravity\\PH360\\frontend-web\\src\\app\\features\\supplier-invoice\\components\\tax-config",
+      "F:\\1. Cloud\\4. AI\\1. Antigravity\\PH360\\backend-supplier-invoice\\src\\main\\java\\com\\ph360\\supplierinvoice\\domain\\event\\pubsub"
     ]
   }
 }

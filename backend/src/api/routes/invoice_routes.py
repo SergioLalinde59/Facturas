@@ -20,7 +20,7 @@ logger = logging.getLogger("api.invoices")
 EXPORT_DIRECTORY = os.getenv('EXPORT_DIRECTORY', '/app/data/Data/Exportadas')
 FACTURAS_PENDIENTES = os.getenv('FACTURAS_PENDIENTES', '/app/data/Data/Pendientes')
 CREDENTIALS_PATH = os.path.abspath("credentials.json")
-TOKEN_PATH = os.path.abspath("token.json")
+TOKEN_PATH = os.path.abspath("Scripts/token.json")
 
 # Repository instance
 factura_repo = PostgresFacturaRepository()
@@ -127,6 +127,33 @@ async def get_invoices_stats(
         return {"stats": stats}
     except Exception as e:
         logger.error(f"Error en get_invoices_stats: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/stats/monthly")
+async def get_monthly_stats(
+    start_date: Optional[date] = Query(None),
+    end_date: Optional[date] = Query(None)
+):
+    logger.info(f"GET /api/v1/invoices/stats/monthly - Filtros: {start_date} a {end_date}")
+    try:
+        monthly = factura_repo.get_monthly_stats(start_date, end_date)
+        return {"monthly": monthly}
+    except Exception as e:
+        logger.error(f"Error en get_monthly_stats: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/stats/top-providers")
+async def get_top_providers_stats(
+    start_date: Optional[date] = Query(None),
+    end_date: Optional[date] = Query(None),
+    limit: int = Query(10, ge=1, le=50)
+):
+    logger.info(f"GET /api/v1/invoices/stats/top-providers - Filtros: {start_date} a {end_date}, Limite: {limit}")
+    try:
+        providers = factura_repo.get_top_providers(start_date, end_date, limit)
+        return {"providers": providers}
+    except Exception as e:
+        logger.error(f"Error en get_top_providers_stats: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/providers")

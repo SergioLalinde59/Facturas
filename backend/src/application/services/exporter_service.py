@@ -231,10 +231,9 @@ class ExporterService:
                 'otros_conceptos': {
                     'missing_tax_definitions': [
                         {
-                            "code": d['code'],
-                            "description": d['description'],
-                            "context": d['context'],
-                            "percent": d['percent'],
+                            "code": d['tax_code'],
+                            "description": d['tax_name'],
+                            "percent": d['percentage'],
                             "amount": d['amount']
                         } for d in tax_details if d.get('tax_name', '').startswith('Desconocido')
                     ],

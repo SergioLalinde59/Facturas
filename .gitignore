@@ -30,6 +30,7 @@ frontend/dist/
 # OS files
 .DS_Store
 Thumbs.db
+nul
 
 # Docker volumes (local data)
 postgres_data/

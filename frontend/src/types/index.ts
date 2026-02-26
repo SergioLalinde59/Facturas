@@ -47,6 +47,23 @@ export interface DashboardStats {
     fecha_max: string | null;
 }
 
+export interface MonthlyStats {
+    month: string;
+    count: number;
+    subtotal: number;
+    descuentos: number;
+    impuestos: number;
+    retenciones: number;
+    total: number;
+}
+
+export interface TopProvider {
+    proveedor: string;
+    nit: string;
+    count: number;
+    total: number;
+}
+
 export type AppView = 'dashboard' | 'extract' | 'import' | 'export' | 'report' | 'tax-master' | 'groupings' | 'tax-rates';
 
 export type SortColumn = 'fecha' | 'proveedor' | 'nit' | 'factura' | 'subtotal' | 'descuentos' | 'impuestos' | 'retenciones' | 'total';

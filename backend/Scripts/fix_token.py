@@ -1,14 +1,15 @@
 import sys
 import os
 
-# Asegurar que el directorio actual (backend) esté en el path
-sys.path.append(os.getcwd())
+# Definir rutas: credentials.json está en backend/, token.json se guarda en Scripts/
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BACKEND_DIR = os.path.dirname(SCRIPT_DIR)
+
+# Asegurar que backend/ esté en el path para importar src.*
+sys.path.insert(0, BACKEND_DIR)
 
 from src.infrastructure.external.google_gmail_service import GoogleGmailService
-
-# Definir rutas relativas al script
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-CREDENTIALS_PATH = os.path.join(SCRIPT_DIR, "credentials.json")
+CREDENTIALS_PATH = os.path.join(BACKEND_DIR, "credentials.json")
 TOKEN_PATH = os.path.join(SCRIPT_DIR, "token.json")
 
 print(f"--- Renovación de Token Gmail ---")

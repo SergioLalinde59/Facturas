@@ -193,6 +193,77 @@ class PostgresFacturaRepository(FacturaRepository):
         finally:
             pool.putconn(conn)
 
+    def get_monthly_stats(self, start_date: Optional[date] = None, end_date: Optional[date] = None) -> List[Dict[str, Any]]:
+        pool = get_connection_pool()
+        conn = pool.getconn()
+        try:
+            with conn.cursor() as cur:
+                query = """
+                SELECT
+                    TO_CHAR(fecha, 'YYYY-MM') as month,
+                    COUNT(*) as count,
+                    COALESCE(SUM(subtotal), 0) as subtotal,
+                    COALESCE(SUM(descuentos), 0) as descuentos,
+                    COALESCE(SUM(impuestos), 0) as impuestos,
+                    COALESCE(SUM(retenciones), 0) as retenciones,
+                    COALESCE(SUM(total), 0) as total
+                FROM facturas
+                WHERE 1=1
+                """
+                params = []
+                if start_date:
+                    query += " AND fecha >= %s"
+                    params.append(start_date)
+                if end_date:
+                    query += " AND fecha <= %s"
+                    params.append(end_date)
+                query += " GROUP BY TO_CHAR(fecha, 'YYYY-MM') ORDER BY month ASC"
+                cur.execute(query, params)
+                return [{
+                    'month': row[0],
+                    'count': row[1],
+                    'subtotal': float(row[2]),
+                    'descuentos': float(row[3]),
+                    'impuestos': float(row[4]),
+                    'retenciones': float(row[5]),
+                    'total': float(row[6])
+                } for row in cur.fetchall()]
+        finally:
+            pool.putconn(conn)
+
+    def get_top_providers(self, start_date: Optional[date] = None, end_date: Optional[date] = None, limit: int = 10) -> List[Dict[str, Any]]:
+        pool = get_connection_pool()
+        conn = pool.getconn()
+        try:
+            with conn.cursor() as cur:
+                query = """
+                SELECT
+                    proveedor,
+                    nit,
+                    COUNT(*) as count,
+                    COALESCE(SUM(total), 0) as total
+                FROM facturas
+                WHERE 1=1
+                """
+                params = []
+                if start_date:
+                    query += " AND fecha >= %s"
+                    params.append(start_date)
+                if end_date:
+                    query += " AND fecha <= %s"
+                    params.append(end_date)
+                query += " GROUP BY proveedor, nit ORDER BY total DESC LIMIT %s"
+                params.append(limit)
+                cur.execute(query, params)
+                return [{
+                    'proveedor': row[0],
+                    'nit': row[1],
+                    'count': row[2],
+                    'total': float(row[3])
+                } for row in cur.fetchall()]
+        finally:
+            pool.putconn(conn)
+
     def get_distinct_providers(self, start_date: Optional[date] = None, end_date: Optional[date] = None) -> List[str]:
         pool = get_connection_pool()
         conn = pool.getconn()
