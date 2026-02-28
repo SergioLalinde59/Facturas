@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(pip3 install:*)"
+      "Bash(pip3 install:*)",
+      "Bash(\"/c/Program Files/PostgreSQL/17/bin/psql.exe\" -U postgres -h localhost -p 5432 -c \"\\\\l\")",
+      "Bash(\"/c/Program Files/PostgreSQL/16/bin/psql.exe\" -U postgres -h localhost -p 5432 -c \"\\\\l\")",
+      "Bash(\"/c/Program Files/PostgreSQL/15/bin/psql.exe\" -U postgres -h localhost -p 5432 -c \"\\\\l\")"
     ]
   }
 }

@@ -57,7 +57,8 @@ rich
 
 | Servicio | Puerto Interno | Puerto Externo | Descripción |
 |----------|----------------|----------------|-------------|
-| **PostgreSQL** | 5432 | 5434 | Base de datos |
+| **PostgreSQL (Docker)** | 5432 | 5434 | Base de datos Docker (respaldo/desarrollo) |
+| **PostgreSQL (Local)** | 5432 | 5433 | Base de datos local del host (usada por el backend) |
 | **Backend (API)** | 8000 | 8002 | API REST FastAPI |
 | **Frontend** | 5174 | 5174 | Vite dev server (hot reload) |
 
@@ -66,18 +67,25 @@ rich
 ## Estructura de Contenedores
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    docker-compose.yml                        │
-├─────────────────────────────────────────────────────────────┤
-│  ┌──────────────┐   ┌──────────────┐   ┌──────────────┐     │
-│  │     db       │   │   backend    │   │   frontend   │     │
-│  │  PostgreSQL  │◄──│   FastAPI    │◄──│  Vite (dev)  │     │
-│  │  :5434       │   │    :8002     │   │    :5174     │     │
-│  └──────────────┘   └──────────────┘   └──────────────┘     │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                    docker-compose.yml                                  │
+├──────────────────────────────────────────────────────────────────────┤
+│  ┌──────────────┐   ┌──────────────┐   ┌──────────────┐              │
+│  │     db       │   │   backend    │   │   frontend   │              │
+│  │  PostgreSQL  │   │   FastAPI    │◄──│  Vite (dev)  │              │
+│  │  :5434       │   │    :8002     │   │    :5174     │              │
+│  └──────────────┘   └──────┬───────┘   └──────────────┘              │
+│                            │                                          │
+└────────────────────────────┼──────────────────────────────────────────┘
+                             │ host.docker.internal:5433
+                    ┌────────▼───────┐
+                    │  PostgreSQL    │
+                    │  Local (Host)  │
+                    │  :5433         │
+                    └────────────────┘
 ```
 
-**Conexión Backend → DB**: El backend usa `host.docker.internal` para conectar a PostgreSQL en el puerto **5434** del host.
+**Conexión Backend → DB**: El backend usa `host.docker.internal` para conectar a la PostgreSQL **local del host** en el puerto **5433** (NO al contenedor Docker de BD). El contenedor `db` de Docker existe como respaldo pero no es usado activamente por el backend.
 
 **Conexión Frontend → Backend**: El frontend usa un proxy interno (`API_PROXY_TARGET=http://backend:8000`) a través de la red Docker, sin pasar por el puerto externo.
 
@@ -128,8 +136,8 @@ Define los 3 servicios principales:
 ### Backend
 | Variable | Valor | Descripción |
 |----------|-------|-------------|
-| `DB_HOST` | `host.docker.internal` | Host de la BD (accede al host desde Docker) |
-| `DB_PORT` | `5434` | Puerto externo de PostgreSQL |
+| `DB_HOST` | `host.docker.internal` | Host de la BD (accede a la PostgreSQL local del host desde Docker) |
+| `DB_PORT` | `5433` | Puerto de la PostgreSQL local del host |
 | `DB_NAME` | `${DB_NAME:-Facturas}` | Nombre de la BD |
 | `DB_USER` | `${DB_USER:-postgres}` | Usuario de la BD |
 | `DB_PASSWORD` | `${DB_PASSWORD}` | Contraseña de la BD |
@@ -250,7 +258,8 @@ notepad C:\Windows\System32\drivers\etc\hosts
 
 | Servicio | ConciliacionWeb | Facturas |
 |----------|-----------------|----------|
-| PostgreSQL | 5432 | 5434 |
+| PostgreSQL (Docker) | 5432 | 5434 |
+| PostgreSQL (Local) | 5432 | 5433 |
 | Backend | 8000 | 8002 |
 | Frontend | 5173 | 5174 |
 
@@ -291,7 +300,7 @@ docker stats
 
 3. **Puerto DB conflicto**: Si se ejecutan ambas apps (ConciliacionWeb + Facturas), cada una usa puertos diferentes para evitar conflictos.
 
-4. **Host Docker**: El backend usa `host.docker.internal` para conectar a la BD del host (fuera del contenedor Docker).
+4. **Host Docker**: El backend usa `host.docker.internal:5433` para conectar a la PostgreSQL **local** del host (no al contenedor Docker de BD). El contenedor `db` Docker expone el puerto 5434 como respaldo.
 
 5. **Rutas de archivos**: Las carpetas `Data/Pendientes`, `Data/Procesadas` y `Data/Exportadas` se montan desde la raíz del proyecto al contenedor del backend via el volumen `.:/app/data`.
 

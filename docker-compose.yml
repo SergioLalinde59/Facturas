@@ -23,7 +23,7 @@ services:
     container_name: facturas_backend
     environment:
       - DB_HOST=host.docker.internal
-      - DB_PORT=5434
+      - DB_PORT=5433
       - DB_NAME=${DB_NAME:-Facturas}
       - DB_USER=${DB_USER:-postgres}
       - DB_PASSWORD=${DB_PASSWORD}
